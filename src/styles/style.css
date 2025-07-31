@@ -30,6 +30,7 @@ a:hover {
     background-position: center;
     background-size: cover;
     background-repeat: no-repeat;
+    height: 470px; /* 25-7-25 Ali */
 }
 
 .bg-skyblue {
@@ -382,7 +383,8 @@ a:hover {
 }
 
 .home-hero-section .container-fluid {
-    background-image: url('./assets/images/bg/bg-forest-1.jpg');
+    background-image: url('/images/bg/bg-forest-1.jpg');
+    /* background-image: url('./assets/images/bg/bg-forest-1.jpg'); */
     border-radius: 20px;
 }
 
@@ -402,7 +404,7 @@ a:hover {
     line-height: 1;
 }
 
-.hh-search-form {
+/* .hh-search-form {
     margin: auto;
     width: 500px;
     height: 80px;
@@ -414,16 +416,34 @@ a:hover {
     display: flex;
     justify-content: end;
     align-items: center;
+} */
+ /* 24-07-25 Ali */
+ .hh-search-form {
+    margin: auto;
+    width: 500px;
+    height: 80px;
+    border-radius: 30px;
+    padding: 10px 40px;
+    background-color: #89757580;
+    border: 1px solid #C6C6D1;
+    gap: 10px;
+    display: flex;
+    justify-content: end;
+    align-items: center;
+    z-index: 999;
 }
 
 .hh-search-form .inputbox {
     border: none;
-    padding: 10px;
+    padding: 40px;
+    /* padding: 10px; */
     width: calc(100% - 30px);
     color: var(--almost-white);
     background-color: transparent;
     font-size: 18px;
     line-height: 1.5;
+    /* 22/07/25 Ali */
+    /* text-align: center; */
 }
 
 .hh-search-form .inputbox:active,
@@ -446,6 +466,16 @@ a:hover {
     font-size: 26px;
     position: absolute;
     left: 40px;
+
+}
+/* 22/07/25 Ali */
+button.search-close
+ {
+    background-color: transparent;
+    border: none;
+    color: var(--almost-white);
+    padding: 0;
+    font-size: 26px;
 }
 
 /* main */
@@ -1360,7 +1390,8 @@ a:hover {
 }
 
 .weather-widget-tab .tab-pane {
-    background-image: url('./assets/images/bg/weather-bg-1.svg');
+    background-image: url('/images/bg/weather-bg-1.svg');
+    /* background-image: url('/assets/images/bg/weather-bg-1.svg'); */
     background-size: cover;
     background-position: center;
     padding: 14px 32px;
@@ -2591,7 +2622,8 @@ input[type="radio"]:checked::after {
 }
 
 .wrapper-home {
-    background-image: url("./assets/images/bg/home-desktop-1.svg");
+    background-image: url("/images/bg/home-desktop-1.svg");
+    /* background-image: url("./assets/images/bg/home-desktop-1.svg"); */
 }
 
 .wrapper-login {
@@ -2603,7 +2635,7 @@ input[type="radio"]:checked::after {
 }
 
 .wrapper-trail-details {
-    background-image: url("./assets/images/bg/Trail-detailed.svg");
+    background-image: url("/assets/images/bg/Trail-detailed.svg");
 }
 
 .wrapper-explore-trail {
@@ -2877,6 +2909,13 @@ input[type="radio"]:checked::after {
     .hh-search-form .inputbox {
         font-size: 14px;
         width: calc(100% - 25px);
+        padding: 10px 28px; /* 25-7-25 Ali */
+    }
+    /* 25-7-25 Ali */
+    ul.suggestions {
+        margin: auto;
+        width: 316px !important;
+        padding: 12px 0px !important;
     }
 
     /* download app */
@@ -3003,10 +3042,10 @@ input[type="radio"]:checked::after {
         margin-left: 0;
         margin-right: 0;
         padding-left: 0;
-        padding-right: 0
+        padding-right: 0;
     }
 
-    ;
+    
 
     .section-local-favorite .container .row .col-12,
     .section-local-favorite .container .row>*,
@@ -4261,7 +4300,7 @@ input[type="radio"]:checked::after {
 .trail-user-favorite-card {
     padding: 20px 20px;}
 .tuf-left-content{width: calc(50% - 50px);flex-wrap: wrap;gap: 0;}
-.tuf-right-content{width: calc(50% + 40px);;}
+.tuf-right-content{width: calc(50% + 40px);}
 .tuf-left-content .tusc-cn-1 {
     width: 100%;
 }
@@ -4270,4 +4309,33 @@ input[type="radio"]:checked::after {
 }
 .tuf-left-content .tusc-cn-2{max-width: 100%}
     }
+
+    /* 24/7/25 Ali */
+     ul.suggestions {
+        margin: auto;
+        width: 500px;
+        list-style: none;
+        padding: 25px 40px;
+        border: 1px solid #C6C6D1;
+        border-top: none;
+        background-color: #504d4d80;
+        position: relative;
+        top: -20px;
+        z-index: 1;
+    }
+     /* 24/7/25 Ali */
+    a.a-text {
+        color: #fff;
+    }
+    .img-fixed-size {
+        width: 100%;
+        height: 200px; 
+        object-fit: cover;
+    }
+    /* 25-7-25 Ali*/
+    body, html {
+        overflow-x: hidden;
+    }
+   
+    
     

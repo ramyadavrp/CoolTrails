@@ -5,6 +5,7 @@ import axios from 'axios';
 // IMPORTANT: Make sure these CSS imports are present either here or in your main.tsx
 import 'owl.carousel/dist/assets/owl.carousel.min.css';
 import 'owl.carousel/dist/assets/owl.theme.default.min.css';
+import { SyncLoader } from "react-spinners";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 //const BASE_URL = 'https://api.cooltrails.purchaseitnow.shop/api/home/topadventurecategory';
@@ -17,7 +18,7 @@ const ShareAdventure: React.FC = () => {
     useEffect(() => {
         const fetchtopAdventure = async ()=>{
             try{
-                const response = await axios.get(`${BASE_URL}/home/topadventurecategory`);
+                const response = await axios.get(`${BASE_URL}/home/topadventurecategory/10`);
                 setAdventure(response.data.data);
             }catch(err){
                 console.error('API Error:', err);
@@ -86,6 +87,15 @@ const ShareAdventure: React.FC = () => {
             }
         //}
         });
+    if (errorAdventure) return <p>{errorAdventure}</p>;
+    if (loadingAdventure) {
+      return (
+        <div className="section-share-adventure d-flex justify-content-center align-items-center" style={{ minHeight: '100px' }}>
+          <SyncLoader color="#FC673C" size={20} />
+        </div>
+      );
+    }
+    if (shareAdventure.length === 0) return <p>No  Views Near By found.</p>;
         
   return (
     <section className="section-share-adventure default-padding">
@@ -107,9 +117,17 @@ const ShareAdventure: React.FC = () => {
                             {
                                shareAdventure.map((adventure: any, index: number) => (
                                 
-                                <div className="advnSliderItem">
+                                <div key={index} className="advnSliderItem">
                                     <div className="share-adventure-single position-relative overflow-hidden">
-                                        <img src={adventure.image} alt={adventure.image} />
+                                        <img
+                                            src={adventure.image || '/assets/images/not-found.jpg'}
+                                            alt="Adventure" className="" 
+                                            onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                                const target = e.currentTarget;
+                                                target.onerror = null; // prevent infinite loop
+                                                target.src = '/assets/images/not-found.jpg'; // fallback image
+                                            }}
+                                        />
                                         <a href="" className="share-adv-overlay d-flex w-100 h-100 align-items-end justify-content-center text-center text-white">
                                         <span className="d-block w-100">{adventure.title}</span></a>
                                     </div>
@@ -186,16 +204,16 @@ const ShareAdventure: React.FC = () => {
                     <ul className="d-flex justify-content-center gap-3 list-unstyled flex-wrap social-media-logo">
                         <li><a href="" title="Facebook"
                                 className="social-media-btn d-flex align-items-center justify-content-center"><img
-                                    src="assets/images/icons/facebook.svg" alt="" /></a></li>
+                                    src="/assets/images/icons/facebook.svg" alt="" /></a></li>
                         <li><a href="" title="Instagram"
                                 className="social-media-btn d-flex align-items-center justify-content-center"><img
-                                    src="assets/images/icons/instagram.svg" alt="" /></a></li>
+                                    src="/assets/images/icons/instagram.svg" alt="" /></a></li>
                         <li><a href="" title="Twitter-X"
                                 className="social-media-btn d-flex align-items-center justify-content-center"><img
-                                    src="assets/images/icons/twitter-x.svg" alt="" /></a></li>
+                                    src="/assets/images/icons/twitter-x.svg" alt="" /></a></li>
                         <li><a href="" title="Linked IN"
                                 className="social-media-btn d-flex align-items-center justify-content-center"><img
-                                    src="assets/images/icons/linkedin02.svg" alt="" /></a></li>
+                                    src="/assets/images/icons/linkedin02.svg" alt="" /></a></li>
                     </ul>
                 </div>
             </div>
