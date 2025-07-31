@@ -26,7 +26,8 @@ const Footer: React.FC = () => {
                 <div className="row">
                     <div className="col-12">
                         <div className="footer-logo-container d-flex justify-content-center">
-                            <a href="" className="footer-logo d-block"><img src="assets/images/logo-white.svg" alt="" /></a>
+                            <a href="" className="footer-logo d-block">
+                                <img src="/assets/images/logo-white.svg" alt="" /></a>
                         </div>
                     </div>
                 </div>
@@ -55,7 +56,11 @@ const Footer: React.FC = () => {
                                         </Link> */}
                                         <a href="#!">Cities</a>
                                     </li>
-                                    <li><a href="#!">Parks</a></li>
+                                    <li>
+                                        <Link to={'/national-park-guide'} className="dropdown-item"> 
+                                             Parks
+                                        </Link>
+                                    </li>
                                     <li><a href="#!">Trails</a></li>
                                     <li><a href="#!">Points of Interest</a></li>
                                     <li><a href="#!">Trail </a></li>
@@ -157,16 +162,16 @@ const Footer: React.FC = () => {
                                 className="d-flex justify-content-end gap-3 list-unstyled flex-wrap social-media-logo social-media-logo-footer mb-0 mt-0 align-items-center">
                                 <li><a href="" title="Facebook"
                                         className="social-media-btn d-flex align-items-center justify-content-center"><img
-                                            src="assets/images/icons/facebook.svg" alt="" /></a></li>
+                                            src="/assets/images/icons/facebook.svg" alt="" /></a></li>
                                 <li><a href="" title="Instagram"
                                         className="social-media-btn d-flex align-items-center justify-content-center"><img
-                                            src="assets/images/icons/instagram.svg" alt="" /></a></li>
+                                            src="/assets/images/icons/instagram.svg" alt="" /></a></li>
                                 <li><a href="" title="Twitter-X"
                                         className="social-media-btn d-flex align-items-center justify-content-center"><img
-                                            src="assets/images/icons/twitter-x.svg" alt="" /></a></li>
+                                            src="/assets/images/icons/twitter-x.svg" alt="" /></a></li>
                                 <li><a href="" title="Linked IN"
                                         className="social-media-btn d-flex align-items-center justify-content-center"><img
-                                            src="assets/images/icons/linkedin02.svg" alt="" /></a></li>
+                                            src="/assets/images/icons/linkedin02.svg" alt="" /></a></li>
                             </ul>
                         </div>
                     </div>

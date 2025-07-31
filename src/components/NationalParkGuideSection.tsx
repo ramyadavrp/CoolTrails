@@ -2,6 +2,7 @@ import React, { useState,useEffect } from 'react';
 import { Link as ScrollLink } from 'react-scroll';
 import { Link as RouterLink } from 'react-router-dom';
 import axios from 'axios';
+import { SyncLoader } from "react-spinners";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 const NationalParkGuideSection: React.FC = () => {
@@ -13,7 +14,7 @@ const NationalParkGuideSection: React.FC = () => {
     useEffect(() => {
         const fetchNParks= async ()=>{
             try{
-                const response = await axios.get(`${BASE_URL}/home/topparks`);
+                const response = await axios.get(`${BASE_URL}/home/topparks/10`);
                 setNationalParks(response.data.data);
             }catch(err){
                 console.error('API Error:', err);
@@ -26,9 +27,18 @@ const NationalParkGuideSection: React.FC = () => {
     }, []);
     
     //console.log(nationalParks);
-    if(loadingNParks) return <p>Loading Parks....</p>;
-    if(errorsNParks) return <p>{errorsNParks}</p>;
-    if(nationalParks.length === 0) return <p>NO National Parks found</p>;
+    // if(loadingNParks) return <p>Loading Parks....</p>;
+    // if(errorsNParks) return <p>{errorsNParks}</p>;
+    // if(nationalParks.length === 0) return <p>NO National Parks found</p>;
+    if (errorsNParks) return <p>{errorsNParks}</p>;
+    if (loadingNParks) {
+    return (
+        <div className="section-explore-park d-flex justify-content-center align-items-center" style={{ minHeight: '100px' }}>
+        <SyncLoader color="#FC673C" size={20} />
+        </div>
+    );
+    }
+    if (nationalParks.length === 0) return <p>NO National Parks found.</p>;
     return (
         <main className="mainContent">
             <section className="section-explore-park">
@@ -100,11 +110,15 @@ const NationalParkGuideSection: React.FC = () => {
                         <div className="col-12">
                             
                             <div className="cooltrails-title text-center">
-                                <h2 className="title title-sm title-dropdown d-flex align-items-center justify-content-center"><span className="me-2 text-midnight-navy">Guides to</span>  <select name="" id="" className="advance-select">
-                                    <option value="" selected>Austraila</option>
-                                    <option value="">America</option>
-                                    <option value="">India</option>
-                                </select> </h2>
+                                <h2 className="title title-sm title-dropdown d-flex align-items-center justify-content-center">
+                                    <span className="me-2 text-midnight-navy">Guides to</span>  
+                                    <select name="" id="" className="advance-select" defaultValue="">
+                                        {/* <option value="" selected>Austraila</option> */}
+                                        <option value="">Austraila</option>
+                                        <option value="america">America</option>
+                                        <option value="india">India</option>
+                                    </select> 
+                                </h2>
                                 <p className="text-center text-grey">29 Parks • 29 Guides</p>
                             </div>
 
@@ -113,9 +127,19 @@ const NationalParkGuideSection: React.FC = () => {
                     <div className="row">
                             {
                                 nationalParks.map((nparks:any,index:number)=>(
-                                <div key = {nparks.id || index} className="col-xl-4 col-lg-6 col-md-6 col-sm-12 col-12">
+                                <div key = {index} className="col-xl-4 col-lg-6 col-md-6 col-sm-12 col-12">
                                     <div className="guide-to-single d-flex align-items-center position-relative">
-                                        <div className="gds-thumb"><img src="assets/images/guide-to/1.png" alt="" className="w-100"/>
+                                        <div className="gds-thumb">
+                                            <img
+                                                src={nparks.image || '/assets/images/not-found.jpg'}
+                                                alt="Weather" 
+                                                className="w-100"
+                                                onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                                    const target = e.currentTarget;
+                                                    target.onerror = null; // prevent infinite loop
+                                                    target.src = '/assets/images/not-found.jpg'; // fallback image
+                                                }}
+                                            />
                                         </div>
                                         <div className="gds-cn">
                                             <h4 className="mb-0 text-midnight-navy">{nparks.name}</h4>
@@ -128,7 +152,7 @@ const NationalParkGuideSection: React.FC = () => {
                                                     xmlns="http://www.w3.org/2000/svg">
                                                     <path
                                                         d="M6.7 2.99988L10.3306 7.2356C10.7158 7.68498 10.7158 8.34811 10.3306 8.79749L6.7 13.0332"
-                                                        stroke="#717171" stroke-width="1.1" stroke-linecap="round" />
+                                                        stroke="#717171" strokeWidth="1.1" strokeLinecap="round" />
                                                 </svg>
                                             </a>
                                         </div>

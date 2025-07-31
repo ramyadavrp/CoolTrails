@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
+import { SyncLoader } from "react-spinners";
+
 //import $ from 'jquery'; // Import jQuery
 import 'owl.carousel'; // Import OwlCarousel's JS (ensure this path is correct)
 
@@ -8,17 +11,26 @@ import 'owl.carousel/dist/assets/owl.carousel.min.css';
 import 'owl.carousel/dist/assets/owl.theme.default.min.css';
 
 const BASE_URL = import.meta.env.VITE_API_URL;
-
+interface TrailDetail {
+  urltitle: string;
+  title: string;
+}
 const LocalFavorites: React.FC = () => {
   const [topLocatTrails, setTopLocatTrails] = useState([]);
   const [loadingLocatTrails, setLoadingLocatTrails] = useState(true);
   const [errorLocatTrails, setErrorLocatTrails] = useState('');
-
+  // genrate slug
+    const generateSlug = (title: string) => {
+        return title
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')  // Replace non-alphanumeric with hyphens
+            .replace(/(^-|-$)+/g, '');    // Trim hyphens from start/end
+    };
   // Effect to fetch data
   useEffect(() => {
       const fetchTopLocalTrail = async() =>{
         try{
-          const response = await axios.get(`${BASE_URL}/home/toplocaltrail`);
+          const response = await axios.get(`${BASE_URL}/home/toplocaltrail/3`);
           setTopLocatTrails(response.data.data);
           //console.log(response.data.data);
         }catch(err){
@@ -98,9 +110,16 @@ const LocalFavorites: React.FC = () => {
     }
   }, [loadingLocatTrails, topLocatTrails]); // Re-run effect when loading status or data changes
 
-  if (loadingLocatTrails) return <p>Loading trails...</p>;
-  if (errorLocatTrails) return <p>{errorLocatTrails}</p>; // Display error if API call failed
-  if (topLocatTrails.length === 0) return <p>No local favorites found.</p>; // Handle empty data
+  
+if (errorLocatTrails) return <p>{errorLocatTrails}</p>;
+if (loadingLocatTrails) {
+  return (
+    <div className="section-local-favorite d-flex justify-content-center align-items-center" style={{ minHeight: '100px' }}>
+      <SyncLoader color="#FC673C" size={20} />
+    </div>
+  );
+}
+if (topLocatTrails.length === 0) return <p>No local favorites found.</p>;
 
   return (
     <section className="section-local-favorite default-padding position-relative">
@@ -122,7 +141,15 @@ const LocalFavorites: React.FC = () => {
                       <div className="local-favorite-single">
                         <div className="lfc-thumb position-relative">
                           {/* Fix image source path - add leading slash for public assets */}
-                          <img src={locatTrail.image} alt={locatTrail.title} className="img-fluid" />
+                          <img
+                              src={locatTrail.image || '/assets/images/not-found.jpg'}
+                              alt="locat Trail" className="img-fluid img-fixed-size" 
+                              onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                  const target = e.currentTarget;
+                                  target.onerror = null; // prevent infinite loop
+                                  target.src = '/assets/images/not-found.jpg'; // fallback image
+                              }}
+                          />
                           <a href="#!" className="bookmark-btn" title="Save">
                             <i className="bi bi-bookmark"></i>
                           </a>
@@ -133,7 +160,18 @@ const LocalFavorites: React.FC = () => {
                           <p className="lfc-tags">
                             <i className="bi bi-star-fill"></i> 4.6 · Moderate · {locatTrail.distance} · Est. {locatTrail.time_duration || 'N/A'}
                           </p>
-                          <a href="#!" className="btn-style-1 w-100">Check Details</a>
+                          {/* <Link to={`/affiliate-details/${locatTrail.trailId}/${generateSlug(locatTrail.title)}`} className="btn-style-1 w-100">
+                              Check Details
+                          </Link> */}
+                          {/* <Link to={`/affiliate-details/${locatTrail.urltitle}`} className="btn-style-1 w-100">
+                              Check Details
+                          </Link> */}
+                          <Link to={`/affiliate-details/${locatTrail.urltitle || generateSlug(locatTrail.title || '')}`}
+                            className="btn-style-1 w-100"
+                          >
+                            Check Details
+                          </Link>
+                          {/* <a href="#!" className="btn-style-1 w-100"></a> */}
                         </div>
                       </div>
                     </div>

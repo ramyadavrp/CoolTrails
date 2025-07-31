@@ -1,7 +1,35 @@
-import React from "react";
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import axios from 'axios';
+import { SyncLoader } from "react-spinners";
+import path from 'path';
+import { Link } from 'react-router-dom';
+import { decodeId,encodeId, generateSlug ,slugToTitle} from '../utils/helpers';
+const BASE_URL = import.meta.env.VITE_API_URL;
+
+interface TrailDetail {
+    id: number;
+    title: string;
+    slug: string;
+    image: string;
+}
 
 function ExploreTrailSection(){
-
+    const { title } = useParams();
+    useEffect(() => {
+            // console.log(title);
+        if (title) {
+            try {
+            // const trailId = Number(decodeId(encodedId)); // safely decode
+            fetchExploreTrail(title);
+            } catch (err) {
+            console.error('Failed to decode ID:', err);
+            }
+        }
+        }, [title]);
+        const fetchExploreTrail = async  (title:String) =>{
+            console.log('fetchExploreTrail');
+        }
     return(
         <main className="mainContent">
             <section className="section-explore-trails position-relative default-padding">
@@ -56,10 +84,10 @@ function ExploreTrailSection(){
                                     <div className="mb-4">
                                         <button className="btn-style-5" data-bs-toggle="collapse" data-bs-target="#allFilter" aria-expanded="false" aria-controls="allFilter">
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="me-2">
-                                                <path d="M21 7L11 7" stroke="#05073D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                                                <circle cx="2" cy="2" r="2" transform="matrix(-1 0 0 1 7 5)" stroke="#05073D" stroke-width="1.5" />
-                                                <path d="M3 17L13 17" stroke="#05073D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                                                <circle cx="19" cy="17" r="2" stroke="#05073D" stroke-width="1.5" />
+                                                <path d="M21 7L11 7" stroke="#05073D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                <circle cx="2" cy="2" r="2" transform="matrix(-1 0 0 1 7 5)" stroke="#05073D" strokeWidth="1.5" />
+                                                <path d="M3 17L13 17" stroke="#05073D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                <circle cx="19" cy="17" r="2" stroke="#05073D" strokeWidth="1.5" />
                                             </svg>
                                             All Filters
                                         </button>
@@ -74,7 +102,7 @@ function ExploreTrailSection(){
                                             <path
                                                 d="M3 4.82463L4.61795 3.20668C4.89352 2.93111 5.34031 2.93111 5.61587 3.20668L7.23383 4.82463M5.11691 3.41335L5.11691 11.881M9.35074 11.1754L10.9687 12.7933C11.2443 13.0689 11.691 13.0689 11.9666 12.7933L13.5846 11.1754M11.4677 12.5866V4.11899"
                                                 stroke="#05073D"
-                                                stroke-linecap="round"
+                                                strokeLinecap="round"
                                             />
                                         </svg>
                                         <select name="" id="sortby" className="advance-select" >
