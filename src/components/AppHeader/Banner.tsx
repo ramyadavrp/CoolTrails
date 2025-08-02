@@ -79,7 +79,7 @@ const Banner: React.FC = () => {
         setSuggestions([]);
     }
    
-//console.log(suggestions);
+console.log(suggestions);
     return (
       <section className="home-hero-section">
         <div className="container-fluid  bg-image">
@@ -125,19 +125,19 @@ const Banner: React.FC = () => {
                                         {/* <Link to={`/affiliate-details/${item.trailId}`} className="a-text">
                                             {item.title}
                                         </Link> */}
-                                        <Link to={`/affiliate-details/${generateSlug(item.title)}`} className="a-text">
-                                            {item.title}
-                                        </Link>
-                                        
-                                        {/* <Link className="a-text"
-                                            to={
-                                                category === 'trail'
-                                                ? `/affiliate-details/${generateSlug(item.title)}`
-                                                : `/explore-trail/${generateSlug(item.title)}`
-                                            }
-                                            >
+                                        {/* <Link to={`/affiliate-details/${generateSlug(item.title)}`} className="a-text">
                                             {item.title}
                                         </Link> */}
+                                        
+                                        <Link className="a-text"
+                                            to={
+                                                item.type === 'Trail'
+                                                ? `/affiliate-details/${generateSlug(item.title)?item.urlTitle:''}`
+                                                : `/explore-trail/${generateSlug(item.title)?item.urlTitle:''}`
+                                            }
+                                            >
+                                           {`${item.title} (${item.type})`}
+                                        </Link>
                                         </div>
                                     </div>
                                     </li>
