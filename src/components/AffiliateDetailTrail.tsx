@@ -12,9 +12,28 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet'
 
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
-
+import data from '../data/alltrailDetails.json';
 
 const BASE_URL = import.meta.env.VITE_API_URL;
+
+interface TrailGuide {
+  trail_guide_title: string;
+  trail_guide_description: string;
+};
+interface Itinerary {
+    day: string;
+    day_title: string;
+    day_description: string;
+}
+
+interface PlaceOffer {
+    scramble: string;
+    offTrail: string;
+    lake: string;
+    view: string;
+    hiking: string;
+    walking: string;
+}
 interface TrailDetail {
     id: number;
     name: string;
@@ -31,6 +50,15 @@ interface MapPoint  {
   longitude: number;
 };
 
+interface Reviews {
+    review_img: string;
+    review_title: string;
+    review: number;
+    review_date: string;
+    review_hiking: string;
+    review_desc: string;
+}
+
 // const trailPoints = [
 //   [27.170382753708353, 78.04216826724485],
 //   [27.17195013722194, 78.04221063831409],
@@ -45,8 +73,28 @@ const AffiliateDetailTrail: React.FC = () => {
     const [nearTrails, setNearTrails] = useState<TrailDetail[]>([]);
     const [getweatherDays, setWeatherDays] = useState([]);
     const [getmapPoints, setMapPoints] = useState<MapPoint[]>([]);
-
-
+    const [getTrailGuide, setTrailGuide] = useState<TrailGuide[]>([]);
+    const [getItinerary, setItinerary] = useState<Itinerary[]>([]);
+    const [getPlaceOffer, setPlaceOffer] = useState<PlaceOffer[]>([]);
+    const [getReviews, setReviews ]= useState<Reviews[]>([]);
+    
+    useEffect(()=>{
+        const fetchDataTrailGuide = async () => {
+            try {
+                const response = await fetch('/data/alltrailDetails.json'); 
+                const json: TrailGuide[] = await response.json();
+                // console.log(json.trail_guides);
+                setTrailGuide(json.trail_guides);
+                setItinerary(json.itinerary);
+                setPlaceOffer(json.place_offers);
+                setReviews(json.reviews);
+            } catch (error) {
+                console.error('Error fetching JSON:', error);
+            }
+        };
+        fetchDataTrailGuide();
+    },[]);
+    // console.log('guide',getTrailGuide.trail_guides);
 
     useEffect(() => {
         // console.log(title);
@@ -280,33 +328,64 @@ const AffiliateDetailTrail: React.FC = () => {
                             </p>
                         </div>
                         <div className="trail-detail-widget trail-guide-widget" id="trailGuide">
-                            <div className="section-title section-title-md">
-                                <h2 className="title title-md">Trail Guide</h2>
-                            </div>
-                            <p>
-                                Try this 10.0-km loop trail near Al Khari, Ras al-Khaimah. Generally considered a moderately challenging route. This is a very popular area for hiking and walking, so you'll likely encounter other people while
-                                exploring. The best times to visit this trail are September through June. <a href="" className="text-orange fw-bold">read more</a>
-                            </p>
+                            {getTrailGuide.length > 0 ? (
+                                getTrailGuide.map((trail, index) => (
+                                    <div key={index}>
+                                    <div className="section-title section-title-md">
+                                        <h2 className="title title-md">{trail.trail_guide_title}</h2>
+                                    </div>
+                                    <p>
+                                        {trail.trail_guide_description}{' '}
+                                        <a href="#" className="text-orange fw-bold">read more</a>
+                                    </p>
+                                    </div>
+                                ))
+                                ) : (
+                                <p>Loading trail details...</p>
+                            )}
+
                         </div>
                         <div className="trail-detail-widget trail-itinary-widget" id="trailItinary">
                             <div className="section-title section-title-md">
                                 <h2 className="title title-md">Itinerary</h2>
                             </div>
                             <div className="accordion accordion-flush faq-accordion trail-itinary-accorion" id="faqToggle">
-                                <div className="accordion-item">
-                                    <h2 className="accordion-header">
-                                        <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1" aria-expanded="false" aria-controls="faq1">
-                                            <span className="fw-bold me-2">Day 1 : </span> Arrival at Lorem Ipsum
-                                        </button>
-                                    </h2>
-                                    <div id="faq1" className="accordion-collapse collapse" data-bs-parent="#faqToggle">
-                                        <div className="accordion-body">
-                                            If you don't want your gift delivered by email, you'll have the option to print instead. Then you can deliver your gift by hand or by mail and the PDF will include all the information your recipient
-                                            needs to redeem it.
+                                {getItinerary.length > 0 ? (
+                                    getItinerary.map((It, index) => {
+                                        const collapseId = `faq${index}`; 
+
+                                        return (
+                                        <div key={index} className="accordion-item">
+                                            <h2 className="accordion-header">
+                                            <button
+                                                className="accordion-button collapsed"
+                                                type="button"
+                                                data-bs-toggle="collapse"
+                                                data-bs-target={`#${collapseId}`} // ✅ Dynamic
+                                                aria-expanded="false"
+                                                aria-controls={collapseId}
+                                            >
+                                                <span className="fw-bold me-2">{It.day}: </span>{It.itinerary_title}
+                                            </button>
+                                            </h2>
+                                            <div
+                                            id={collapseId} // ✅ Match this with data-bs-target
+                                            className="accordion-collapse collapse"
+                                            data-bs-parent="#faqToggle"
+                                            >
+                                            <div className="accordion-body">
+                                                {It.itinerary_description}
+                                            </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-                                <div className="accordion-item">
+                                        );
+                                    })
+                                    ) : (
+                                    <p>Loading Itinerary details...</p>
+                                    )}
+
+                                
+                                {/* <div className="accordion-item">
                                     <h2 className="accordion-header">
                                         <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2" aria-expanded="false" aria-controls="faq2">
                                             <span className="fw-bold me-2">Day 2 : </span> Arrival at Lorem Ipsum
@@ -318,8 +397,8 @@ const AffiliateDetailTrail: React.FC = () => {
                                             needs to redeem it. <code>.accordion-flush</code> className. This is the second item’s accordion body. Let’s imagine this being filled with some actual content.
                                         </div>
                                     </div>
-                                </div>
-                                <div className="accordion-item">
+                                </div> */}
+                                {/* <div className="accordion-item">
                                     <h2 className="accordion-header">
                                         <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3" aria-expanded="false" aria-controls="faq3">
                                             <span className="fw-bold me-2">Day 3 : </span> Arrival at Lorem Ipsum
@@ -331,8 +410,8 @@ const AffiliateDetailTrail: React.FC = () => {
                                             needs to redeem it.
                                         </div>
                                     </div>
-                                </div>
-                                <div className="accordion-item">
+                                </div> */}
+                                {/* <div className="accordion-item">
                                     <h2 className="accordion-header">
                                         <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq33" aria-expanded="false" aria-controls="faq33">
                                             <span className="fw-bold me-2">Day 4 : </span> Arrival at Lorem Ipsum
@@ -344,7 +423,7 @@ const AffiliateDetailTrail: React.FC = () => {
                                             needs to redeem it.
                                         </div>
                                     </div>
-                                </div>
+                                </div> */}
                             </div>
                         </div>
                     </div>
@@ -440,22 +519,33 @@ const AffiliateDetailTrail: React.FC = () => {
                             <h3 className="text-midnight-navy">What this place offers</h3>
                             <ul className="trail-side-nav list-unstyled mt-0">
                                 <li>
-                                    <a href=""><img src="/assets/images/icons/scamble.svg" alt="" /> Scramble </a>
+                                    <a href=""><img src="/assets/images/icons/scamble.svg" alt="" /> 
+                                        {getPlaceOffer[0].scramble ? getPlaceOffer[0].scramble :'N/A'} 
+                                    </a>
                                 </li>
                                 <li>
-                                    <a href=""><img src="/assets/images/icons/off-trail.svg" alt="" /> Off-trail (bushwhack) </a>
+                                    <a href=""><img src="/assets/images/icons/off-trail.svg" alt="" /> 
+                                        {getPlaceOffer[0].offTrail ? getPlaceOffer[0].offTrail:'N/A'}  
+                                    </a>
                                 </li>
                                 <li>
-                                    <a href=""><img src="/assets/images/icons/lakes.svg" alt="" /> Lakes </a>
+                                    <a href=""><img src="/assets/images/icons/lakes.svg" alt="" /> 
+                                        {getPlaceOffer[0].lake ? getPlaceOffer[0].lake : 'N/A'}  
+                                    </a>
                                 </li>
                                 <li>
-                                    <a href=""><img src="/assets/images/icons/views.svg" alt="" /> Views </a>
+                                    <a href=""><img src="/assets/images/icons/views.svg" alt="" /> 
+                                        {getPlaceOffer[0].view ? getPlaceOffer[0].view : 'N/A'}  
+                                    </a>
                                 </li>
                                 <li>
-                                    <a href=""><img src="/assets/images/icons/hiking.svg" alt="" /> Hiking </a>
+                                    <a href=""><img src="/assets/images/icons/hiking.svg" alt="" /> 
+                                        {getPlaceOffer[0].hiking ? getPlaceOffer[0].hiking: 'N/A'}  
+                                    </a>
                                 </li>
                                 <li>
-                                    <a href=""><img src="/assets/images/icons/walking.svg" alt="" /> Walking </a>
+                                    <a href=""><img src="/assets/images/icons/walking.svg" alt="" /> 
+                                    {getPlaceOffer[0].walking ? getPlaceOffer[0].walking : 'N/A'} </a>
                                 </li>
                             </ul>
                             <div className="d-flex flex-wrap align-items-center">
@@ -555,7 +645,88 @@ const AffiliateDetailTrail: React.FC = () => {
                     </div>
 
                     <div className="row review-row g-3">
-                        <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
+                        
+                        	{getReviews.length > 0 ? (
+                                getReviews.map((review:any,index:number) =>{
+                                        return (
+                                            <>
+                                            <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
+                                            <div key={index} className="testimonial-single position-relative">
+                                                <div className="testimonial-head d-flex w-100 align-items-center position-relative">
+                                                    <div className="test-image">
+                                                        <img
+                                                            src={review.review_img || '/assets/images/not-found.jpg'}
+                                                            alt="Top Trail" className="img-fluid img-fixed-size" 
+                                                            onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                                                const target = e.currentTarget;
+                                                                target.onerror = null; // prevent infinite loop
+                                                                target.src = '/assets/images/not-found.jpg'; // fallback image
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <div className="test-head">
+                                                        <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">{review.review_title}</h3>
+                                                        <div className="rating">
+                                                            <i className="bi bi-star-fill"></i>
+                                                            <i className="bi bi-star-fill"></i>
+                                                            <i className="bi bi-star-fill"></i>
+                                                            <i className="bi bi-star-fill"></i>
+                                                            <i className="bi bi-star-fill"></i>
+                                                        </div>
+                                                        <p className="mb-0">{review.review_date} <span className="d-inline-block mx-1">•</span> {review.review_hiking}</p>
+                                                    </div>
+                                                    <div className="right-abs">
+                                                        <i className="bi bi-three-dots"></i>
+                                                    </div>
+                                                </div>
+                                                <div className="testimonial-body">
+                                                    <p className="text-midnight-navy">{review.review_desc}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
+                                            <div key={index} className="testimonial-single position-relative">
+                                                <div className="testimonial-head d-flex w-100 align-items-center position-relative">
+                                                    <div className="test-image">
+                                                        <img
+                                                            src={review.review_img || '/assets/images/not-found.jpg'}
+                                                            alt="Top Trail" className="img-fluid img-fixed-size" 
+                                                            onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                                                const target = e.currentTarget;
+                                                                target.onerror = null; // prevent infinite loop
+                                                                target.src = '/assets/images/not-found.jpg'; // fallback image
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <div className="test-head">
+                                                        <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">{review.review_title}</h3>
+                                                        <div className="rating">
+                                                            <i className="bi bi-star-fill"></i>
+                                                            <i className="bi bi-star-fill"></i>
+                                                            <i className="bi bi-star-fill"></i>
+                                                            <i className="bi bi-star-fill"></i>
+                                                            <i className="bi bi-star-fill"></i>
+                                                        </div>
+                                                        <p className="mb-0">{review.review_date} <span className="d-inline-block mx-1">•</span> {review.review_hiking}</p>
+                                                    </div>
+                                                    <div className="right-abs">
+                                                        <i className="bi bi-three-dots"></i>
+                                                    </div>
+                                                </div>
+                                                <div className="testimonial-body">
+                                                    <p className="text-midnight-navy">{review.review_desc}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+</>    
+                                        )
+                                    }
+                                    
+                                )
+                            ):(
+                                <p>Loading Review  details...</p>
+                            )}
+                        {/* <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
                             <div className="testimonial-single position-relative">
                                 <div className="testimonial-head d-flex w-100 align-items-center position-relative">
                                     <div className="test-image">
@@ -580,8 +751,8 @@ const AffiliateDetailTrail: React.FC = () => {
                                     <p className="text-midnight-navy">CoolTrails helped me discover hidden gems right in my backyard. The trail difficulty ratings were spot on, and the user tips saved me big time!</p>
                                 </div>
                             </div>
-                        </div>
-                        <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
+                        </div> */}
+                        {/* <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
                             <div className="testimonial-single position-relative">
                                 <div className="testimonial-head d-flex w-100 align-items-center position-relative">
                                     <div className="test-image">
@@ -606,8 +777,8 @@ const AffiliateDetailTrail: React.FC = () => {
                                     <p className="text-midnight-navy">CoolTrails helped me discover hidden gems right in my backyard. The trail difficulty ratings were spot on, and the user tips saved me big time!</p>
                                 </div>
                             </div>
-                        </div>
-                        <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
+                        </div> */}
+                        {/* <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
                             <div className="testimonial-single position-relative">
                                 <div className="testimonial-head d-flex w-100 align-items-center position-relative">
                                     <div className="test-image">
@@ -632,33 +803,7 @@ const AffiliateDetailTrail: React.FC = () => {
                                     <p className="text-midnight-navy">CoolTrails helped me discover hidden gems right in my backyard. The trail difficulty ratings were spot on, and the user tips saved me big time!</p>
                                 </div>
                             </div>
-                        </div>
-                        <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
-                            <div className="testimonial-single position-relative">
-                                <div className="testimonial-head d-flex w-100 align-items-center position-relative">
-                                    <div className="test-image">
-                                        <img src="/assets/images/other/testimonial-1.png" alt="" className="img-fluid" />
-                                    </div>
-                                    <div className="test-head">
-                                        <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">Emily R. – Denver, CO</h3>
-                                        <div className="rating">
-                                            <i className="bi bi-star-fill"></i>
-                                            <i className="bi bi-star-fill"></i>
-                                            <i className="bi bi-star-fill"></i>
-                                            <i className="bi bi-star-fill"></i>
-                                            <i className="bi bi-star-fill"></i>
-                                        </div>
-                                        <p className="mb-0">Apr 1, 2025 <span className="d-inline-block mx-1">•</span> Hiking</p>
-                                    </div>
-                                    <div className="right-abs">
-                                        <i className="bi bi-three-dots"></i>
-                                    </div>
-                                </div>
-                                <div className="testimonial-body">
-                                    <p className="text-midnight-navy">CoolTrails helped me discover hidden gems right in my backyard. The trail difficulty ratings were spot on, and the user tips saved me big time!</p>
-                                </div>
-                            </div>
-                        </div>
+                        </div> */}
                         <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
                             <div className="testimonial-single position-relative">
                                 <div className="testimonial-head d-flex w-100 align-items-center position-relative">
