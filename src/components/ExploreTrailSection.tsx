@@ -16,17 +16,40 @@ interface TrailDetail {
 
 function ExploreTrailSection(){
     const { title } = useParams();
+   
+
+    const [filters, setFilters] = useState({
+        distance: [],    // e.g., ["near", "away"]
+        activity: [],    // e.g., ["running", "walking"]
+        difficulty: [],  // e.g., ["easy", "hard"]
+        length: [],      // e.g., ["short", "long"]
+    });
+
+    
+    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    //    console.log('hello');
+        const { name, value } = e.target;
+
+        setFilters((prev) => ({
+            ...prev,
+            [name]: [value], // use array if your state expects an array
+        }));
+        
+    };
+   console.log(filters);
+
+    
     useEffect(() => {
             // console.log(title);
         if (title) {
             try {
-            // const trailId = Number(decodeId(encodedId)); // safely decode
             fetchExploreTrail(title);
             } catch (err) {
             console.error('Failed to decode ID:', err);
             }
         }
         }, [title]);
+
         const fetchExploreTrail = async  (title:String) =>{
             console.log('fetchExploreTrail');
         }
@@ -52,31 +75,51 @@ function ExploreTrailSection(){
                                     <div className="collapse" id="allFilter">
                                         <div className="select-filter d-flex flex-wrap mb-3 w-100 overflow-hidden">
                                             <div className="single-select-filter">
-                                                <select name="" id="distanceFilter" className="form-select advance-select">
-                                                    <option value="">Distance Near</option>
-                                                    <option value="">Distance Away</option>
+                                                <select name="distance" 
+                                                    id="distanceFilter"
+                                                    className="form-select advance-select"
+                                                    value={filters.distance}
+                                                    onChange={handleSelectChange}
+                                                    >
+                                                    <option value="near">Distance Near</option>
+                                                    <option value="away">Distance Away</option>
                                                 </select>
                                             </div>
                                             <div className="single-select-filter">
-                                                <select name="" id="runningFilter" className="form-select advance-select">
-                                                    <option value="">Running</option>
-                                                    <option value="">Option</option>
+                                                <select name="activity" 
+                                                    id="runningFilter"
+                                                    className="form-select advance-select"
+                                                    value={filters.activity}
+                                                    onChange={handleSelectChange}
+                                                    >
+                                                    <option value="running">Running</option>
+                                                    <option value="option">Option</option>
                                                 </select>
                                             </div>
                                             <div className="single-select-filter">
-                                                <select name="" id="difficultyFIlter" className="form-select advance-select">
-                                                    <option value="">Difficulty</option>
-                                                    <option value="">Easy</option>
-                                                    <option value="">Moderate</option>
-                                                    <option value="">Hard</option>
+                                                <select name="difficulty" 
+                                                    id="difficultyFIlter" 
+                                                    className="form-select advance-select"
+                                                    value={filters.difficulty}
+                                                    onChange={handleSelectChange}
+                                                    >
+                                                    <option value="difficulty">Difficulty</option>
+                                                    <option value="easy">Easy</option>
+                                                    <option value="moderate">Moderate</option>
+                                                    <option value="hard">Hard</option>
                                                 </select>
                                             </div>
                                             <div className="single-select-filter">
-                                                <select name="" id="lengthFilter" className="form-select advance-select">
-                                                    <option value="">Length</option>
-                                                    <option value="">Easy</option>
-                                                    <option value="">Moderate</option>
-                                                    <option value="">Hard</option>
+                                                <select name="length" 
+                                                    id="lengthFilter" 
+                                                    className="form-select advance-select"
+                                                    value={filters.length}
+                                                    onChange={handleSelectChange}
+                                                    >
+                                                    <option value="length">Length</option>
+                                                    <option value="easy">Easy</option>
+                                                    <option value="moderate">Moderate</option>
+                                                    <option value="hard">Hard</option>
                                                 </select>
                                             </div>
                                         </div>
