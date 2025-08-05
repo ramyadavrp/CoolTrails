@@ -4336,6 +4336,10 @@ input[type="radio"]:checked::after {
     body, html {
         overflow-x: hidden;
     }
+    /* 5-8-25 */
+    /* .review-row .col-xl-6:nth-last-of-type(2) .testimonial-single {
+            border-bottom: 0px;
+    } */
    
     
     
