@@ -1,0 +1,53 @@
+{
+  "explore_trails": [
+    {
+        "explore_image":"/assets/images/local-favorites/img-1.jpg",
+        "explore_title": "Wadi Sahem - Al Hayl Fort ",
+        "explore_address": "Al Fujayrah, Fujairah, United Arab Emirates",
+        "explore_rating": "4.6",
+        "explore_distance": "9.3km",
+        "explore_time_duration": "2h 55m"
+    },
+    {
+        "explore_image":"/assets/images/local-favorites/img-1.jpg",
+        "explore_title": "Wadi Sahem - Al Hayl Fort ",
+        "explore_address": "Al Fujayrah, Fujairah, United Arab Emirates",
+        "explore_rating": "4.6",
+        "explore_distance": "9.3km",
+        "explore_time_duration": "2h 55m"
+    },
+    {
+        "explore_image":"/assets/images/local-favorites/img-1.jpg",
+        "explore_title": "Wadi Sahem - Al Hayl Fort ",
+        "explore_address": "Al Fujayrah, Fujairah, United Arab Emirates",
+        "explore_rating": "4.6",
+        "explore_distance": "9.3km",
+        "explore_time_duration": "2h 55m"
+    },
+    {
+        "explore_image":"/assets/images/local-favorites/img-1.jpg",
+        "explore_title": "Wadi Sahem - Al Hayl Fort ",
+        "explore_address": "Al Fujayrah, Fujairah, United Arab Emirates",
+        "explore_rating": "4.6",
+        "explore_distance": "9.3km",
+        "explore_time_duration": "2h 55m"
+    },
+    {
+        "explore_image":"/assets/images/local-favorites/img-1.jpg",
+        "explore_title": "Wadi Sahem - Al Hayl Fort ",
+        "explore_address": "Al Fujayrah, Fujairah, United Arab Emirates",
+        "explore_rating": "4.6",
+        "explore_distance": "9.3km",
+        "explore_time_duration": "2h 55m"
+    },
+    {
+        "explore_image":"/assets/images/local-favorites/img-1.jpg",
+        "explore_title": "Wadi Sahem - Al Hayl Fort ",
+        "explore_address": "Al Fujayrah, Fujairah, United Arab Emirates",
+        "explore_rating": "4.6",
+        "explore_distance": "9.3km",
+        "explore_time_duration": "2h 55m"
+    }
+
+  ]
+}

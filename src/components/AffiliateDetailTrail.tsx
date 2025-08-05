@@ -12,10 +12,14 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet'
 
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
-import data from '../data/alltrailDetails.json';
+import data from '../data/explorealltrails.json';
 
 const BASE_URL = import.meta.env.VITE_API_URL;
-
+declare global {
+  interface Window {
+    Fancybox: any;
+  }
+}
 interface TrailGuide {
   trail_guide_title: string;
   trail_guide_description: string;
@@ -49,7 +53,9 @@ interface MapPoint  {
   latitude: number;
   longitude: number;
 };
-
+interface ReviewsImages {
+    review_img_path: string; 
+}
 interface Reviews {
     review_img: string;
     review_title: string;
@@ -72,11 +78,13 @@ const AffiliateDetailTrail: React.FC = () => {
     const [errorDetailTrails, setErrorDetailTrails] = useState('');
     const [nearTrails, setNearTrails] = useState<TrailDetail[]>([]);
     const [getweatherDays, setWeatherDays] = useState([]);
+    const [getImages, setImages] = useState([]);
     const [getmapPoints, setMapPoints] = useState<MapPoint[]>([]);
     const [getTrailGuide, setTrailGuide] = useState<TrailGuide[]>([]);
     const [getItinerary, setItinerary] = useState<Itinerary[]>([]);
     const [getPlaceOffer, setPlaceOffer] = useState<PlaceOffer[]>([]);
     const [getReviews, setReviews ]= useState<Reviews[]>([]);
+    const [getReviewImages, setReviewImages ]= useState<ReviewsImages[]>([]);
     
     useEffect(()=>{
         const fetchDataTrailGuide = async () => {
@@ -88,6 +96,7 @@ const AffiliateDetailTrail: React.FC = () => {
                 setItinerary(json.itinerary);
                 setPlaceOffer(json.place_offers);
                 setReviews(json.reviews);
+                setReviewImages(json.reviews_images);
             } catch (error) {
                 console.error('Error fetching JSON:', error);
             }
@@ -121,8 +130,11 @@ const AffiliateDetailTrail: React.FC = () => {
             // setTrailDetail(data.trailDetail || null);
             setNearTrails(response.data.data.nearTrails);
             setWeatherDays(response.data.data.weatherDays);
+            setWeatherDays(response.data.data.weatherDays);
+            setImages(response.data.data.imageUrls);
+            console.log('image',response.data.data.imageUrls);
             const points = response.data.data.mapPoints;
-            // console.log('mappoints',points);
+            
             setMapPoints(points);
             
         }catch(err){
@@ -237,7 +249,7 @@ const AffiliateDetailTrail: React.FC = () => {
                         </ul>
                         <div className="trail-cover position-relative" id="overviewData">
                            
-                            <img
+                            {/* <img 
                                src={
                                     trailDetail.imageUrls?.[0]
                                     ? `${BASE_URL}/uploads/${trailDetail.imageUrls[0]}`
@@ -249,9 +261,48 @@ const AffiliateDetailTrail: React.FC = () => {
                                     target.onerror = null; // prevent infinite loop
                                     target.src = '/assets/images/not-found.jpg'; // fallback image
                                 }}
-                            />
+                            /> */}
+                            {
+                                
+                                getImages.map((image: any, index: number) => {
+                                    const fileName = image.imageUrls;
+                                    //console.log(fileName);
+                                    const fullUrl = fileName
+                                        ? `${BASE_URL}/uploads/${encodeURIComponent(fileName)}`
+                                        : '/assets/images/not-found.jpg';
+
+                                    return (
+                                        <a
+                                        key={index}
+                                        href={image}
+                                        data-fancybox="MoreImages"
+                                        style={{ display: index === 0 ? 'block' : 'none' }} 
+                                        >
+                                        <img
+                                            src={image}
+                                            alt={`Trail ${index + 1}`}
+                                            className="w-100 br-20 coverImage"
+                                            onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                            const target = e.currentTarget;
+                                            target.onerror = null;
+                                            target.src = '/assets/images/not-found.jpg';
+                                            }}
+                                        />
+                                        </a>
+                                    );
+                                    })
+
+                                    
+                            }
+           
+
                             <div className="cover-overlay h-100 w-100 d-flex justify-content-between align-items-end br-20">
-                                <a href="/assets/images/trails/trail-1.jpg" className="btn-style-4" data-fancybox="MoreImages">
+                                <a href={
+                                    getImages.length > 0
+                                    ? `${BASE_URL}/uploads/${encodeURIComponent(getImages[0].imageUrls)}`
+                                    : '/assets/images/not-found.jpg'
+                                }
+                                className="btn-style-4" data-fancybox="MoreImages">
                                     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" className="me-2">
                                         <rect x="1.5" y="1.5" width="15" height="15" rx="3.75" stroke="#05073D" strokeWidth="1.125" />
                                         <path
@@ -262,16 +313,32 @@ const AffiliateDetailTrail: React.FC = () => {
                                         />
                                         <circle cx="1.5" cy="1.5" r="1.5" transform="matrix(-1 0 0 1 7.5 4.5)" stroke="#05073D" strokeWidth="1.125" />
                                     </svg>
-                                    150+ Photos
+                                    {getImages.length} + Photos
                                 </a>
-                                <a href="/assets/images/trails/trail-1-gallery-1.jpg" data-fancybox="MoreImages"></a>
+                                {/* <a href="/assets/images/trails/trail-1-gallery-1.jpg" data-fancybox="MoreImages"></a>
                                 <a href="/assets/images/trails/trail-1-gallery-2.jpg" data-fancybox="MoreImages"></a>
                                 <a href="/assets/images/trails/trail-1-gallery-3.jpg" data-fancybox="MoreImages"></a>
-                                <a href="" className="arrow-btn d-flex align-items-center justify-content-center rounded-circle">
+                                 */}
+                                <a
+                                    href="#"
+                                    className="arrow-btn d-flex align-items-center justify-content-center rounded-circle"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        if (window.Fancybox) {
+                                        window.Fancybox.getInstance()?.next();
+                                        }
+                                    }}
+                                    >
                                     <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M10.6188 15L16.4788 9.23744C17.1737 8.55402 17.1737 7.44598 16.4788 6.76256L10.6188 0.999999M15.9575 8L1 8" stroke="#C6C6D1" strokeWidth="1.5" strokeLinecap="round" />
                                     </svg>
                                 </a>
+
+                                {/* <a href="" className="arrow-btn d-flex align-items-center justify-content-center rounded-circle">
+                                    <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M10.6188 15L16.4788 9.23744C17.1737 8.55402 17.1737 7.44598 16.4788 6.76256L10.6188 0.999999M15.9575 8L1 8" stroke="#C6C6D1" strokeWidth="1.5" strokeLinecap="round" />
+                                    </svg>
+                                </a> */}
                             </div>
                         </div>
                         <div className="trail-user-favorite-card br-20 bg-almost-white d-flex justify-content-between flex-wrap">
@@ -361,7 +428,7 @@ const AffiliateDetailTrail: React.FC = () => {
                                                 className="accordion-button collapsed"
                                                 type="button"
                                                 data-bs-toggle="collapse"
-                                                data-bs-target={`#${collapseId}`} // ✅ Dynamic
+                                                data-bs-target={`#${collapseId}`} 
                                                 aria-expanded="false"
                                                 aria-controls={collapseId}
                                             >
@@ -369,7 +436,7 @@ const AffiliateDetailTrail: React.FC = () => {
                                             </button>
                                             </h2>
                                             <div
-                                            id={collapseId} // ✅ Match this with data-bs-target
+                                            id={collapseId} 
                                             className="accordion-collapse collapse"
                                             data-bs-parent="#faqToggle"
                                             >
@@ -649,9 +716,9 @@ const AffiliateDetailTrail: React.FC = () => {
                         	{getReviews.length > 0 ? (
                                 getReviews.map((review:any,index:number) =>{
                                         return (
-                                            <>
-                                            <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
-                                            <div key={index} className="testimonial-single position-relative">
+                                    <>
+                                        <div key={index} className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
+                                            <div  className="testimonial-single position-relative">
                                                 <div className="testimonial-head d-flex w-100 align-items-center position-relative">
                                                     <div className="test-image">
                                                         <img
@@ -684,7 +751,7 @@ const AffiliateDetailTrail: React.FC = () => {
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
+                                        {/* <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
                                             <div key={index} className="testimonial-single position-relative">
                                                 <div className="testimonial-head d-flex w-100 align-items-center position-relative">
                                                     <div className="test-image">
@@ -717,8 +784,8 @@ const AffiliateDetailTrail: React.FC = () => {
                                                     <p className="text-midnight-navy">{review.review_desc}</p>
                                                 </div>
                                             </div>
-                                        </div>
-</>    
+                                        </div> */}
+                                    </>    
                                         )
                                     }
                                     
@@ -805,43 +872,44 @@ const AffiliateDetailTrail: React.FC = () => {
                             </div>
                         </div> */}
                         <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
-                            <div className="testimonial-single position-relative">
-                                <div className="testimonial-head d-flex w-100 align-items-center position-relative">
-                                    <div className="test-image">
-                                        <img src="/assets/images/other/testimonial-1.png" alt="" className="img-fluid" />
-                                    </div>
-                                    <div className="test-head">
-                                        <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">Emily R. – Denver, CO</h3>
-                                        <div className="rating">
-                                            <i className="bi bi-star-fill"></i>
-                                            <i className="bi bi-star-fill"></i>
-                                            <i className="bi bi-star-fill"></i>
-                                            <i className="bi bi-star-fill"></i>
-                                            <i className="bi bi-star-fill"></i>
-                                        </div>
-                                        <p className="mb-0">Apr 1, 2025 <span className="d-inline-block mx-1">•</span> Hiking</p>
-                                    </div>
-                                    <div className="right-abs">
-                                        <i className="bi bi-three-dots"></i>
-                                    </div>
-                                </div>
-                                <div className="testimonial-body">
-                                    <p className="text-midnight-navy">CoolTrails helped me discover hidden gems right in my backyard. The trail difficulty ratings were spot on, and the user tips saved me big time!</p>
+                            <div className="testimonial-single position-relative ">
+                                {/* <div className="testimonial-body review_style" style={{paddingTop:'0px'}}> */}
+                                    {/* <p className="text-midnight-navy">CoolTrails helped me discover hidden gems right in my backyard. The trail difficulty ratings were spot on, and the user tips saved me big time!</p> */}
                                     <div className="review-gallery">
                                         <div className="d-flex">
-                                            <a href="/assets/images/review-images/r-1.png" data-fancybox="reviewImages"><img src="/assets/images/review-images/r-1.png" alt="" /></a>
+                                            {
+                                                getReviewImages.length > 0 ? (
+                                                    getReviewImages.map((rvImages,index)=>(
+                                                    <a key= {index} href="/assets/images/review-images/r-1.png" data-fancybox="reviewImages">
+                                                        <img
+                                                            src={rvImages.review_img_path || '/assets/images/not-found.jpg'}
+                                                            alt="Top Trail" className="" 
+                                                            onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                                                const target = e.currentTarget;
+                                                                target.onerror = null; // prevent infinite loop
+                                                                target.src = '/assets/images/not-found.jpg'; // fallback image
+                                                            }}
+                                                        />
+                                                    </a>
+                                                ))
+                                                ):(
+                                                    <p>Review Images not available...</p>
+                                                )
 
-                                            <a href="/assets/images/review-images/r-2.png" data-fancybox="reviewImages"><img src="/assets/images/review-images/r-2.png" alt="" /></a>
+                                            }
+                                           
+
+                                            {/* <a href="/assets/images/review-images/r-2.png" data-fancybox="reviewImages"><img src="/assets/images/review-images/r-2.png" alt="" /></a>
 
                                             <a href="/assets/images/review-images/r-3.png" data-fancybox="reviewImages"><img src="/assets/images/review-images/r-3.png" alt="" /></a>
 
-                                            <a href="/assets/images/review-images/r-4.png" data-fancybox="reviewImagess"><img src="/assets/images/review-images/r-4.png" alt="" /></a>
+                                            <a href="/assets/images/review-images/r-4.png" data-fancybox="reviewImagess"><img src="/assets/images/review-images/r-4.png" alt="" /></a> */}
                                         </div>
                                     </div>
-                                </div>
+                                {/* </div> */}
                             </div>
                         </div>
-                        <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
+                        {/* <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
                             <div className="testimonial-single position-relative">
                                 <div className="testimonial-head d-flex w-100 align-items-center position-relative">
                                     <div className="test-image">
@@ -866,7 +934,7 @@ const AffiliateDetailTrail: React.FC = () => {
                                     <p className="text-midnight-navy">CoolTrails helped me discover hidden gems right in my backyard. The trail difficulty ratings were spot on, and the user tips saved me big time!</p>
                                 </div>
                             </div>
-                        </div>
+                        </div> */}
                     </div>
                     <div className="row">
                         <div className="col-12 mb-4 text-center">

@@ -6,6 +6,7 @@ import path from 'path';
 import { Link } from 'react-router-dom';
 import { decodeId,encodeId, generateSlug ,slugToTitle} from '../utils/helpers';
 const BASE_URL = import.meta.env.VITE_API_URL;
+import data from '../data/explorealltrails.json';
 
 interface TrailDetail {
     id: number;
@@ -13,10 +14,18 @@ interface TrailDetail {
     slug: string;
     image: string;
 }
-
+interface Trails{
+    explore_image:string,
+    explore_title:string,
+    explore_address:string,
+    explore_rating:number,
+    explore_distance:number,
+    explore_time_duration:number,
+}
+ 
 function ExploreTrailSection(){
     const { title } = useParams();
-   
+    const [getTrails, setTrails ]= useState<Trails[]>([]);
 
     const [filters, setFilters] = useState({
         distance: [],    // e.g., ["near", "away"]
@@ -25,7 +34,19 @@ function ExploreTrailSection(){
         length: [],      // e.g., ["short", "long"]
     });
 
-    
+    useEffect(()=>{
+            const fetchExploreData= async () => {
+                try {
+                    const response = await fetch('/data/explorealltrails.json'); 
+                    const json: Trails[] = await response.json();
+                    setTrails(json.explore_trails);
+                }catch (error) {
+                console.error('Error fetching JSON:', error);
+            }
+            };
+            fetchExploreData();
+    },[]);
+
     const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     //    console.log('hello');
         const { name, value } = e.target;
@@ -158,21 +179,39 @@ function ExploreTrailSection(){
                                 </div>
 
                                 <div className="row">
-                                    <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
-                                        <div className="local-favorite-single mb-4">
-                                            <div className="lfc-thumb position-relative">
-                                                <img src="assets/images/local-favorites/img-1.jpg" alt="" className="img-fluid" />
-                                                <a href="#!" className="bookmark-btn" role="button" title="Save"><i className="bi bi-bookmark"></i></a>
-                                            </div>
-                                            <div className="lfc-content">
-                                                <h3 className="lfc-title">Wadi Sahem - Al Hayl Fort - Water Springs</h3>
-                                                <p className="lfc-location mb-1">Al Fujayrah, Fujairah, United Arab Emirates</p>
-                                                <p className="lfc-tags"><i className="bi bi-star-fill"></i> 4.6 · Moderate · 9.3km · Est. 2h 45m</p>
-                                                <a href="#!" className="btn-style-1 w-100">Check Details</a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
+                                    {
+                                        getTrails.length > 0 ? (
+                                            getTrails.map((trail:any, index:number)=>(
+                                                <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
+                                                    <div className="local-favorite-single mb-4">
+                                                        <div className="lfc-thumb position-relative">
+                                                            <img
+                                                                src={trail.explore_image || '/assets/images/not-found.jpg'}
+                                                                alt="locat Trail" className="img-fluid img-fixed-size" 
+                                                                onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                                                    const target = e.currentTarget;
+                                                                    target.onerror = null; // prevent infinite loop
+                                                                    target.src = '/assets/images/not-found.jpg'; // fallback image
+                                                                }}
+                                                            />
+                                                            {/* <img src="assets/images/local-favorites/img-1.jpg" alt="" className="img-fluid" /> */}
+                                                            <a href="#!" className="bookmark-btn" role="button" title="Save"><i className="bi bi-bookmark"></i></a>
+                                                        </div>
+                                                        <div className="lfc-content">
+                                                            <h3 className="lfc-title">{trail.explore_title}Wadi Sahem - Al Hayl Fort - Water Springs</h3>
+                                                            <p className="lfc-location mb-1">Al Fujayrah, Fujairah, United Arab Emirates</p>
+                                                            <p className="lfc-tags"><i className="bi bi-star-fill"></i> 4.6 · Moderate · 9.3km · Est. 2h 45m</p>
+                                                            <a href="#!" className="btn-style-1 w-100">Check Details</a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ):(
+                                            <p>not </p>
+                                        )
+                                    }
+                                    
+                                    {/* <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
                                         <div className="local-favorite-single mb-4">
                                             <div className="lfc-thumb position-relative">
                                                 <img src="assets/images/local-favorites/img-2.jpg" alt="" className="img-fluid" />
@@ -241,7 +280,7 @@ function ExploreTrailSection(){
                                                 <a href="#!" className="btn-style-1 w-100">Check Details</a>
                                             </div>
                                         </div>
-                                    </div>
+                                    </div> */}
                                 </div>
                             </div>
                         </div>
