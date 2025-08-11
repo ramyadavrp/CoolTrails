@@ -5,6 +5,7 @@
       "trail_guide_description": "Try this 10.0-km loop trail near Al Khari, Ras al-Khaimah. Generally considered a moderately challenging route. This is a very popular area for hiking and walking, so you'll likely encounter other people while exploring. The best times to visit this trail are September through June"
     }
   ],
+
   "itinerary": [
     { "day":"Day 1",
       "itinerary_title": "Arrival at Lorem Ipsum",
@@ -23,6 +24,7 @@
       "itinerary_description": "If you don't want your gift delivered by email, you'll have the option to print instead. Then you can deliver your gift by hand or by mail and the PDF will include all the information your recipient needs to redeem it."
     }
   ],
+
   "place_offers": [
     {
       "scramble": "Scramble",
@@ -33,40 +35,45 @@
       "walking": ""
     }
   ],
+
   "reviews": [
-    {
+    { "review_id":1,
       "review_img": "/assets/images/other/testimonial-1.png",
       "review_title": "Emily R. – Denver, CO",
-      "review": "",
+      "review_rate": "5",
       "review_date": "Apr 1, 2025",
       "review_hiking": "Hiking",
       "review_desc": "CoolTrails helped me discover hidden gems right in my backyard. The trail difficulty ratings were spot on, and the user tips saved me big time!"
     },
     {
+      "review_id":2,
       "review_img": "/assets/images/other/testimonial-1.png",
       "review_title": "Emily R. – Denver, CO",
-      "review": "",
+      "review_rate": "5",
       "review_date": "Apr 1, 2025",
       "review_hiking": "Hiking",
       "review_desc": "CoolTrails helped me discover hidden gems right in my backyard. The trail difficulty ratings were spot on, and the user tips saved me big time!"
     },
     {
+      "review_id":3,
       "review_img": "/assets/images/other/testimonial-1.png",
       "review_title": "Emily R. – Denver, CO",
-      "review": "",
+      "review_rate": "4",
       "review_date": "Apr 1, 2025",
       "review_hiking": "Hiking",
       "review_desc": "CoolTrails helped me discover hidden gems right in my backyard. The trail difficulty ratings were spot on, and the user tips saved me big time!"
     },
      {
+      "review_id":4,
       "review_img": "/assets/images/review-images/r-3.png",
       "review_title": "Emily R. – Denver, CO",
-      "review": "",
+      "review_rate": "5",
       "review_date": "Apr 1, 2025",
       "review_hiking": "Hiking",
       "review_desc": "CoolTrails helped me discover hidden gems right in my backyard. The trail difficulty ratings were spot on, and the user tips saved me big time!"
     }
   ],
+
   "reviews_images": [
     {
       "review_img_path": "/assets/images/review-images/r-2.png"
@@ -79,6 +86,13 @@
     },
      {
       "review_img_path": "/assets/images/review-images/r-3.png"
+    }
+  ],
+  
+  "users_favorite": [
+    {
+      "users_description": "One of the most loved homes on Airbnb, according to guests",
+      "users_elevation_gain": "367"
     }
   ]
   

@@ -1,53 +1,51 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState,useRef } from 'react';
 import { Link as ScrollLink } from 'react-scroll';
 import { Link as RouterLink } from 'react-router-dom';
 // import SearchDiscover from './SearchDiscover';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import { SyncLoader } from "react-spinners";
+import { SquareLoader } from "react-spinners"; 
+import { setTimeout, clearTimeout } from 'timers';
+
 import path from 'path';
 import { Link } from 'react-router-dom';
 import { decodeId,encodeId, generateSlug ,slugToTitle} from '../utils/helpers';
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
-
+import 'mapbox-gl/dist/mapbox-gl.css';
+import mapboxgl from 'mapbox-gl';
+import StarRating from './AffiliateDetails/StarRating';
+import PlaceOffers from './AffiliateDetails/PlaceOffers';
+// import TopTrailsNearBy from './AffiliateDetails/TopTrailsNearBy';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
-import data from '../data/explorealltrails.json';
+// import data from '../data/alltrailDetails.json';
 
 const BASE_URL = import.meta.env.VITE_API_URL;
-declare global {
-  interface Window {
-    Fancybox: any;
-  }
-}
+
+let rating: number;
 interface TrailGuide {
   trail_guide_title: string;
   trail_guide_description: string;
 };
 interface Itinerary {
-    day: string;
+    dayTitle: string;
     day_title: string;
-    day_description: string;
+    description: string;
 }
 
-interface PlaceOffer {
-    scramble: string;
-    offTrail: string;
-    lake: string;
-    view: string;
-    hiking: string;
-    walking: string;
-}
 interface TrailDetail {
     id: number;
     name: string;
     title: string;
     address?: string;
     description?: string;
+    overview?: string;
     rating: number;
     lengthKm: number;
     estimatedTime: number;
     imageUrls: string;
+    trailType: string;
+    userFavorite: string;
 }
 interface MapPoint  {
   latitude: number;
@@ -56,20 +54,21 @@ interface MapPoint  {
 interface ReviewsImages {
     review_img_path: string; 
 }
-interface Reviews {
-    review_img: string;
-    review_title: string;
-    review: number;
-    review_date: string;
-    review_hiking: string;
-    review_desc: string;
+interface Review {
+    userImage: string;
+    userWithAddress: string;
+    rating: number;
+    ratingOn: string;
+    category: string;
+    decription: string;
+}
+interface UserFavorite {
+    users_description: string;
+    users_elevation_gain: number;
 }
 
-// const trailPoints = [
-//   [27.170382753708353, 78.04216826724485],
-//   [27.17195013722194, 78.04221063831409],
-//   // Add more coordinates if needed
-// ];
+mapboxgl.accessToken = 'pk.eyJ1IjoiMTExMnZpcmVuZHJhIiwiYSI6ImNtYmE0emNyNjBwbHMyanNibHBpZHgxMjUifQ.5FSp2VZ1T1kXcGV38bC5jA';
+       
 const AffiliateDetailTrail: React.FC = () => {
     const { title } = useParams();
     // const { id: encodedId, slug } = useParams(); // url link
@@ -78,33 +77,32 @@ const AffiliateDetailTrail: React.FC = () => {
     const [errorDetailTrails, setErrorDetailTrails] = useState('');
     const [nearTrails, setNearTrails] = useState<TrailDetail[]>([]);
     const [getweatherDays, setWeatherDays] = useState([]);
-    const [getImages, setImages] = useState([]);
+    const [getImages, setImages] = useState([]);    
+    const mapContainer = useRef<HTMLDivElement | null>(null);
+    const map = useRef<mapboxgl.Map | null>(null);
+    const walkerMarker = useRef(null);
+    const [points, setPoints] = useState<any>([]);
+    const [loopClosed, setLoopClosed] = useState(false);
     const [getmapPoints, setMapPoints] = useState<MapPoint[]>([]);
     const [getTrailGuide, setTrailGuide] = useState<TrailGuide[]>([]);
     const [getItinerary, setItinerary] = useState<Itinerary[]>([]);
-    const [getPlaceOffer, setPlaceOffer] = useState<PlaceOffer[]>([]);
-    const [getReviews, setReviews ]= useState<Reviews[]>([]);
+    const [getPlaceOffer, setPlaceOffer] = useState([]);
+    const [getReviews, setReviews ]= useState<Review[]>([]);
+    const [getUserFavorite, setUserFavorite ]= useState<UserFavorite[]>([]);
     const [getReviewImages, setReviewImages ]= useState<ReviewsImages[]>([]);
+    const [currentIndex, setCurrentIndex] = useState(0); // image arrow
+    const [isExpanded, setIsExpanded] = useState(false);
     
-    useEffect(()=>{
-        const fetchDataTrailGuide = async () => {
-            try {
-                const response = await fetch('/data/alltrailDetails.json'); 
-                const json: TrailGuide[] = await response.json();
-                // console.log(json.trail_guides);
-                setTrailGuide(json.trail_guides);
-                setItinerary(json.itinerary);
-                setPlaceOffer(json.place_offers);
-                setReviews(json.reviews);
-                setReviewImages(json.reviews_images);
-            } catch (error) {
-                console.error('Error fetching JSON:', error);
-            }
-        };
-        fetchDataTrailGuide();
-    },[]);
-    // console.log('guide',getTrailGuide.trail_guides);
-
+    // useEffect(()=>{
+    //     const loadpage = setTimeout(()=>setLoadingDetailTrails(false), 1000);
+    //     return clearTimeout(loadpage);
+    // },[]);
+  
+    
+    // image arraw move
+    const handleNextImage = () => {
+        setCurrentIndex((prevIndex) => (prevIndex + 1) % getImages.length);
+    };
     useEffect(() => {
         // console.log(title);
     if (title) {
@@ -116,7 +114,7 @@ const AffiliateDetailTrail: React.FC = () => {
         }
     }
     }, [title]);
-
+        // console.log(getUserFavorite);
     const fetchTrailDetail = async (title:String) =>{
         try{
              setLoadingDetailTrails(true);
@@ -126,16 +124,16 @@ const AffiliateDetailTrail: React.FC = () => {
             });
             
             setTrailDetail(response.data.data);
-            // console.log("Full Response:", response.data.data);
-            // setTrailDetail(data.trailDetail || null);
             setNearTrails(response.data.data.nearTrails);
             setWeatherDays(response.data.data.weatherDays);
-            setWeatherDays(response.data.data.weatherDays);
             setImages(response.data.data.imageUrls);
-            console.log('image',response.data.data.imageUrls);
+            setPlaceOffer(response.data.data.placeOffer);
+            setItinerary(response.data.data.itinerary);
+            setReviews(response.data.data.review);
+            setReviewImages(response.data.data.reviews_images);
             const points = response.data.data.mapPoints;
-            
             setMapPoints(points);
+            
             
         }catch(err){
             console.error('API Error:', err);
@@ -146,6 +144,158 @@ const AffiliateDetailTrail: React.FC = () => {
         }
          
     }
+
+    useEffect(() => {
+        if (!getmapPoints.length || map.current) return;
+
+        const firstPoint = getmapPoints[0];
+
+        map.current = new mapboxgl.Map({
+            container: mapContainer.current,
+            style: 'mapbox://styles/mapbox/outdoors-v12',
+            center: [firstPoint.longitude, firstPoint.latitude],
+            zoom: 13,       
+        });
+
+        map.current.addControl(new mapboxgl.NavigationControl());
+
+        map.current.on('load', async () => {
+            const formattedPoints = getmapPoints.map(p => [p.longitude, p.latitude]);
+            setPoints(formattedPoints);
+
+            const bounds = new mapboxgl.LngLatBounds();
+
+            formattedPoints.forEach((coords:any, index) => {
+                new mapboxgl.Marker()
+                .setLngLat(coords)
+                .setPopup(new mapboxgl.Popup().setText(`Point ${index + 1}`))
+                .addTo(map.current);
+
+                bounds.extend(coords);
+            });
+
+            map.current.fitBounds(bounds, { padding: 50, maxZoom: 17 });
+
+            // Route source
+            map.current.addSource('route', {
+                type: 'geojson',
+                data: { type: 'Feature', geometry: { type: 'LineString', coordinates: [] } },
+            });
+
+            // Arrow icon
+            map.current.loadImage("https://cdn-icons-png.flaticon.com/512/271/271228.png", (error, image) => {
+                if (error || !image) return;
+                if (!map.current.hasImage('arrow')) map.current.addImage('arrow', image);
+
+                map.current.addLayer({
+                id: 'arrow-layer',
+                type: 'symbol',
+                source: 'route',
+                layout: {
+                    'symbol-placement': 'line',
+                    'symbol-spacing': 60,
+                    'icon-image': 'arrow',
+                    'icon-size': 0.05,
+                    'icon-allow-overlap': true,
+                    'icon-rotation-alignment': 'map',
+                },
+                });
+            });
+
+            map.current.addLayer({
+                id: 'route-layer',
+                type: 'line',
+                source: 'route',
+                layout: { 'line-join': 'round', 'line-cap': 'round' },
+                paint: { 'line-color': '#3b9ddd', 'line-width': 5 },
+            });
+
+            const el = document.createElement('div');
+            el.style.width = '30px';
+            el.style.height = '30px';
+            el.style.backgroundImage = "url('https://img.icons8.com/color/48/person-male--v1.png')";
+            el.style.backgroundSize = 'cover';
+            el.style.borderRadius = '50%';
+            el.style.border = '2px solid white';
+            walkerMarker.current = new mapboxgl.Marker(el).setLngLat([0, 0]).addTo(map.current);
+
+            await updateRoute(formattedPoints);
+        });
+    }, [getmapPoints]);
+
+    const getRoute = async (start, end) => {
+        const url = `https://api.mapbox.com/directions/v5/mapbox/walking/${start[0]},${start[1]};${end[0]},${end[1]}?geometries=geojson&access_token=${mapboxgl.accessToken}`;
+        const res = await fetch(url);
+        const json = await res.json();
+        return json.routes?.[0]?.geometry?.coordinates || null;
+    };
+
+    const updateRoute = async (points) => {
+        if (points.length < 2) return;
+
+        let fullRoute = [];
+
+        for (let i = 0; i < points.length - 1; i++) {
+            const route = await getRoute(points[i], points[i + 1]);
+            if (!route) return;
+            if (i > 0) route.shift();
+            fullRoute = [...fullRoute, ...route];
+        }
+
+        if (points.length > 2) {
+        const [first, last] = [points[0], points[points.length - 1]];
+        const dist = Math.sqrt((first[0] - last[0]) ** 2 + (first[1] - last[1]) ** 2);
+            if (dist < 0.0001) {
+                setLoopClosed(true);
+                const closeRoute = await getRoute(last, first);
+                if (closeRoute) {
+                closeRoute.shift();
+                fullRoute = [...fullRoute, ...closeRoute];
+                }
+            }
+        }
+
+        map.current.getSource('route').setData({
+            type: 'Feature',
+            geometry: { type: 'LineString', coordinates: fullRoute },
+        });
+
+        walkerMarker.current.setLngLat(fullRoute[0]);
+        animateAlongPath(fullRoute);
+    };
+
+    const animateAlongPath = (coords) => {
+        let i = 0;
+        let animationFrame;
+
+    const step = () => {
+      if (i >= coords.length - 1) return;
+      const start = coords[i];
+      const end = coords[i + 1];
+      let progress = 0;
+      const duration = 200;
+      const startTime = performance.now();
+
+        const animate = (t) => {
+            progress = Math.min((t - startTime) / duration, 1);
+            const lng = start[0] + (end[0] - start[0]) * progress;
+            const lat = start[1] + (end[1] - start[1]) * progress;
+            walkerMarker.current.setLngLat([lng, lat]);
+
+            if (progress < 1) {
+            animationFrame = requestAnimationFrame(animate);
+            } else {
+            i++;
+            animationFrame = requestAnimationFrame(step);
+            }
+        };
+
+        animationFrame = requestAnimationFrame(animate);
+        };
+
+        animationFrame = requestAnimationFrame(step);
+    };
+
     useEffect(() => {
         // Initialize Owl Carousel only after data is loaded and component has rendered
         if (!loadingDetailTrails && nearTrails.length > 0) {
@@ -211,17 +361,35 @@ const AffiliateDetailTrail: React.FC = () => {
           }
         }
       }, [loadingDetailTrails, nearTrails]);
-    
+    // start Trail Guide read more limit
+    const limit = 250;
+    // Safety check
+    const rawDescription = trailDetail?.description ?? '';
+    const cleanDescription = rawDescription
+    .replace(/<[^>]+>/g, '')      // Remove HTML tags
+    .replace(/&nbsp;| /g, '')     // Remove HTML entities
+    .trim();
+
+    const shortText = cleanDescription.slice(0, limit);
+    const shouldTruncate = cleanDescription.length > limit;
+    // end
     if (errorDetailTrails) return <p>{errorDetailTrails}</p>;
     if (loadingDetailTrails) {
     return (
         <div className="section-trail-detail d-flex justify-content-center align-items-center" style={{ minHeight: '100px' }}>
-        <SyncLoader color="#FC673C" size={20} />
+        <SquareLoader color="#FC673C" size={20} />
         </div>
     );
     }
     if (!trailDetail) return <p>No local favorites found.</p>;
     const trailPoints: [number, number][] = getmapPoints.map((p) => [p.latitude, p.longitude]);
+
+    const total_reviews = getReviews.length;
+
+    // Sum all ratings (assuming each review has a `review_rate` property)
+    const total_rating = getReviews.reduce((sum, review) => sum + Number(review.rating || 0), 0);
+    
+     const average_rating = total_reviews > 0 ? (total_rating / total_reviews).toFixed(1) : "0.0";
      return (
      <main className="mainContent">
         <section className="section-trail-detail">
@@ -232,7 +400,8 @@ const AffiliateDetailTrail: React.FC = () => {
                             <h1 className="trail-dt-title"> {trailDetail.name || (title ?  slugToTitle(title) : '')}</h1>
                             <p className="trail-dt-address text-grey mb-0">
                                 <span className="tdt-add">{trailDetail.address ?? 'N/A'}</span> <span className="tdt-separator">|</span> 
-                                <span className="t-dt-r-and-o"><i className="bi bi-star-fill"></i> {trailDetail.rating ?? 'N/A'} · Moderate · {trailDetail.lengthKm ?? 'N/A'} · Est. {trailDetail.estimatedTime ?? 'N/A'}</span>
+                                <span className="t-dt-r-and-o"><i className="bi bi-star-fill"></i> {trailDetail.rating != null ? Number(trailDetail.rating.toFixed(1)) : 'N/A'}
+ · Moderate · {trailDetail.lengthKm ?? 'N/A'} · Est. {trailDetail.estimatedTime ?? 'N/A'}</span>
                             </p>
                         </div>
                     </div>
@@ -263,23 +432,18 @@ const AffiliateDetailTrail: React.FC = () => {
                                 }}
                             /> */}
                             {
-                                
-                                getImages.map((image: any, index: number) => {
-                                    const fileName = image.imageUrls;
-                                    //console.log(fileName);
-                                    const fullUrl = fileName
-                                        ? `${BASE_URL}/uploads/${encodeURIComponent(fileName)}`
-                                        : '/assets/images/not-found.jpg';
-
+                                getImages.length > 0 ? (
+                                    getImages.map((image: any, index: number) => {
                                     return (
                                         <a
                                         key={index}
                                         href={image}
                                         data-fancybox="MoreImages"
-                                        style={{ display: index === 0 ? 'block' : 'none' }} 
+                                        style={{ display: index === currentIndex ? 'block' : 'none' }}
                                         >
+                                             
                                         <img
-                                            src={image}
+                                            src={image || '/assets/images/not-found.jpg'}
                                             alt={`Trail ${index + 1}`}
                                             className="w-100 br-20 coverImage"
                                             onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
@@ -290,12 +454,21 @@ const AffiliateDetailTrail: React.FC = () => {
                                         />
                                         </a>
                                     );
-                                    })
-
+                                }) 
+                                ):(
+                                    <img
+                                        src='/assets/images/not-found.jpg'
+                                        alt=""
+                                        className="w-100 br-20 coverImage"
+                                        onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                        const target = e.currentTarget;
+                                        target.onerror = null;
+                                        target.src = '/assets/images/not-found.jpg';
+                                        }}
+                                    />
+                                )
                                     
                             }
-           
-
                             <div className="cover-overlay h-100 w-100 d-flex justify-content-between align-items-end br-20">
                                 <a href={
                                     getImages.length > 0
@@ -319,15 +492,14 @@ const AffiliateDetailTrail: React.FC = () => {
                                 <a href="/assets/images/trails/trail-1-gallery-2.jpg" data-fancybox="MoreImages"></a>
                                 <a href="/assets/images/trails/trail-1-gallery-3.jpg" data-fancybox="MoreImages"></a>
                                  */}
-                                <a
-                                    href="#"
-                                    className="arrow-btn d-flex align-items-center justify-content-center rounded-circle"
+                                 
+                                <a href="#"
                                     onClick={(e) => {
                                         e.preventDefault();
-                                        if (window.Fancybox) {
-                                        window.Fancybox.getInstance()?.next();
-                                        }
+                                        handleNextImage();
                                     }}
+                                    className="arrow-btn d-flex align-items-center justify-content-center rounded-circle"
+                                    
                                     >
                                     <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M10.6188 15L16.4788 9.23744C17.1737 8.55402 17.1737 7.44598 16.4788 6.76256L10.6188 0.999999M15.9575 8L1 8" stroke="#C6C6D1" strokeWidth="1.5" strokeLinecap="round" />
@@ -347,24 +519,18 @@ const AffiliateDetailTrail: React.FC = () => {
                                     <p className="mb-0">Users Favorite</p>
                                 </div>
                                 <div className="tusc-cn-2">
-                                    <p className="mb-0 text-midnight-navy">One of the most loved homes on Airbnb, according to guests</p>
+                                    <p className="mb-0 text-midnight-navy">{trailDetail.userFavorite ? trailDetail.userFavorite : 'N/A'} </p>
                                 </div>
                             </div>
 
                             <div className="tuf-right-content d-flex align-items-center">
                                 <div className="tusc-cn-1 text-center">
-                                    <p className="mb-0">4.84</p>
-                                    <div className="rating">
-                                        <i className="bi bi-star-fill"></i>
-                                        <i className="bi bi-star-fill"></i>
-                                        <i className="bi bi-star-fill"></i>
-                                        <i className="bi bi-star-fill"></i>
-                                        <i className="bi bi-star-fill"></i>
-                                    </div>
+                                    <p className="mb-0">{average_rating}</p>
+                                     <StarRating rating={Number(average_rating)}/>
                                 </div>
                                 <div className="tusc-cn-2 text-center">
                                     <p className="mb-0 text-midnight-navy">
-                                        <span className="d-block review-no">31</span>
+                                        <span className="d-block review-no">{total_reviews}</span>
                                         <span>Reviews</span>
                                     </p>
                                 </div>
@@ -375,41 +541,47 @@ const AffiliateDetailTrail: React.FC = () => {
                         </div>
                         <div className="trail-stats d-flex flex-wrap">
                             <div className="trail-stat-single text-midnight-navy px-2">
-                                <h3>10<span>km</span></h3>
+                                <h3>{trailDetail.lengthKm ?? 'N/A'}<span>km</span></h3>
                                 <p className="mb-0">Length</p>
                             </div>
                             <div className="trail-stat-single text-midnight-navy px-2">
-                                <h3>378<span>m</span></h3>
+                                <h3>654 <span>m</span></h3>
                                 <p className="mb-0">Elevation gain</p>
                             </div>
                             <div className="trail-stat-single text-midnight-navy px-2">
                                 <img src="/assets/images/icons/loop.svg" alt="" className="tss-icon" />
-                                <p className="mb-0">Loop</p>
+                                <p className="mb-0">{trailDetail.trailType ?? 'N/A'}</p>
                             </div>
                         </div>
                         <div className="trail-desc trail-detail-widget">
                             <p>
-                                {trailDetail.description ?? 'N/A'}
-                                {/* Try this 10.0-km loop trail near Al Khari, Ras al-Khaimah. Generally considered a moderately challenging route. This is a very popular area for hiking and walking, so you'll likely encounter other people while
-                                exploring. The best times to visit this trail are September through June. */}
+                                {(trailDetail.overview ?? '').replace(/<[^>]+>/g, '').replace(/&nbsp;| /g, '')  || 'N/A'}
                             </p>
                         </div>
                         <div className="trail-detail-widget trail-guide-widget" id="trailGuide">
-                            {getTrailGuide.length > 0 ? (
-                                getTrailGuide.map((trail, index) => (
-                                    <div key={index}>
+                           
+                                <div>
                                     <div className="section-title section-title-md">
-                                        <h2 className="title title-md">{trail.trail_guide_title}</h2>
+                                        <h2 className="title title-md">{trailDetail.trail_guide_title ?? 'Trail Guide'}</h2>
                                     </div>
-                                    <p>
-                                        {trail.trail_guide_description}{' '}
-                                        <a href="#" className="text-orange fw-bold">read more</a>
-                                    </p>
-                                    </div>
-                                ))
-                                ) : (
-                                <p>Loading trail details...</p>
-                            )}
+                                    
+                                        <p>
+                                            {isExpanded || !shouldTruncate ? cleanDescription : `${shortText}...`}
+                                            {shouldTruncate && (
+                                                <a
+                                                href="#"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    setIsExpanded(!isExpanded);
+                                                }}
+                                                className="text-orange fw-bold ms-1"
+                                                >
+                                                {isExpanded ? 'Read less' : 'Read more'}
+                                                </a>
+                                            )}
+                                        </p>
+                                </div>
+                                
 
                         </div>
                         <div className="trail-detail-widget trail-itinary-widget" id="trailItinary">
@@ -432,7 +604,7 @@ const AffiliateDetailTrail: React.FC = () => {
                                                 aria-expanded="false"
                                                 aria-controls={collapseId}
                                             >
-                                                <span className="fw-bold me-2">{It.day}: </span>{It.itinerary_title}
+                                                <span className="fw-bold me-2">{It.dayTitle} </span> {It.itinerary_title ?? 'N/A'}
                                             </button>
                                             </h2>
                                             <div
@@ -441,14 +613,14 @@ const AffiliateDetailTrail: React.FC = () => {
                                             data-bs-parent="#faqToggle"
                                             >
                                             <div className="accordion-body">
-                                                {It.itinerary_description}
+                                                {It.description}
                                             </div>
                                             </div>
                                         </div>
                                         );
                                     })
                                     ) : (
-                                    <p>Loading Itinerary details...</p>
+                                    <p>Review is not Available..</p>
                                     )}
 
                                 
@@ -497,7 +669,7 @@ const AffiliateDetailTrail: React.FC = () => {
                     <div className="col-xl-4 col-lg-5 col-md-12 col-sm-12 col-12">
                         <div className="trail-detail-map position-relative">
                             <div className="trail-detail-map-btn-group d-flex justify-content-xl-end justify-content-lg-end justify-content-md-center justify-content-sm-center justify-content-center">
-                                <button className="btn-rounded-white rounded-circle" type="button" title="Share">
+                                    <button className="btn-rounded-white rounded-circle" type="button" title="Share">
                                     <svg width="15" height="18" viewBox="0 0 15 18" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <circle cx="12.125" cy="3.375" r="1.875" stroke="#05073D" strokeWidth="1.125" />
                                         <circle cx="3.125" cy="8.625" r="1.875" stroke="#05073D" strokeWidth="1.125" />
@@ -527,6 +699,10 @@ const AffiliateDetailTrail: React.FC = () => {
                                     </svg>
                                 </button>
                             </div>
+                    <div className="rounded-3 shadow-sm" ref={mapContainer} style={{height: '400px'}}/></div>
+                        {/* <div  ref={mapContainer} style={{height: '400px'}} className="rounded-3 shadow-sm"></div> */}
+
+                            
                             {/* <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d194474.440444268!2d55.959295174859626!3d25.08154936413991!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ef5a8616e5ca149%3A0x75d4f4005126006a!2sShawkah%20Dam!5e0!3m2!1sen!2sin!4v1749891263519!5m2!1sen!2sin"   allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>  */}
                             {/* <img src="/assets/images/trails/map.png" alt="" className="map-img" />
                             <a href="/assets/images/trails/map.png" data-fancybox="mapImg" className="arrow-btn d-flex align-items-center justify-content-center rounded-circle">
@@ -538,8 +714,8 @@ const AffiliateDetailTrail: React.FC = () => {
                                     />
                                 </svg>
                             </a>  */}
-                            <div className="map-img position-relative">
-                                <MapContainer
+                            {/* <div className="map-img position-relative"> */}
+                                {/* <MapContainer
                                     center={trailPoints[0]}
                                     zoom={16}
                                     scrollWheelZoom={false}
@@ -555,10 +731,10 @@ const AffiliateDetailTrail: React.FC = () => {
                                         <Popup>Point {idx + 1}</Popup>
                                     </Marker>
                                 ))}
-                            </MapContainer>
+                            </MapContainer> */}
 
                             {/* Same button - still can link to image, or zoom feature */}
-                            <a
+                            {/* <a
                                 href="/assets/images/trails/map.png"
                                 data-fancybox="mapImg"
                                 className="arrow-btn d-flex align-items-center justify-content-center rounded-circle"
@@ -579,42 +755,12 @@ const AffiliateDetailTrail: React.FC = () => {
                                         strokeLinecap="round"
                                     />
                                 </svg>
-                            </a>
-                            </div>
-                        </div>
+                            </a> */}
+                        {/* </div> */}
+                        
                         <div className="trail-sidebar-widget bg-almost-white br-20">
                             <h3 className="text-midnight-navy">What this place offers</h3>
-                            <ul className="trail-side-nav list-unstyled mt-0">
-                                <li>
-                                    <a href=""><img src="/assets/images/icons/scamble.svg" alt="" /> 
-                                        {getPlaceOffer[0].scramble ? getPlaceOffer[0].scramble :'N/A'} 
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href=""><img src="/assets/images/icons/off-trail.svg" alt="" /> 
-                                        {getPlaceOffer[0].offTrail ? getPlaceOffer[0].offTrail:'N/A'}  
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href=""><img src="/assets/images/icons/lakes.svg" alt="" /> 
-                                        {getPlaceOffer[0].lake ? getPlaceOffer[0].lake : 'N/A'}  
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href=""><img src="/assets/images/icons/views.svg" alt="" /> 
-                                        {getPlaceOffer[0].view ? getPlaceOffer[0].view : 'N/A'}  
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href=""><img src="/assets/images/icons/hiking.svg" alt="" /> 
-                                        {getPlaceOffer[0].hiking ? getPlaceOffer[0].hiking: 'N/A'}  
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href=""><img src="/assets/images/icons/walking.svg" alt="" /> 
-                                    {getPlaceOffer[0].walking ? getPlaceOffer[0].walking : 'N/A'} </a>
-                                </li>
-                            </ul>
+                             <PlaceOffers getPlaceOffer={getPlaceOffer} />
                             <div className="d-flex flex-wrap align-items-center">
                                 <a href="" className="btn-style-3">Get Directions</a>
                                 <a href="" className="btn-style-1">Hit the Trail</a>
@@ -716,13 +862,12 @@ const AffiliateDetailTrail: React.FC = () => {
                         	{getReviews.length > 0 ? (
                                 getReviews.map((review:any,index:number) =>{
                                         return (
-                                    <>
-                                        <div key={index} className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
+                                        <div key={index}  className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
                                             <div  className="testimonial-single position-relative">
                                                 <div className="testimonial-head d-flex w-100 align-items-center position-relative">
                                                     <div className="test-image">
                                                         <img
-                                                            src={review.review_img || '/assets/images/not-found.jpg'}
+                                                            src={review.userImage || '/assets/images/not-found.jpg'}
                                                             alt="Top Trail" className="img-fluid img-fixed-size" 
                                                             onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                                                                 const target = e.currentTarget;
@@ -732,66 +877,25 @@ const AffiliateDetailTrail: React.FC = () => {
                                                         />
                                                     </div>
                                                     <div className="test-head">
-                                                        <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">{review.review_title}</h3>
-                                                        <div className="rating">
-                                                            <i className="bi bi-star-fill"></i>
-                                                            <i className="bi bi-star-fill"></i>
-                                                            <i className="bi bi-star-fill"></i>
-                                                            <i className="bi bi-star-fill"></i>
-                                                            <i className="bi bi-star-fill"></i>
-                                                        </div>
-                                                        <p className="mb-0">{review.review_date} <span className="d-inline-block mx-1">•</span> {review.review_hiking}</p>
+                                                        <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">{review.userWithAddress ?? 'N/A'}</h3>
+                                                        <StarRating rating={Number(review.rating)}/>
+                                                        <p className="mb-0">{review.ratingOn ?? 'N/A'} <span className="d-inline-block mx-1">•</span> {review.category ?? 'N/A'}</p>
                                                     </div>
                                                     <div className="right-abs">
                                                         <i className="bi bi-three-dots"></i>
                                                     </div>
                                                 </div>
                                                 <div className="testimonial-body">
-                                                    <p className="text-midnight-navy">{review.review_desc}</p>
+                                                    <p className="text-midnight-navy">{review.decription ?? 'N/A'}</p>
                                                 </div>
                                             </div>
                                         </div>
-                                        {/* <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
-                                            <div key={index} className="testimonial-single position-relative">
-                                                <div className="testimonial-head d-flex w-100 align-items-center position-relative">
-                                                    <div className="test-image">
-                                                        <img
-                                                            src={review.review_img || '/assets/images/not-found.jpg'}
-                                                            alt="Top Trail" className="img-fluid img-fixed-size" 
-                                                            onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                                                                const target = e.currentTarget;
-                                                                target.onerror = null; // prevent infinite loop
-                                                                target.src = '/assets/images/not-found.jpg'; // fallback image
-                                                            }}
-                                                        />
-                                                    </div>
-                                                    <div className="test-head">
-                                                        <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">{review.review_title}</h3>
-                                                        <div className="rating">
-                                                            <i className="bi bi-star-fill"></i>
-                                                            <i className="bi bi-star-fill"></i>
-                                                            <i className="bi bi-star-fill"></i>
-                                                            <i className="bi bi-star-fill"></i>
-                                                            <i className="bi bi-star-fill"></i>
-                                                        </div>
-                                                        <p className="mb-0">{review.review_date} <span className="d-inline-block mx-1">•</span> {review.review_hiking}</p>
-                                                    </div>
-                                                    <div className="right-abs">
-                                                        <i className="bi bi-three-dots"></i>
-                                                    </div>
-                                                </div>
-                                                <div className="testimonial-body">
-                                                    <p className="text-midnight-navy">{review.review_desc}</p>
-                                                </div>
-                                            </div>
-                                        </div> */}
-                                    </>    
                                         )
                                     }
                                     
                                 )
                             ):(
-                                <p>Loading Review  details...</p>
+                                <p> Review  is not available...</p>
                             )}
                         {/* <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
                             <div className="testimonial-single position-relative">

@@ -3935,6 +3935,7 @@ input[type="radio"]:checked::after {
 
         .trail-desc p, .trail-guide-widget p {
             font-size: 12px;margin-bottom: 0;
+            text-align: justify; /* 11-8-25 Ali  */
         }
 
         .trail-cover .coverImage {
@@ -4336,10 +4337,10 @@ input[type="radio"]:checked::after {
     body, html {
         overflow-x: hidden;
     }
-    /* 5-8-25 */
-    /* .review-row .col-xl-6:nth-last-of-type(2) .testimonial-single {
-            border-bottom: 0px;
-    } */
+    /* 6-8-25 */
+    .review-row > .col-xl-6:nth-last-child(3) .testimonial-single {
+        border-bottom: 0;
+    }
    
     
     

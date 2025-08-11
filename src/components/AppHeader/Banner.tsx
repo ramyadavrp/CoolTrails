@@ -44,12 +44,12 @@ const Banner: React.FC = () => {
             });
             //console.log("searchkey response", response.data);
             setSuggestions(response.data.data);
-            console.log("searchkey response:", {searchkey:searchTerm,category:''} );
+            // console.log("searchkey response:", {searchkey:searchTerm,category:''} );
             result = response.data.data || [];
             if (response.data?.status === "success" && response.data.data.length > 0) {
                 setSuggestions(response.data.data);
             } else{
-                console.log("Trying category search:", { searchkey: '', category: searchTerm });
+                // console.log("Trying category search:", { searchkey: '', category: searchTerm });
                 const fallback = await axios.post(`${BASE_URL}/Trail/Search`, {
                 take: take,
                 skip: skipCount,
@@ -57,7 +57,7 @@ const Banner: React.FC = () => {
                 category: searchTerm
                 });
                 if (fallback.data?.status === "success" && fallback.data.data.length > 0) {
-                    console.log("category response", fallback.data);
+                    // console.log("category response", fallback.data);
                     setSuggestions(fallback.data.data); 
                 } else {
                     setSuggestions([]); 
@@ -79,7 +79,7 @@ const Banner: React.FC = () => {
         setSuggestions([]);
     }
    
-console.log(suggestions);
+// console.log(suggestions);
     return (
       <section className="home-hero-section">
         <div className="container-fluid  bg-image">
