@@ -5,9 +5,11 @@ import { SyncLoader } from "react-spinners";
 import path from 'path';
 import { Link } from 'react-router-dom';
 import { decodeId,encodeId, generateSlug ,slugToTitle} from '../utils/helpers';
-const BASE_URL = import.meta.env.VITE_API_URL;
 import data from '../data/explorealltrails.json';
+import { SquareLoader } from "react-spinners";
 
+
+const BASE_URL = import.meta.env.VITE_API_URL;
 interface TrailDetail {
     id: number;
     title: string;
@@ -26,6 +28,7 @@ interface Trails{
 function ExploreTrailSection(){
     const { title } = useParams();
     const [getTrails, setTrails ]= useState<Trails[]>([]);
+     const [loadingExplore,setloadingExplore] = useState(true);
 
     const [filters, setFilters] = useState({
         distance: [],    // e.g., ["near", "away"]
@@ -33,7 +36,12 @@ function ExploreTrailSection(){
         difficulty: [],  // e.g., ["easy", "hard"]
         length: [],      // e.g., ["short", "long"]
     });
-
+    window.scrollTo(0,0);
+    useEffect(()=>{
+        const timer = setTimeout(()=>
+            setloadingExplore(false),3000);
+        return()=>clearTimeout(timer);
+    },[]);
     useEffect(()=>{
             const fetchExploreData= async () => {
                 try {
@@ -74,6 +82,26 @@ function ExploreTrailSection(){
         const fetchExploreTrail = async  (title:String) =>{
             console.log('fetchExploreTrail');
         }
+        if (loadingExplore) {
+                return (
+                    <div
+                        style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        width: "100vw",
+                        height: "100vh",
+                        background: "#FFF5E9",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 9999,
+                        }}
+                    >
+                        <SquareLoader color="#FC673C" size={80} speedMultiplier={1.5} />
+                    </div>
+                );
+            }
     return(
         <main className="mainContent">
             <section className="section-explore-trails position-relative default-padding">

@@ -4341,6 +4341,61 @@ input[type="radio"]:checked::after {
     .review-row > .col-xl-6:nth-last-child(3) .testimonial-single {
         border-bottom: 0;
     }
-   
+    /* 12-8-25 ALI */
+    a.btn-style-review {
+        padding: 13px 25px;
+        color: white;
+        border-radius: 50px;
+        border: none;
+        text-align: center;
+        background-color: var(--orange);
+        display: inline-block;
+        transition: all 0.2s linear;
+    }
+    .review {
+        display: flex;
+        gap: 20px;
+    }
+    /* 13-8-25 ALI */
+    .btn-cross{
+        border-radius: 50%;
+        border: none;
+        width: 45px;
+        height: 45px;
+        
+    }
+    .li-style{
+        border-radius: 50%;
+        border: none;
+        width: 45px;
+        background: #FAFAFA;
+    }
+        
+    .btn-cross:hover {
+        border: 1px solid #FC673C;
+        transition: all 0.3s;
+    }
+    .btn-send{
+        float:right;
+        padding: 10px 25px;
+        color: white;
+        border-radius: 50px;
+        border: none;
+        text-align: center;
+        background-color: #FC673C;
+        display: inline-block;
+        transition: all 0.2s linear;
+    }
+    .btn-download{
+        float:center;
+        padding: 10px 25px;
+        color: white;
+        border-radius: 50px;
+        border: none;
+        text-align: center;
+        background-color: #FC673C;
+        display: inline-block;
+        transition: all 0.2s linear;
+    }
     
     
