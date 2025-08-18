@@ -1,12 +1,20 @@
 // src/components/CommunitySection.tsx
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import 'owl.carousel';
 
 import 'owl.carousel/dist/assets/owl.carousel.min.css';
 import 'owl.carousel/dist/assets/owl.theme.default.min.css';  
 import ProfileLeftSection from './ProfileLeftSection';
+import { SquareLoader } from "react-spinners"; 
 
 const CommunitySection: React.FC = () => {
+    const [loading,setLoading] = useState(true);
+    window.scrollTo(0,0);
+    useEffect(()=>{
+        const timer = setTimeout(()=>
+            setLoading(false),3000);
+        return()=>clearTimeout(timer);
+    },[])
     useEffect(() => {
         // Initialize Owl Carousel only after data is loaded and component has rendered
         const $owlElement = $('#suggestedMembers');
@@ -61,8 +69,27 @@ const CommunitySection: React.FC = () => {
         }
 
     });
-
-  return (
+    if (loading) {
+        return (
+            <div
+                style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                width: "100vw",
+                height: "100vh",
+                background: "#FFF5E9",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 9999,
+                }}
+            >
+                <SquareLoader color="#FC673C" size={80} speedMultiplier={1.5} />
+            </div>
+        );
+    }
+    return (
         <main className="mainContent">
             <section className="section-profile-feed inner-dashboard position-relative py-3">
                 <div className="container-fluid">

@@ -2,7 +2,7 @@ import React, { useState,useEffect } from 'react';
 import { Link as ScrollLink } from 'react-scroll';
 import { Link as RouterLink } from 'react-router-dom';
 import axios from 'axios';
-import { SyncLoader } from "react-spinners";
+import { SquareLoader } from "react-spinners";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 const NationalParkGuideSection: React.FC = () => {
@@ -10,10 +10,18 @@ const NationalParkGuideSection: React.FC = () => {
     const [loadingNParks,setLoadingNParks] = useState(true);
     const [errorsNParks,setErrorsNParks] = useState('');
 
+    window.scrollTo(0,0);
+    useEffect(()=>{
+        const timer = setTimeout(()=>
+            setLoadingNParks(false),5000);
+        return()=>clearTimeout(timer);
+    },[]);
     // Effect to fetch data
     useEffect(() => {
         const fetchNParks= async ()=>{
             try{
+                setLoadingNParks(true); // show loader every time fetch starts
+                setErrorsNParks("");
                 const response = await axios.get(`${BASE_URL}/home/topparks/10`);
                 setNationalParks(response.data.data);
             }catch(err){
@@ -30,14 +38,28 @@ const NationalParkGuideSection: React.FC = () => {
     // if(loadingNParks) return <p>Loading Parks....</p>;
     // if(errorsNParks) return <p>{errorsNParks}</p>;
     // if(nationalParks.length === 0) return <p>NO National Parks found</p>;
-    if (errorsNParks) return <p>{errorsNParks}</p>;
     if (loadingNParks) {
-    return (
-        <div className="section-explore-park d-flex justify-content-center align-items-center" style={{ minHeight: '100px' }}>
-        <SyncLoader color="#FC673C" size={20} />
-        </div>
-    );
+        return (
+            <div
+                style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                width: "100vw",
+                height: "100vh",
+                background: "#FFF5E9",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 9999,
+                }}
+            >
+                <SquareLoader color="#FC673C" size={80} speedMultiplier={1.5} />
+            </div>
+        );
     }
+    if (errorsNParks) return <p>{errorsNParks}</p>;
+    
     if (nationalParks.length === 0) return <p>NO National Parks found.</p>;
     return (
         <main className="mainContent">

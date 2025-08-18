@@ -1,11 +1,11 @@
-import React, { useEffect, useState,useRef } from 'react';
+import React, { useEffect, useState,useRef ,useCallback} from 'react';
 import { Link as ScrollLink } from 'react-scroll';
 import { Link as RouterLink } from 'react-router-dom';
 // import SearchDiscover from './SearchDiscover';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { SquareLoader } from "react-spinners"; 
-import { setTimeout, clearTimeout } from 'timers';
+// import { setTimeout, clearTimeout } from 'timers';
 
 import path from 'path';
 import { Link } from 'react-router-dom';
@@ -18,10 +18,14 @@ import PlaceOffers from './AffiliateDetails/PlaceOffers';
 // import TopTrailsNearBy from './AffiliateDetails/TopTrailsNearBy';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
+import { QRCodeCanvas } from "qrcode.react";
+import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/style.css";
+import { useLayoutEffect } from "react";
+
 // import data from '../data/alltrailDetails.json';
 
 const BASE_URL = import.meta.env.VITE_API_URL;
-
 let rating: number;
 interface TrailGuide {
   trail_guide_title: string;
@@ -67,6 +71,13 @@ interface UserFavorite {
     users_elevation_gain: number;
 }
 
+
+type ShareOption = {
+  label: string;
+  icon: JSX.Element | (() => JSX.Element);
+  action: () => void;
+};
+
 mapboxgl.accessToken = 'pk.eyJ1IjoiMTExMnZpcmVuZHJhIiwiYSI6ImNtYmE0emNyNjBwbHMyanNibHBpZHgxMjUifQ.5FSp2VZ1T1kXcGV38bC5jA';
        
 const AffiliateDetailTrail: React.FC = () => {
@@ -92,17 +103,36 @@ const AffiliateDetailTrail: React.FC = () => {
     const [getReviewImages, setReviewImages ]= useState<ReviewsImages[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0); // image arrow
     const [isExpanded, setIsExpanded] = useState(false);
-    
+    const [isOpen, setIsOpen] = useState(false);
+    const [copied, setCopied] = useState(false);
+    const [showTextModal, setShowTextModal] = useState(false); // For Text this park modal
+    const [phone, setPhone] = useState("");/* Text share*/ 
+    const [showQR, setShowQR] = useState(false);
+    const qrRef = useRef<HTMLCanvasElement>(null);
+
+    const shareUrl = window.location.href;
+    const qrImage = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://example.com";
     // useEffect(()=>{
     //     const loadpage = setTimeout(()=>setLoadingDetailTrails(false), 1000);
     //     return clearTimeout(loadpage);
     // },[]);
-  
-    
+
+    //  loader time set 
+    // window.scrollTo(0,0);
+   useLayoutEffect(() => {
+    window.scrollTo(0,0);
+    }, []);
+//  Loader
+    useEffect(()=>{
+        const timer = setTimeout(()=>
+            setLoadingDetailTrails(false),3000);
+        return()=>clearTimeout(timer);
+    },[])
     // image arraw move
-    const handleNextImage = () => {
-        setCurrentIndex((prevIndex) => (prevIndex + 1) % getImages.length);
-    };
+    const handleNextImage = useCallback(() => {
+        setCurrentIndex(i => (i + 1) % getImages.length);
+    }, [getImages.length]);
+
     useEffect(() => {
         // console.log(title);
     if (title) {
@@ -360,7 +390,139 @@ const AffiliateDetailTrail: React.FC = () => {
             };
           }
         }
-      }, [loadingDetailTrails, nearTrails]);
+    }, [loadingDetailTrails, nearTrails]);
+
+    /* share code start*/ 
+    const handleCopy = async () => {
+        await navigator.clipboard.writeText(shareUrl);
+        setCopied(true);
+        // setTimeout(() => setCopied(false), 2000);
+    };
+    const sendText = () => {
+        if (phone.trim()) {
+        window.open(`sms:${phone}?body=${encodeURIComponent(shareUrl)}`);
+        setIsOpen(false);
+        }
+    };
+    // const handleDownload = () => {
+    //     const canvas = qrRef.current.querySelector("canvas");
+    //     if (!canvas) return;
+
+    //     const link = document.createElement("a");
+    //     link.href = canvas.toDataURL("image/png");
+    //     link.download = "qr-code.png"; // File name
+    //     link.click();
+    // };
+    
+    const downloadQR = () => {
+       
+        const canvas = qrRef.current;
+        if (!canvas) return;
+        const link = document.createElement("a");
+        link.download = `my-custom-qr-${Date.now()}.png`; // custom filename
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+        // const link = document.createElement("a");
+        // link.href = qrImage;
+        // link.download = "qr-code.png";
+        // link.click();
+    };
+
+    // 1) SVG icon components
+    const IconCopy = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M8 8h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z" stroke="#05073D" strokeWidth="1.8" />
+        <path d="M6 6h9a1 1 0 0 1 1 1v1" stroke="#05073D" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+    );
+
+    const IconCheck = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M5 13l4 4L19 7" stroke="#0A7F2E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+    );
+
+    // Your chat/comment bubble (cleaned)
+    const IconChat = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path fillRule="evenodd" clipRule="evenodd"
+        d="M12.6 2.288a9.74 9.74 0 0 0-9.151 14.404l-.794 2.804v.003A1.49 1.49 0 0 0 4.5 21.346l.004-.001 2.804-.794A9.74 9.74 0 1 0 12.6 2.288M6.936 5.501a8.24 8.24 0 1 1 .853 13.598.75.75 0 0 0-.587-.077l-3.103.879.879-3.103a.75.75 0 0 0-.077-.587 8.24 8.24 0 0 1 2.035-10.71"
+        fill="currentColor" />
+    </svg>
+    );
+
+    const IconEmail = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <rect x="3" y="5" width="18" height="14" rx="2" stroke="#05073D" strokeWidth="1.8" />
+        <path d="M4 7l8 6 8-6" stroke="#05073D" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+    );
+
+    const IconEmbed = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M8 9L4 12l4 3" stroke="#05073D" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M16 9l4 3-4 3" stroke="#05073D" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M10 18l4-12" stroke="#05073D" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+    );
+
+    const IconQR = () => (
+    <svg width="25" height="25" viewBox="0 0 24 24" fill="none">
+        {/* finder patterns */}
+        <rect x="3" y="3" width="6" height="6" stroke="#05073D" strokeWidth="1.8" />
+        <rect x="15" y="3" width="6" height="6" stroke="#05073D" strokeWidth="1.8" />
+        <rect x="3" y="15" width="6" height="6" stroke="#05073D" strokeWidth="1.8" />
+        {/* small modules */}
+        <rect x="12" y="12" width="2" height="2" fill="#05073D" />
+        <rect x="16" y="12" width="2" height="2" fill="#05073D" />
+        <rect x="12" y="16" width="2" height="2" fill="#05073D" />
+        <rect x="18" y="18" width="2" height="2" fill="#05073D" />
+    </svg>
+    );
+
+    const options: ShareOption[] = [
+        {
+            label: copied ? "Link copied" : "Copy link",
+            icon: copied ? <IconCheck /> : <IconCopy />,
+            action: handleCopy,
+        },
+        {
+            label: "Text",
+            icon: <IconChat />,
+            action: () => {
+            setIsOpen(false);
+            setShowTextModal(true);
+            },
+        },
+        {
+            label: "Email",
+            icon: <IconEmail />,
+            action: () => {
+            window.open(`mailto:?subject=Check this out&body=${encodeURIComponent(shareUrl)}`);
+            },
+        },
+        {
+            label: "Embed",
+            icon: <IconEmbed />,
+            action: () => {
+            alert(`<iframe src="${shareUrl}" width="600" height="400"></iframe>`);
+            },
+        },
+        { label: "QR Code", icon: IconQR, action: () => setShowQR(true) },
+    ];
+    
+    // const CopyIcon = (
+    //     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    //     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+    //     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    //     </svg>
+    // );
+
+    // const CheckIcon = (
+    //     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    //     <polyline points="20 6 9 17 4 12" />
+    //     </svg>
+    // );
     // start Trail Guide read more limit
     const limit = 250;
     // Safety check
@@ -373,14 +535,28 @@ const AffiliateDetailTrail: React.FC = () => {
     const shortText = cleanDescription.slice(0, limit);
     const shouldTruncate = cleanDescription.length > limit;
     // end
-    if (errorDetailTrails) return <p>{errorDetailTrails}</p>;
     if (loadingDetailTrails) {
-    return (
-        <div className="section-trail-detail d-flex justify-content-center align-items-center" style={{ minHeight: '100px' }}>
-        <SquareLoader color="#FC673C" size={20} />
-        </div>
-    );
+        return (
+            <div
+                style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                width: "100vw",
+                height: "100vh",
+                background: "#FFF5E9",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 9999,
+                }}
+            >
+                <SquareLoader color="#FC673C" size={80} speedMultiplier={1.5} />
+            </div>
+        );
     }
+    if (errorDetailTrails) return <p>{errorDetailTrails}</p>;
+   
     if (!trailDetail) return <p>No local favorites found.</p>;
     const trailPoints: [number, number][] = getmapPoints.map((p) => [p.latitude, p.longitude]);
 
@@ -388,9 +564,9 @@ const AffiliateDetailTrail: React.FC = () => {
 
     // Sum all ratings (assuming each review has a `review_rate` property)
     const total_rating = getReviews.reduce((sum, review) => sum + Number(review.rating || 0), 0);
+    const average_rating = total_reviews > 0 ? (total_rating / total_reviews).toFixed(1) : "0.0";
     
-     const average_rating = total_reviews > 0 ? (total_rating / total_reviews).toFixed(1) : "0.0";
-     return (
+    return (
      <main className="mainContent">
         <section className="section-trail-detail">
             <div className="container">
@@ -545,7 +721,7 @@ const AffiliateDetailTrail: React.FC = () => {
                                 <p className="mb-0">Length</p>
                             </div>
                             <div className="trail-stat-single text-midnight-navy px-2">
-                                <h3>654 <span>m</span></h3>
+                                <h3>{trailDetail.elevationGain ?? 'N/A'}<span>m</span></h3>
                                 <p className="mb-0">Elevation gain</p>
                             </div>
                             <div className="trail-stat-single text-midnight-navy px-2">
@@ -669,7 +845,8 @@ const AffiliateDetailTrail: React.FC = () => {
                     <div className="col-xl-4 col-lg-5 col-md-12 col-sm-12 col-12">
                         <div className="trail-detail-map position-relative">
                             <div className="trail-detail-map-btn-group d-flex justify-content-xl-end justify-content-lg-end justify-content-md-center justify-content-sm-center justify-content-center">
-                                    <button className="btn-rounded-white rounded-circle" type="button" title="Share">
+                                    {/* share */}
+                                <button onClick={() => setIsOpen(true)} className="btn-rounded-white rounded-circle" type="button"  title="Share">
                                     <svg width="15" height="18" viewBox="0 0 15 18" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <circle cx="12.125" cy="3.375" r="1.875" stroke="#05073D" strokeWidth="1.125" />
                                         <circle cx="3.125" cy="8.625" r="1.875" stroke="#05073D" strokeWidth="1.125" />
@@ -700,6 +877,205 @@ const AffiliateDetailTrail: React.FC = () => {
                                 </button>
                             </div>
                     <div className="rounded-3 shadow-sm" ref={mapContainer} style={{height: '400px'}}/></div>
+                        <div>
+                            {/* <button onClick={() => setIsOpen(true)}>Share</button> */}
+
+                            {isOpen && (
+                                <div
+                                style={{
+                                    position: "fixed",
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    background: "rgba(0,0,0,0.5)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    zIndex: 1000,
+                                }}
+                                onClick={() => setIsOpen(false)}
+                                >
+                                <div
+                                    style={{
+                                    background: "white",
+                                    padding: "25px",
+                                    borderRadius: "10px",
+                                    width: "450px",
+                                    maxHeight: "80vh",
+                                    overflowY: "auto",
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                        <h3 style={{ marginTop:'34px'}}>Share</h3>
+                                        <button className="btn-cross" onClick={() => setIsOpen(false)}>
+                                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M4 4L16 16M16 4L4 16" stroke="#05073D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                                        {options.map((opt, idx) => (
+                                            <li
+                                            key={idx}
+                                            style={{
+                                                padding: "15px",
+                                                borderBottom: "1px solid #eee",
+                                                cursor: "pointer",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: "14px",
+                                            }}
+                                            onClick={opt.action}
+                                            >
+                                            <span className="li-style" style={{ display: "inline-flex"}}>
+                                                {typeof opt.icon === "function" ? opt.icon() : opt.icon}
+                                            </span>
+                                            <span>{opt.label}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+
+                                    </div>
+                                </div>
+                            )}
+
+                            {showTextModal && (
+                            <div
+                                style={{
+                                position: "fixed",
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                background: "rgba(0,0,0,0.5)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                zIndex: 1000,
+                                }}
+                                onClick={() => setShowTextModal(false)}
+                            >
+                                <div
+                                    style={{
+                                        background: "white",
+                                        padding: "25px",
+                                        borderRadius: "10px",
+                                        width: "450px",
+                                        maxHeight: "80vh",
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                    >
+                                    <div style={{ display: "flex", justifyContent: "space-between",margin:'15px 0px 15px 0px' }}>
+                                        
+                                        <button className="btn-cross"
+                                        onClick={() => {
+                                            setShowTextModal(false);
+                                            setIsOpen(true); // reopen Share modal
+                                        }}
+                                        > 
+                                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M12 4L6 10L12 16" stroke="#05073D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                        </svg>
+                                        </button>
+                                        <button className="btn-cross" onClick={() => setShowTextModal(false)}> 
+                                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M4 4L16 16M16 4L4 16" stroke="#05073D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                        </svg>
+
+                                        </button>
+                                    </div>
+                                    <div>
+                                        <h3>Text this trails</h3>
+                                        <p>
+                                            Text this trail to your friends, family or yourself so you can 
+                                            get driving directions and see detailed trail maps on the go.
+                                        </p>
+                                        {/* <input
+                                            type="tel"
+                                            placeholder="Enter phone number"
+                                            value={phone}
+                                            onChange={(e) => setPhone(e.target.value)}
+                                            style={{ width: "100%", padding: "10px", marginBottom: "15px" }}
+                                        /> */}
+                                        
+                                        <PhoneInput
+                                        country={"us"} // default country
+                                        value={phone}
+                                        onChange={setPhone}
+                                        containerStyle={{ width: "100%", marginBottom: "15px" }} // wrapper div
+                                        inputStyle={{ width: "100%", padding: "10px", paddingLeft:'45px'}} // actual input
+                                        buttonStyle={{ borderRadius: "8px 0 0 8px" }} // country flag dropdown button
+                                        // enableSearch={true} // search countries
+                                        />
+                                        
+                                        <button className="btn-send" onClick={sendText}>Send</button>
+                                    </div>
+                                </div>
+                            </div>
+                            )}
+
+                            {showQR && (
+    
+                                <div
+                                    style={{
+                                    position: "fixed",
+                                    top: 40,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    zIndex: 1000,
+                                    }}
+                                    onClick={() => setShowQR(false)}
+                                >
+                                    <div
+                                        style={{
+                                            background: "white",
+                                            padding: "25px",
+                                            borderRadius: "10px",
+                                            width: "450px",
+                                            maxHeight: "80vh",
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <div style={{ display: "flex", justifyContent: "space-between",margin:'15px 0px 15px 0px' }}>
+                                            
+                                            <button className="btn-cross"
+                                            onClick={() => {
+                                                setShowQR(false);
+                                                setIsOpen(true); // reopen Share modal
+                                            }}
+                                            > 
+                                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M12 4L6 10L12 16" stroke="#05073D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                            </svg>
+                                            </button>
+                                            <button className="btn-cross" onClick={() => setShowQR(false)}> 
+                                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M4 4L16 16M16 4L4 16" stroke="#05073D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                            </svg>
+
+                                            </button>
+                                        </div>
+                                        <div style={{ background: "white", padding: "10px", borderRadius: "10px", textAlign: "center" }}>
+                                            <h3>Download QR Code</h3>
+                                            <p>Link others to this route with the following QR code</p>
+                                            {/* <img src={qrImage} alt="QR Code" style={{ marginBottom: "15px",width:'132px',height:'132px' }} /> */}
+                                            <QRCodeCanvas value="https://example.com" bgColor='#fff' includeMargin={true} fgColor='#000' size={132} ref={qrRef} />
+                                            <div style={{ marginTop: "15px" }}>
+                                                <button className="btn-download"onClick={downloadQR}>Download</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+
+                        </div>
                         {/* <div  ref={mapContainer} style={{height: '400px'}} className="rounded-3 shadow-sm"></div> */}
 
                             
@@ -851,8 +1227,9 @@ const AffiliateDetailTrail: React.FC = () => {
                 <div className="trails-reviews-widget" id="reviews">
                     <div className="row">
                         <div className="col-12">
-                            <div className="section-title">
+                            <div className="section-title review">
                                 <h2 className="title">Reviews</h2>
+                                <a href="" className="btn-style-review">Review trail</a>
                             </div>
                         </div>
                     </div>
