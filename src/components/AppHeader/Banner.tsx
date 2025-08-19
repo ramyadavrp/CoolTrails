@@ -13,7 +13,9 @@ const Banner: React.FC = () => {
     const [take, setTake] = useState(5);
     // const take = 5;
     // console.log(inputSearchvlue);
-  
+    const country='india';
+    const state = 'up';
+    const city= 'lucknow';
 
     useEffect(() => {
         const delayDebounce = setTimeout(() => {
@@ -132,8 +134,8 @@ const Banner: React.FC = () => {
                                         <Link className="a-text"
                                             to={
                                                 item.type === 'Trail'
-                                                ? `/affiliate-details/${generateSlug(item.title)?item.urlTitle:''}`
-                                                : `/explore-trail/${generateSlug(item.title)?item.urlTitle:''}`
+                                                ? `/affiliate-details/${item.type}/${country}/${state}/${city}/${generateSlug(item.title)?item.urlTitle:''}`
+                                                : `/explore-trail/${item.type}/${country}/${state}/${city}/${generateSlug(item.title)?item.urlTitle:''}`
                                             }
                                             >
                                            {`${item.title} (${item.type})`}

@@ -48,6 +48,7 @@ function ExploreTrailSection(){
                     const response = await fetch('/data/explorealltrails.json'); 
                     const json: Trails[] = await response.json();
                     setTrails(json.explore_trails);
+                    
                 }catch (error) {
                 console.error('Error fetching JSON:', error);
             }
@@ -65,8 +66,8 @@ function ExploreTrailSection(){
         }));
         
     };
-   console.log(filters);
-
+//    console.log(filters);
+// console.log('ex',getTrails);
     
     useEffect(() => {
             // console.log(title);

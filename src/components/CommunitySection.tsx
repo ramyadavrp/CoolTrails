@@ -6,15 +6,37 @@ import 'owl.carousel/dist/assets/owl.carousel.min.css';
 import 'owl.carousel/dist/assets/owl.theme.default.min.css';  
 import ProfileLeftSection from './ProfileLeftSection';
 import { SquareLoader } from "react-spinners"; 
+import data from '../data/community.json';
 
+interface Community{
+    member_name:string,
+    member_country:string,
+    member_image:string
+}
 const CommunitySection: React.FC = () => {
     const [loading,setLoading] = useState(true);
+    const [getCommunity, setCommunity ]= useState<Community[]>([]);
     window.scrollTo(0,0);
     useEffect(()=>{
         const timer = setTimeout(()=>
             setLoading(false),3000);
         return()=>clearTimeout(timer);
     },[])
+
+    useEffect(()=>{
+            const fetchCommunityData= async () => {
+                try {
+                    const response = await fetch('/data/community.json'); 
+                    const json: Community[] = await response.json();
+                    setCommunity(json.suggested_members);
+                    
+                }catch (error) {
+                console.error('Error fetching JSON:', error);
+            }
+            };
+            fetchCommunityData();
+    },[]);
+    // console.log('ddd',getCommunity);
     useEffect(() => {
         // Initialize Owl Carousel only after data is loaded and component has rendered
         const $owlElement = $('#suggestedMembers');
@@ -107,6 +129,97 @@ const CommunitySection: React.FC = () => {
                             <div className="suggested-members-container">
                                 {/* <!-- <div className="sm-box"> --> */}
                                 <div className="owl-carousel owl-theme" id="suggestedMembers">
+                                    {
+                                        getCommunity.length> 0 ?(
+                                            getCommunity.map((getCom,index)=>(
+                                                <div className="suggested-member-single bg-almost-white d-flex align-items-center">
+                                                    <div className="sms-img">
+                                                        
+                                                        <img
+                                                            src={getCom.member_image || '/assets/images/not-found.jpg'}
+                                                            alt="Com" className="img-fluid img-fixed-size" 
+                                                            onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                                                const target = e.currentTarget;
+                                                                target.onerror = null; // prevent infinite loop
+                                                                target.src = '/assets/images/not-found.jpg'; // fallback image
+                                                            }}
+                                                        />
+                                                        {/* <img src="assets/images/profile/suggested-members/1.png" alt="" /> */}
+                                                    </div>
+                                                    <div className="sms-dt">
+                                                        <p className="mb-0 text-midnight-navy sms-dt-title">{getCom.member_name ?? 'N/A'}</p>
+                                                        <p className="mb-0 text-grey sms-dt-location">{getCom.member_country ?? 'N/A'}</p>
+                                                    </div>
+                                                    <div className="sms-btn d-flex align-items-center">
+                                                        <button className="btn-style-1">Follow</button>
+                                                        <a href="" title="cancle">
+                                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                <path d="M18 6L6 18" stroke="#717171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                                                <path d="M6 6L18 18" stroke="#717171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                                            </svg>
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ):(
+                                            <p>not found</p>
+                                        )
+                                    }
+                                    
+                                    {/* <div className="suggested-member-single bg-almost-white d-flex align-items-center">
+                                        <div className="sms-img">
+                                            <img src="assets/images/profile/suggested-members/2.png" alt="" />
+                                        </div>
+                                        <div className="sms-dt">
+                                            <p className="mb-0 text-midnight-navy sms-dt-title">Rekish</p>
+                                            <p className="mb-0 text-grey sms-dt-location">Dubai</p>
+                                        </div>
+                                        <div className="sms-btn d-flex align-items-center">
+                                            <button className="btn-style-1">Follow</button>
+                                            <a href="" title="cancle">
+                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M18 6L6 18" stroke="#717171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                                    <path d="M6 6L18 18" stroke="#717171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                                </svg>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div className="suggested-member-single bg-almost-white d-flex align-items-center">
+                                        <div className="sms-img">
+                                            <img src="assets/images/profile/suggested-members/3.png" alt="" />
+                                        </div>
+                                        <div className="sms-dt">
+                                            <p className="mb-0 text-midnight-navy sms-dt-title">Laila</p>
+                                            <p className="mb-0 text-grey sms-dt-location">Dubai</p>
+                                        </div>
+                                        <div className="sms-btn d-flex align-items-center">
+                                            <button className="btn-style-1">Follow</button>
+                                            <a href="" title="cancle">
+                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M18 6L6 18" stroke="#717171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                                    <path d="M6 6L18 18" stroke="#717171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                                </svg>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div className="suggested-member-single bg-almost-white d-flex align-items-center">
+                                        <div className="sms-img">
+                                            <img src="assets/images/profile/suggested-members/4.png" alt="" />
+                                        </div>
+                                        <div className="sms-dt">
+                                            <p className="mb-0 text-midnight-navy sms-dt-title">Rahul Singh</p>
+                                            <p className="mb-0 text-grey sms-dt-location">Dubai</p>
+                                        </div>
+                                        <div className="sms-btn d-flex align-items-center">
+                                            <button className="btn-style-1">Follow</button>
+                                            <a href="" title="cancle">
+                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M18 6L6 18" stroke="#717171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                                    <path d="M6 6L18 18" stroke="#717171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                                </svg>
+                                            </a>
+                                        </div>
+                                    </div>
                                     <div className="suggested-member-single bg-almost-white d-flex align-items-center">
                                         <div className="sms-img">
                                             <img src="assets/images/profile/suggested-members/1.png" alt="" />
@@ -178,79 +291,7 @@ const CommunitySection: React.FC = () => {
                                                 </svg>
                                             </a>
                                         </div>
-                                    </div>
-                                    <div className="suggested-member-single bg-almost-white d-flex align-items-center">
-                                        <div className="sms-img">
-                                            <img src="assets/images/profile/suggested-members/1.png" alt="" />
-                                        </div>
-                                        <div className="sms-dt">
-                                            <p className="mb-0 text-midnight-navy sms-dt-title">Anna B</p>
-                                            <p className="mb-0 text-grey sms-dt-location">Dubai</p>
-                                        </div>
-                                        <div className="sms-btn d-flex align-items-center">
-                                            <button className="btn-style-1">Follow</button>
-                                            <a href="" title="cancle">
-                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                    <path d="M18 6L6 18" stroke="#717171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                                    <path d="M6 6L18 18" stroke="#717171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                                </svg>
-                                            </a>
-                                        </div>
-                                    </div>
-                                    <div className="suggested-member-single bg-almost-white d-flex align-items-center">
-                                        <div className="sms-img">
-                                            <img src="assets/images/profile/suggested-members/2.png" alt="" />
-                                        </div>
-                                        <div className="sms-dt">
-                                            <p className="mb-0 text-midnight-navy sms-dt-title">Rekish</p>
-                                            <p className="mb-0 text-grey sms-dt-location">Dubai</p>
-                                        </div>
-                                        <div className="sms-btn d-flex align-items-center">
-                                            <button className="btn-style-1">Follow</button>
-                                            <a href="" title="cancle">
-                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                    <path d="M18 6L6 18" stroke="#717171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                                    <path d="M6 6L18 18" stroke="#717171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                                </svg>
-                                            </a>
-                                        </div>
-                                    </div>
-                                    <div className="suggested-member-single bg-almost-white d-flex align-items-center">
-                                        <div className="sms-img">
-                                            <img src="assets/images/profile/suggested-members/3.png" alt="" />
-                                        </div>
-                                        <div className="sms-dt">
-                                            <p className="mb-0 text-midnight-navy sms-dt-title">Laila</p>
-                                            <p className="mb-0 text-grey sms-dt-location">Dubai</p>
-                                        </div>
-                                        <div className="sms-btn d-flex align-items-center">
-                                            <button className="btn-style-1">Follow</button>
-                                            <a href="" title="cancle">
-                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                    <path d="M18 6L6 18" stroke="#717171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                                    <path d="M6 6L18 18" stroke="#717171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                                </svg>
-                                            </a>
-                                        </div>
-                                    </div>
-                                    <div className="suggested-member-single bg-almost-white d-flex align-items-center">
-                                        <div className="sms-img">
-                                            <img src="assets/images/profile/suggested-members/4.png" alt="" />
-                                        </div>
-                                        <div className="sms-dt">
-                                            <p className="mb-0 text-midnight-navy sms-dt-title">Rahul Singh</p>
-                                            <p className="mb-0 text-grey sms-dt-location">Dubai</p>
-                                        </div>
-                                        <div className="sms-btn d-flex align-items-center">
-                                            <button className="btn-style-1">Follow</button>
-                                            <a href="" title="cancle">
-                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                    <path d="M18 6L6 18" stroke="#717171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                                    <path d="M6 6L18 18" stroke="#717171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                                </svg>
-                                            </a>
-                                        </div>
-                                    </div>
+                                    </div> */}
                                 </div>
                             </div>
                         </div>
