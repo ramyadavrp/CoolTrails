@@ -51,6 +51,8 @@ interface TrailDetail {
     imageUrls: string;
     trailType: string;
     userFavorite: string;
+    trail_guide_title: string;
+    elevationGain: number;
 }
 interface MapPoint  {
   latitude: number;
@@ -647,12 +649,16 @@ const AffiliateDetailTrail: React.FC = () => {
                                     
                             }
                             <div className="cover-overlay h-100 w-100 d-flex justify-content-between align-items-end br-20">
-                                <a href={
-                                    getImages.length > 0
-                                    ? `${BASE_URL}/uploads/${encodeURIComponent(getImages[0].imageUrls)}`
-                                    : '/assets/images/not-found.jpg'
-                                }
-                                className="btn-style-4" data-fancybox="MoreImages">
+                                    <a
+                                        href={
+                                            getImages.length > 0
+                                            ? getImages[0] 
+                                            : "/assets/images/not-found.jpg"
+                                        }
+                                        className="btn-style-4"
+                                        // data-fancybox="MoreImages"
+                                        data-fancybox-trigger="MoreImages"
+                                    >
                                     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" className="me-2">
                                         <rect x="1.5" y="1.5" width="15" height="15" rx="3.75" stroke="#05073D" strokeWidth="1.125" />
                                         <path
@@ -665,6 +671,7 @@ const AffiliateDetailTrail: React.FC = () => {
                                     </svg>
                                     {getImages.length} + Photos
                                 </a>
+                                
                                 {/* <a href="/assets/images/trails/trail-1-gallery-1.jpg" data-fancybox="MoreImages"></a>
                                 <a href="/assets/images/trails/trail-1-gallery-2.jpg" data-fancybox="MoreImages"></a>
                                 <a href="/assets/images/trails/trail-1-gallery-3.jpg" data-fancybox="MoreImages"></a>
