@@ -32,23 +32,24 @@
     }
   ],
 
-  "itinerary": [
-    { "day":"Day 1",
-      "itinerary_title": "Arrival at Lorem Ipsum",
-      "itinerary_description": "If you don't want your gift delivered by email, you'll have the option to print instead. Then you can deliver your gift by hand or by mail and the PDF will include all the information your recipient needs to redeem it."
+  "suggested_nearby": [
+    { "name":"Thomas",
+      "date": "22 Mar",
+      "logo": "/assets/images/profile/thomas.png",
+      "image_near": "/assets/images/profile/feed/feed-img-1.png",
+      "title": "Forest of Meudon - Virofly",
+      "rating": 4,
+      "description": "Hike through the forest of Meudon and Viroflay, where wooded paths offer a soothing setting, punctuated by unobstructed views, and invite you to discover the local flora and fauna."
     },
-     { "day":"Day 2",
-      "itinerary_title": "Arrival at Lorem Ipsum",
-      "itinerary_description": "If you don't want your gift delivered by email, you'll have the option to print instead. Then you can deliver your gift by hand or by mail and the PDF will include all the information your recipient needs to redeem it."
-    },
-     { "day":"Day 3",
-      "itinerary_title": "Arrival at Lorem Ipsum",
-      "itinerary_description": "If you don't want your gift delivered by email, you'll have the option to print instead. Then you can deliver your gift by hand or by mail and the PDF will include all the information your recipient needs to redeem it."
-    },
-     { "day":"Day 4",
-      "itinerary_title": "Arrival at Lorem Ipsum",
-      "itinerary_description": "If you don't want your gift delivered by email, you'll have the option to print instead. Then you can deliver your gift by hand or by mail and the PDF will include all the information your recipient needs to redeem it."
+    { "name":"James",
+      "date": "Arrival at Lorem Ipsum",
+      "logo": "/assets/images/profile/james.png",
+      "image_near": "/assets/images/profile/feed/feed-img-2.png",
+      "title": "Forest of Meudon - Virofly",
+      "rating": 4.5,
+      "description": "Hike through the forest of Meudon and Viroflay, where wooded paths offer a soothing setting, punctuated by unobstructed views, and invite you to discover the local flora and fauna."
     }
+     
   ],
 
   "place_offers": [

@@ -13,9 +13,8 @@ const Banner: React.FC = () => {
     const [take, setTake] = useState(5);
     // const take = 5;
     // console.log(inputSearchvlue);
-    const country='india';
-    const state = 'up';
-    const city= 'lucknow';
+    
+    
 
     useEffect(() => {
         const delayDebounce = setTimeout(() => {
@@ -115,7 +114,11 @@ const Banner: React.FC = () => {
                         inputSearchvlue && (
                             suggestions.length > 0 ? (
                                 <ul className="suggestions">
-                                {suggestions.map((item: any, index: number) => (
+                                {suggestions.map((item: any, index: number) => {
+                                    const trailurl = `/${generateSlug(item.type)}s/${generateSlug(item.country)}/${generateSlug(item.state)}/${generateSlug(item.city)}/${item.urlTitle ? item.urlTitle : generateSlug(item.title)}`;
+                                    const parkUrl = `/${generateSlug(item.type)}s/${generateSlug(item.country)}/${generateSlug(item.state)}/${generateSlug(item.city)}/${item.urlTitle ? item.urlTitle : generateSlug(item.title)}`;
+
+                                    return(
                                     <li
                                     key={index}
                                     className="flex items-start px-3 py-2 hover:bg-gray-100 cursor-pointer"
@@ -134,8 +137,8 @@ const Banner: React.FC = () => {
                                         <Link className="a-text"
                                             to={
                                                 item.type === 'Trail'
-                                                ? `/affiliate-details/${item.type}/${country}/${state}/${city}/${generateSlug(item.title)?item.urlTitle:''}`
-                                                : `/explore-trail/${item.type}/${country}/${state}/${city}/${generateSlug(item.title)?item.urlTitle:''}`
+                                                ? trailurl
+                                                : parkUrl
                                             }
                                             >
                                            {`${item.title} (${item.type})`}
@@ -143,7 +146,8 @@ const Banner: React.FC = () => {
                                         </div>
                                     </div>
                                     </li>
-                                ))}
+                                    )
+                                    })}
                                 </ul>
                             ) : (
                                 <ul className="suggestions">   
