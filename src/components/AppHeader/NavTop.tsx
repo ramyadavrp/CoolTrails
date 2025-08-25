@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import SeoMeta from '../../containers/SeoMeta';
 
 const NavTop: React.FC = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -18,6 +19,8 @@ const NavTop: React.FC = () => {
 
 
     return (
+        <>
+        <SeoMeta/>
         <header className="header">
             <nav className="navbar navbar-expand-lg main-navbar">
                 <div className="container-fluid">
@@ -47,7 +50,7 @@ const NavTop: React.FC = () => {
                                     </li>
                                     
                                     <li>
-                                        <Link to={'/explore-trail'} className="dropdown-item">
+                                        <Link to={'/explore'} className="dropdown-item">
                                             <img src="/assets/images/icons/location.svg" alt="" />
                                              Near by Trails
                                         </Link>
@@ -93,8 +96,20 @@ const NavTop: React.FC = () => {
                                 </a>
                                 <div className="dropdown-menu">
                                     <ul className="list-unstyled">
-                                        <li><a className="dropdown-item" href="#">Action</a></li>
-                                        <li><a className="dropdown-item" href="#">Another action</a></li>
+                                        <li>
+                                            <Link to={''} className="dropdown-item">
+                                                <img src="/assets/images/icons/Users.svg" alt="" />
+                                                Compare Plans
+                                            </Link>
+                                            {/* <a className="dropdown-item" href="#">Compare Plans</a> */}
+                                        </li>
+                                        <li>
+                                            <Link to={'/gift-membership'} className="dropdown-item">
+                                                <img src="/assets/images/icons/Users.svg" alt="" />
+                                                gift Membership 
+                                            </Link>
+                                            {/* <a className="dropdown-item" href="#">gift Membership</a> */}
+                                        </li>
                                     </ul>
                                 </div>
                             </li>
@@ -159,6 +174,8 @@ const NavTop: React.FC = () => {
                 </div>
             </nav>
         </header>
+        </>
+        
     );
 };
 

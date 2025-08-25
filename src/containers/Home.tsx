@@ -14,6 +14,10 @@ import SearchDiscover from '../components/SearchDiscover';
 import TrailFeedbackSection from '../components/TrailFeedbackSection';
 import Footer from '../components/AppFooter/Footer';
 import { SquareLoader } from "react-spinners"; 
+import { Helmet } from 'react-helmet-async';
+import axios from 'axios';
+// import SeoMeta from '../containers/SeoMeta'
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 const Home: React.FC = () => {
   const [loading,setLoading] = useState(true);
@@ -21,14 +25,24 @@ const Home: React.FC = () => {
     alert('Button clicked!');
   };
   // Loader
-  window.scrollTo(0,0);
-      useEffect(()=>{
-          const timer = setTimeout(()=>
-              setLoading(false),3000);
-          return()=>clearTimeout(timer);
-      },[])
+  // window.scrollTo(0,0);
+
+    useEffect(() => {
+      window.scrollTo(0, 0);
+    }, []);
+
+    useEffect(()=>{
+        const timer = setTimeout(()=>
+            setLoading(false),3000);
+        return()=>clearTimeout(timer);
+    },[]);
+
+      
 //function Home(){
   return (
+    <>
+    {/* SEO Meta Tags */}
+    {/* <SeoMeta/> */}
     <div className="main-wrapper wrapper-home">
       <NavTop />
       <main className="mainContent">
@@ -87,6 +101,7 @@ const Home: React.FC = () => {
 
       {/* Footer */}
     </div>
+    </>
   );
 };
 

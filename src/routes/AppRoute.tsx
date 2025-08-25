@@ -39,9 +39,10 @@ const AppRoute = () => {
         <Route path="/community" element={<CommunityPage />} />
         <Route path="/Trails/:country/:state/:city/:title" element={<AffiliateDetails />} />
 
-        {/* <Route path="/affiliate-details/:title" element={<AffiliateDetails />} /> */}
+        <Route path="/affiliate-details/:title" element={<AffiliateDetails />} />
         <Route path="/Parks/:country/:state/:city/:title" element={<ExploreTrail />} /> 
-        <Route path="/explore-trail/:title" element={<ExploreTrail />} /> 
+        <Route path="/explore/:title" element={<ExploreTrail />} /> 
+        <Route path="/explore/" element={<ExploreTrail />} /> 
         <Route path="/national-park-guide" element={<NationalParkGuide />} /> 
         <Route path="/gift-membership" element={<GiftMembership />} /> 
         

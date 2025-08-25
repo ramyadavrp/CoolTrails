@@ -84,7 +84,7 @@ type ShareOption = {
 mapboxgl.accessToken = 'pk.eyJ1IjoiMTExMnZpcmVuZHJhIiwiYSI6ImNtYmE0emNyNjBwbHMyanNibHBpZHgxMjUifQ.5FSp2VZ1T1kXcGV38bC5jA';
        
 const AffiliateDetailTrail: React.FC = () => {
-    const { title } = useParams();
+    const { country, state, city, title } = useParams();
     // const { id: encodedId, slug } = useParams(); // url link
     const [trailDetail, setTrailDetail] = useState<TrailDetail | null>(null);
     const [loadingDetailTrails, setLoadingDetailTrails] = useState(true);

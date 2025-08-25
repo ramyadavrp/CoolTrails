@@ -134,6 +134,7 @@ const NationalParkGuideSection: React.FC = () => {
                             <div className="cooltrails-title text-center">
                                 <h2 className="title title-sm title-dropdown d-flex align-items-center justify-content-center">
                                     <span className="me-2 text-midnight-navy">Guides to</span>  
+                                    
                                     <select name="" id="" className="advance-select" defaultValue="">
                                         {/* <option value="" selected>Austraila</option> */}
                                         <option value="">Austraila</option>
@@ -141,11 +142,13 @@ const NationalParkGuideSection: React.FC = () => {
                                         <option value="india">India</option>
                                     </select> 
                                 </h2>
+
                                 <p className="text-center text-grey">29 Parks • 29 Guides</p>
                             </div>
 
                         </div>
                     </div>
+                    
                     <div className="row">
                             {
                                 nationalParks.map((nparks:any,index:number)=>(

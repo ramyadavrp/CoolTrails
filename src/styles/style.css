@@ -30,7 +30,7 @@ a:hover {
     background-position: center;
     background-size: cover;
     background-repeat: no-repeat;
-    height: 470px; /* 25-7-25 Ali */
+    height: 500px; /* 470, 25-7-25 Ali */
 }
 
 .bg-skyblue {
@@ -4323,6 +4323,9 @@ input[type="radio"]:checked::after {
         position: relative;
         top: -20px;
         z-index: 1;
+        max-height: 250px;
+        overflow-y: auto;
+        overflow-x: hidden;
     }
      /* 24/7/25 Ali */
     a.a-text {
@@ -4397,5 +4400,8 @@ input[type="radio"]:checked::after {
         display: inline-block;
         transition: all 0.2s linear;
     }
-    
+    /* .image-div-style{
+        max-width: 400px;
+        max-height: 276px;
+    } */
     

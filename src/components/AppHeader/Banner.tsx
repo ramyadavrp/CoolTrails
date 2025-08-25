@@ -115,8 +115,16 @@ const Banner: React.FC = () => {
                             suggestions.length > 0 ? (
                                 <ul className="suggestions">
                                 {suggestions.map((item: any, index: number) => {
-                                    const trailurl = `/${generateSlug(item.type)}s/${generateSlug(item.country)}/${generateSlug(item.state)}/${generateSlug(item.city)}/${item.urlTitle ? item.urlTitle : generateSlug(item.title)}`;
-                                    const parkUrl = `/${generateSlug(item.type)}s/${generateSlug(item.country)}/${generateSlug(item.state)}/${generateSlug(item.city)}/${item.urlTitle ? item.urlTitle : generateSlug(item.title)}`;
+                                    // country null check
+                                    // const safeSlug = (value) => value ? generateSlug(value) : '';
+                                    // const nearUrl = `/${safeSlug(nTrails.type)}s/${safeSlug(nTrails.country)}/${safeSlug(nTrails.state)}/${safeSlug(nTrails.city)}/${nTrails.urlTitle ? nTrails.urlTitle : generateSlug(nTrails.title)}`;
+                                    const city    = item.city    ?? "Lucknow";
+                                    const state   = item.state   ?? "UTTAR PRADESH";
+                                    const country = item.country ?? "India";
+
+                                    const slugTitle = item.urlTitle ?? generateSlug(item.title);
+                                    const trailurl = `/${generateSlug(item.type)}s/${generateSlug(country)}/${generateSlug(state)}/${generateSlug(city)}/${slugTitle}`;
+                                    const parkUrl = `/${generateSlug(item.type)}s/${generateSlug(country)}/${generateSlug(state)}/${generateSlug(city)}/${slugTitle}`;
 
                                     return(
                                     <li
@@ -142,6 +150,7 @@ const Banner: React.FC = () => {
                                             }
                                             >
                                            {`${item.title} (${item.type})`}
+                                           <p style={{fontSize:'12px'}}>{item.address}</p>
                                         </Link>
                                         </div>
                                     </div>
