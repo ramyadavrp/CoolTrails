@@ -20,34 +20,39 @@ interface Trails{
     explore_image:string,
     explore_title:string,
     explore_address:string,
-    explore_rating:number,
-    explore_distance:number,
+    explore_rating:any,
+    explore_distance:any,
     explore_time_duration:number,
+    date:number
 }
  
 function ExploreTrailSection(){
     const { title } = useParams();
     const [getTrails, setTrails ]= useState<Trails[]>([]);
-     const [loadingExplore,setloadingExplore] = useState(true);
-
+    const [loadingExplore,setloadingExplore] = useState(true);
+    const [sortType, setSortType] = useState("Best Matches"); 
     const [filters, setFilters] = useState({
         distance: [],    // e.g., ["near", "away"]
         activity: [],    // e.g., ["running", "walking"]
         difficulty: [],  // e.g., ["easy", "hard"]
         length: [],      // e.g., ["short", "long"]
     });
+    const totalTrails =getTrails.length
     window.scrollTo(0,0);
     useEffect(()=>{
         const timer = setTimeout(()=>
             setloadingExplore(false),3000);
         return()=>clearTimeout(timer);
     },[]);
+    
+
     useEffect(()=>{
             const fetchExploreData= async () => {
                 try {
                     const response = await fetch('/data/explorealltrails.json'); 
                     const json: Trails[] = await response.json();
                     setTrails(json.explore_trails);
+                    // console.log(getTrails);
                     
                 }catch (error) {
                 console.error('Error fetching JSON:', error);
@@ -55,6 +60,32 @@ function ExploreTrailSection(){
             };
             fetchExploreData();
     },[]);
+    const handleMatchChange = (e) =>{
+        e.preventDefault();
+        setSortType(e.target.value);
+    }
+    const sortedData = [...getTrails].sort((a, b) => {
+        
+        if (sortType === "popular") {
+            return Number(b.explore_rating) - Number(a.explore_rating);
+        }
+        if (sortType === "closest") {
+            return Number(a.explore_distance) - Number(b.explore_distance);
+        }
+        if (sortType === "new") {
+            return (new Date(b.date).getTime() || 0) - (new Date(a.date).getTime() || 0);
+        }
+        if (sortType === "best") {
+            // Example best match formula:
+            // Higher rating, closer distance, and more recent date
+            const scoreA = Number(a.explore_rating) * 2 - Number(a.explore_distance) + (new Date(a.date).getTime() || 0) / 1e10;
+            const scoreB = Number(b.explore_rating) * 2 - Number(b.explore_distance) + (new Date(b.date).getTime() || 0) / 1e10;
+            return scoreB - scoreA;
+        }
+        return 0;
+    });
+
+    
 
     const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     //    console.log('hello');
@@ -188,7 +219,7 @@ function ExploreTrailSection(){
                                 </div>
                                 <div className="resultContainer d-flex justify-content-between px-2 mb-2">
                                     <div className="res">
-                                        <p className="mb-2">49 trails</p>
+                                        <p className="mb-2">{totalTrails} trails</p>
                                     </div>
                                     <div className="resFilter d-flex justify-content-end">
                                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="mt-1">
@@ -198,19 +229,23 @@ function ExploreTrailSection(){
                                                 strokeLinecap="round"
                                             />
                                         </svg>
-                                        <select name="" id="sortby" className="advance-select" >
-                                            <option value="">Best Matches</option>
-                                            <option value="">Most Popular</option>
-                                            <option value="">Closest</option>
-                                            <option value="">Newly Added</option>
+                                        <select name="" id="sortby"
+                                            value={sortType}
+                                             onChange={handleMatchChange}
+                                            // onChange={(e) => setSortType(e.target.value)}
+                                            className="advance-select" >
+                                            <option value="Best">Best Matches</option>
+                                            <option value="popular">Most Popular</option>
+                                            <option value="closest">Closest</option>
+                                            <option value="new">Newly Added</option>
                                         </select>
                                     </div>
                                 </div>
 
                                 <div className="row">
                                     {
-                                        getTrails.length > 0 ? (
-                                            getTrails.map((trail:any, index:number)=>(
+                                        sortedData.length > 0 ? (
+                                            sortedData.map((trail:any, index:number)=>(
                                                 <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
                                                     <div className="local-favorite-single mb-4">
                                                         <div className="lfc-thumb position-relative">
@@ -227,9 +262,9 @@ function ExploreTrailSection(){
                                                             <a href="#!" className="bookmark-btn" role="button" title="Save"><i className="bi bi-bookmark"></i></a>
                                                         </div>
                                                         <div className="lfc-content">
-                                                            <h3 className="lfc-title">{trail.explore_title}Wadi Sahem - Al Hayl Fort - Water Springs</h3>
-                                                            <p className="lfc-location mb-1">Al Fujayrah, Fujairah, United Arab Emirates</p>
-                                                            <p className="lfc-tags"><i className="bi bi-star-fill"></i> 4.6 · Moderate · 9.3km · Est. 2h 45m</p>
+                                                            <h3 className="lfc-title">{trail.explore_title}</h3>
+                                                            <p className="lfc-location mb-1">{trail.explore_address}</p>
+                                                            <p className="lfc-tags"><i className="bi bi-star-fill"></i> {trail.explore_rating} · Moderate · {trail.explore_distance} km · Est. {trail.explore_time_duration}</p>
                                                             <a href="#!" className="btn-style-1 w-100">Check Details</a>
                                                         </div>
                                                     </div>

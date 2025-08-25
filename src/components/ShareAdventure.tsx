@@ -18,7 +18,7 @@ const ShareAdventure: React.FC = () => {
     useEffect(() => {
         const fetchtopAdventure = async ()=>{
             try{
-                const response = await axios.get(`${BASE_URL}/home/topadventurecategory/10`);
+                const response = await axios.get(`${BASE_URL}/home/adventurelist/15`);
                 setAdventure(response.data.data);
             }catch(err){
                 console.error('API Error:', err);
@@ -118,9 +118,9 @@ const ShareAdventure: React.FC = () => {
                                shareAdventure.map((adventure: any, index: number) => (
                                 
                                 <div key={index} className="advnSliderItem">
-                                    <div className="share-adventure-single position-relative overflow-hidden">
+                                    <div className="share-adventure-single position-relative overflow-hidden image-div-style">
                                         <img
-                                            src={adventure.image || '/assets/images/not-found.jpg'}
+                                            src={adventure.imagePath || '/assets/images/not-found.jpg'}
                                             alt="Adventure" className="" 
                                             onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                                                 const target = e.currentTarget;
