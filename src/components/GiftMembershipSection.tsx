@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link as ScrollLink } from 'react-scroll';
 import { Link as RouterLink } from 'react-router-dom';
 import data from '../data/community.json';
+import { Link } from 'react-router-dom';
+
 import { SquareLoader } from "react-spinners"; 
 
 interface Plans {
@@ -103,7 +105,12 @@ const GiftMembershipSection: React.FC = () => {
                                 ))
                             }
                             
-                            <div className="annp-ctrl"><a href="" className="btn-style-1">Buy Gift</a></div>
+                            <div className="annp-ctrl">
+                                <Link className="btn-style-1" to={'/gift/customize'}>
+                                    Buy Gift                                                                   
+                                </Link>
+                                {/* <a href="" className="btn-style-1">Buy Gift</a> */}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -265,7 +272,7 @@ const GiftMembershipSection: React.FC = () => {
                             <div className="rtg-content text-center">
                                 <h2 className="text-almost-white">Ready to Gift?</h2>
                                 <p className="text-white mb-3">Surprise someone with the outdoors, wherever they are.</p>
-                                <a href="" className="btn-style-1">Send  Gift Now</a>
+                                <a href="#" className="btn-style-1">Send  Gift Now</a>
                             </div>
                         </div>
                     </div>

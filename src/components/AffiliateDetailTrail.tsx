@@ -5,6 +5,8 @@ import { Link as RouterLink } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { SquareLoader } from "react-spinners"; 
+import { SyncLoader } from "react-spinners";
+
 // import { setTimeout, clearTimeout } from 'timers';
 
 import path from 'path';
@@ -98,6 +100,7 @@ const AffiliateDetailTrail: React.FC = () => {
     const [points, setPoints] = useState<any>([]);
     const [loopClosed, setLoopClosed] = useState(false);
     const [getmapPoints, setMapPoints] = useState<MapPoint[]>([]);
+
     const [getTrailGuide, setTrailGuide] = useState<TrailGuide[]>([]);
     const [getItinerary, setItinerary] = useState<Itinerary[]>([]);
     const [getPlaceOffer, setPlaceOffer] = useState([]);
@@ -112,6 +115,7 @@ const AffiliateDetailTrail: React.FC = () => {
     const [phone, setPhone] = useState("");/* Text share*/ 
     const [showQR, setShowQR] = useState(false);
     const qrRef = useRef<HTMLCanvasElement>(null);
+    // const [loading,setloading] = useState(false);
 
     const shareUrl = window.location.href;
     const qrImage = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://example.com";
@@ -129,6 +133,7 @@ const AffiliateDetailTrail: React.FC = () => {
     useEffect(()=>{
         const timer = setTimeout(()=>
             setLoadingDetailTrails(false),3000);
+        
         return()=>clearTimeout(timer);
     },[])
     // image arraw move
@@ -193,6 +198,7 @@ const AffiliateDetailTrail: React.FC = () => {
         map.current.addControl(new mapboxgl.NavigationControl());
 
         map.current.on('load', async () => {
+            //  setloading(true);
             const formattedPoints = getmapPoints.map(p => [p.longitude, p.latitude]);
             setPoints(formattedPoints);
 
@@ -719,7 +725,7 @@ const AffiliateDetailTrail: React.FC = () => {
                                     </p>
                                 </div>
                                 <div className="tusc-cn-3">
-                                    <a href="" className="btn-style-1">Show all Reviews</a>
+                                    <a  href="#reviews" className="btn-style-1">Show all Reviews</a>
                                 </div>
                             </div>
                         </div>
@@ -884,7 +890,11 @@ const AffiliateDetailTrail: React.FC = () => {
                                     </svg>
                                 </button>
                             </div>
-                    <div className="rounded-3 shadow-sm" ref={mapContainer} style={{height: '400px'}}/></div>
+
+                          
+                        <div className="rounded-3 shadow-sm" ref={mapContainer} style={{ height: '400px' }} />
+                                
+                        
                         <div>
                             {/* <button onClick={() => setIsOpen(true)}>Share</button> */}
 
@@ -1083,6 +1093,7 @@ const AffiliateDetailTrail: React.FC = () => {
                             )}
 
 
+                        </div>
                         </div>
                         {/* <div  ref={mapContainer} style={{height: '400px'}} className="rounded-3 shadow-sm"></div> */}
 
@@ -1401,7 +1412,7 @@ const AffiliateDetailTrail: React.FC = () => {
                                                         <p className="lfc-location mb-1">{trail.address}</p>
                                                         <p className="lfc-tags"><i className="bi bi-star-fill"></i> {trail.rating}· Moderate · {trail.length} · Est. {trail.estimateTime}</p>
                                                         {/* <a href="#!" className="btn-style-1 w-100">Check Details</a> */}
-                                                        <Link to={`/affiliate-details/${trail.urlTitle|| generateSlug(trail.title || '')}`} className="btn-style-1 w-100">
+                                                        <Link to={`/${trail.urlTitle|| generateSlug(trail.title || '')}`} className="btn-style-1 w-100">
                                                            Check Details
                                                         </Link>
                                                     </div>

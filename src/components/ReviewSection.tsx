@@ -2,7 +2,7 @@
 import React, { useEffect, useState,useRef } from 'react';
 import axios from 'axios';
 import 'owl.carousel'; // Import OwlCarousel's JS (ensure this path is correct)
-
+import { Link ,useNavigate} from 'react-router-dom';
 // IMPORTANT: Make sure these CSS imports are present either here or in your main.tsx
 import 'owl.carousel/dist/assets/owl.carousel.min.css';
 import 'owl.carousel/dist/assets/owl.theme.default.min.css';
@@ -19,10 +19,44 @@ declare global {
 
 
 const ReviewSection: React.FC = () => {
+    const [btnText, setBtnText] = useState("Follow");
     const [explorers, setExplorers] = useState([]);
     const [loadingExplorers, setLoadingExplorers] = useState(true);
     const [errorExplorers, setErrorExplorers] = useState('');
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const navigate = useNavigate();
     
+   
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        setIsLoggedIn(!!token);
+    }, []);
+
+    const handleFollow = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+
+        if (!isLoggedIn) {
+            // not logged in → go to login page
+            navigate("/login");
+            return;
+        }
+
+        // logged in → navigate home
+        if (location.pathname !== "/") {
+            navigate("/", { replace: true });
+            // small delay so homepage mounts before scroll
+            setTimeout(() => {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            }, 100);
+        } else {
+            // already on home → just scroll
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        // optionally update button text or call API
+        // setBtnText("Following");
+        // axios.post("/api/follow", { profileId });
+    };
     // Effect to fetch data
     useEffect(() => {
         const fetchtopExplorers = async ()=>{
@@ -140,7 +174,10 @@ const ReviewSection: React.FC = () => {
                             <h2 className="title">Follow Fellow <span>Explorers</span></h2>
                             <p className="mb-4">Stay inspired by following hikers, bikers, and nature lovers who share your
                                 passion for adventure.</p>
-                            <a href="" className="btn-style-3">Explore the Community</a>
+                                <Link to={'/community'} className="btn-style-3">
+                                        Explore the Community
+                                </Link>
+                            {/* <a href="" className="btn-style-3">Explore the Community</a> */}
                         </div>
                     </div>
                 </div>  
@@ -168,7 +205,10 @@ const ReviewSection: React.FC = () => {
                                             <div className="ff-content">
                                                 <h3 className="ff-title">{explorer.fullName}</h3>
                                                 <p>{explorer.address} Member since&nbsp;{explorer.registeredOn} </p>
-                                                <a href="" className="btn-style-1 stretched-link">Follow</a>
+                                                
+                                                <a href="#"
+                                                 onClick={handleFollow}
+                                                  className="btn-style-1 stretched-link">{btnText}</a>
                                             </div>
                                         </div>
                                     </div>
@@ -191,7 +231,7 @@ const ReviewSection: React.FC = () => {
                                             <div className="ff-content">
                                                 <h3 className="ff-title">{explorer.fullName}</h3>
                                                 <p>{explorer.address} Member since&nbsp;{explorer.registeredOn} </p>
-                                                <a href="" className="btn-style-1 stretched-link">Follow</a>
+                                                <a href="#" onClick={handleFollow} className="btn-style-1 stretched-link">{btnText}</a>
                                             </div>
                                         </div>
                                     </div>
@@ -222,7 +262,8 @@ const ReviewSection: React.FC = () => {
                                             <div className="ff-content">
                                                 <h3 className="ff-title">{explorer.fullName}</h3>
                                                 <p>{explorer.address} Member since&nbsp;{explorer.registeredOn} </p>
-                                                <a href="" className="btn-style-1 stretched-link">Follow</a>
+                                                 <a href="#" onClick={handleFollow} className="btn-style-1 stretched-link">{btnText}</a>
+
                                             </div>
                                         </div>
                                     </div>
@@ -246,7 +287,8 @@ const ReviewSection: React.FC = () => {
                                             <div className="ff-content">
                                                 <h3 className="ff-title">{explorer.fullName}</h3>
                                                 <p>{explorer.address} Member since&nbsp;{explorer.registeredOn} </p>
-                                                <a href="" className="btn-style-1 stretched-link">Follow</a>
+                                                <a href="#" onClick={handleFollow} className="btn-style-1 stretched-link">{btnText}</a>
+
                                             </div>
                                         </div>
                                     </div>

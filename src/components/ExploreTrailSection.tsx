@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState ,useMemo} from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { SyncLoader } from "react-spinners";
@@ -9,6 +9,7 @@ import data from '../data/explorealltrails.json';
 import { SquareLoader } from "react-spinners";
 
 
+
 const BASE_URL = import.meta.env.VITE_API_URL;
 interface TrailDetail {
     id: number;
@@ -17,6 +18,15 @@ interface TrailDetail {
     image: string;
 }
 interface Trails{
+    imagePath:string,
+    title:string,
+    explore_address:string,
+    rating:any,
+    length:any,
+    estimateTime:number,
+    date:number
+}
+interface Activity{
     explore_image:string,
     explore_title:string,
     explore_address:string,
@@ -29,8 +39,22 @@ interface Trails{
 function ExploreTrailSection(){
     const { title } = useParams();
     const [getTrails, setTrails ]= useState<Trails[]>([]);
+    const [getActivity, setActivity ]= useState<Activity[]>([]);
     const [loadingExplore,setloadingExplore] = useState(true);
-    const [sortType, setSortType] = useState("Best Matches"); 
+    const [loading,setloading] = useState(false);
+    const [sortType, setSortType] = useState("all"); 
+    const [nearFilter, setNearFilter] = useState("all");
+    const [lengthDifficulty, setDifficulty] = useState("all");
+    const [searchTerm, setSearchText] = useState("");
+
+    const [take, setTake] = useState(10); 
+    const [skip, setSkip] = useState(0);  
+    const [maxDistance, setMaxDistance] = useState(15); 
+    //const [nearbytrails,setNearbytrails] =useState([]);
+    const [nearbytrails, setNearbytrails] = useState<any[]>([]);
+    const [latitude, setLatitude] = useState<number | null>(null);
+    const [longitude, setLongitude] = useState<number | null>(null);
+
     const [filters, setFilters] = useState({
         distance: [],    // e.g., ["near", "away"]
         activity: [],    // e.g., ["running", "walking"]
@@ -46,46 +70,221 @@ function ExploreTrailSection(){
     },[]);
     
 
+    const postLocation = async() =>{
+        try{
+            const response = await axios.post(`${BASE_URL}/trail/NearTrailsByLatAndLan`, {
+                take: take,
+                skip: skip,
+                lat: latitude,
+                lon: longitude,
+                // lat: 27.1719517170742,
+                // lon: 78.0420843000696,
+                maxDistance: maxDistance
+            });
+            setTrails(response.data.data);
+            console.log('Server response:', response.data.data);
+        }catch(err){
+            console.error('Failed your location:',err);
+        }finally{
+                setloadingExplore(false);
+        }
+    };
     useEffect(()=>{
-            const fetchExploreData= async () => {
-                try {
-                    const response = await fetch('/data/explorealltrails.json'); 
-                    const json: Trails[] = await response.json();
-                    setTrails(json.explore_trails);
-                    // console.log(getTrails);
-                    
-                }catch (error) {
-                console.error('Error fetching JSON:', error);
-            }
-            };
-            fetchExploreData();
+         // Users Current location
+        if(navigator.geolocation){
+            navigator.geolocation.getCurrentPosition(
+                (position)=>{
+                    //const { latitude,longitude } = position.coords;
+                     //console.log('user location:', latitude, longitude );
+                    setLatitude(position.coords.latitude);
+                    setLongitude(position.coords.longitude);
+                    //console.log('user location:', latitude, longitude );
+                    //postLocation(latitude, longitude);
+                },
+                (error)=>{
+                    console.error('Geolocation error:', error.message);
+                } 
+            );
+        }else{
+            console.error('not Support');
+        }
     },[]);
-    const handleMatchChange = (e) =>{
-        e.preventDefault();
-        setSortType(e.target.value);
-    }
-    const sortedData = [...getTrails].sort((a, b) => {
+    //console.log('user location:1', latitude, longitude ,take,skip,maxDistance);
+
+     // Fetch data when location or pagination changes
+    useEffect(() => {
+        if (latitude !== null && longitude !== null) {
+        postLocation();
+        }
+    }, [latitude, longitude, take, skip,maxDistance]);
+
+
+    useEffect(() => {
+      const fetchActivity = async() =>{
+        try{
+          const response = await axios.get(`${BASE_URL}/home/topcategory/10`);
+          setActivity(response.data.data);
+          //console.log(response.data.data);
+        }catch(error){
+            console.error('API Error:', error);
+            // setErrorLocatTrails('Unable to fetch top local trails');
+        } finally{
+            setloadingExplore(false);
+        }
+      }  
+        fetchActivity();
+    }, []);
+    // useEffect(()=>{
+    //         const fetchExploreData= async () => {
+    //             try {
+    //                 const response = await fetch('/data/explorealltrails.json'); 
+    //                 const json: Trails[] = await response.json();
+    //                 setTrails(json.explore_trails);
+    //                 // console.log(getTrails);
+                    
+    //             }catch (error) {
+    //             console.error('Error fetching JSON:', error);
+    //         }
+    //         };
+    //         fetchExploreData();
+    // },[]);
+    // const handleMatchChange = (e) =>{
+    //     e.preventDefault();
+    //     setSortType(e.target.value);
+    // }
+    const handleNearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const newValue = e.target.value;
+        setloading(true);
+        setNearFilter(newValue);
+        setTimeout(() => setloading(false), 300);
+    };
+
+    const handleDifficultyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const newValue = e.target.value;
+        setloading(true);
+        setDifficulty(newValue);
+        setTimeout(() => setloading(false), 300);
+    };
+    const handleMatchChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const newValue = e.target.value;
+        setloading(true);
+        setSortType(newValue);
+        // Optional small delay to simulate real API/fetch
+        setTimeout(() => setloading(false), 300);
+    };
+
+    // const sortedData = useMemo(() => {
+    //     setloading(true);
+    //     const timer = setTimeout(() => setloading(false), 300); 
+
+    //     return [...getTrails].sort((a, b) => {
+    //         if (sortType === "popular") {
+    //         return Number(b.explore_rating) - Number(a.explore_rating);
+    //         }
+
+    //         if (sortType === "closest") {
+    //         return Number(a.explore_distance) - Number(b.explore_distance);
+    //         }
+
+    //         if (sortType === "new") {
+    //         return (new Date(b.date).getTime() || 0) - (new Date(a.date).getTime() || 0);
+    //         }
+
+    //         if (sortType === "best") {
+    //         // weighted formula: higher rating, closer distance, more recent date
+    //         const scoreA =
+    //             Number(a.explore_rating) * 2 -
+    //             Number(a.explore_distance) +
+    //             (new Date(a.date).getTime() || 0) / 1e10;
+
+    //         const scoreB =
+    //             Number(b.explore_rating) * 2 -
+    //             Number(b.explore_distance) +
+    //             (new Date(b.date).getTime() || 0) / 1e10;
+
+    //         return scoreB - scoreA;
+    //         }
+
+    //         return 0;
+    //     });
+    // }, [getTrails, sortType]);
+
+    // 🔍 Filter trails by explore_title
+    
+        useEffect(() => {
+            setloading(true);
+            const timer = setTimeout(() => setloading(false), 300);
+            return () => clearTimeout(timer);
+        }, [searchTerm, sortType, nearFilter, lengthDifficulty, getTrails]);
+        const sortedData = useMemo(() => {
+            setloading(true);
+            const timer = setTimeout(() => setloading(false), 300); 
+            let result = [...getTrails];
         
+        if (searchTerm) {
+            result = result.filter((disData) =>
+                disData.title.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
+
+        if (nearFilter === "near") {
+            setSortType(null);
+          result = result.filter((disData) => disData.length <= 6);
+        }
+        if (nearFilter === "away") {
+            setSortType(null);
+          result = result.filter((disData) => disData.length > 6);
+        }
+        
+        if (lengthDifficulty === "easy") {
+          result = result.filter((lenData) => lenData.length > 4);
+        }
+        if (lengthDifficulty === "moderate") {
+          result = result.filter((lenData) => lenData.length > 7);
+        }
+        if (lengthDifficulty === "hard") {
+          result = result.filter((lenData) => lenData.length > 10);
+        }
+         
+    
         if (sortType === "popular") {
-            return Number(b.explore_rating) - Number(a.explore_rating);
+            setNearFilter('all');
+            setDifficulty('all');
+            return result.sort((a, b) => b.rating - a.rating);
         }
+           
         if (sortType === "closest") {
-            return Number(a.explore_distance) - Number(b.explore_distance);
+            setNearFilter('all');
+            setDifficulty('all');
+            return  result.sort((a, b) => a.length - b.length);
         }
+           
         if (sortType === "new") {
-            return (new Date(b.date).getTime() || 0) - (new Date(a.date).getTime() || 0);
+            setNearFilter('all');
+            setDifficulty('all');
+            return result.sort((a, b) => (new Date(b.date).getTime() || 0) - (new Date(a.date).getTime() || 0));
         }
         if (sortType === "best") {
-            // Example best match formula:
-            // Higher rating, closer distance, and more recent date
-            const scoreA = Number(a.explore_rating) * 2 - Number(a.explore_distance) + (new Date(a.date).getTime() || 0) / 1e10;
-            const scoreB = Number(b.explore_rating) * 2 - Number(b.explore_distance) + (new Date(b.date).getTime() || 0) / 1e10;
-            return scoreB - scoreA;
-        }
-        return 0;
-    });
+            setNearFilter('all');
+            setDifficulty('all');
+            const today = new Date();
+            result.sort((a, b) => {
+                const scoreA =
+                        Number(a.rating) * 2 -
+                        Number(a.length) +
+                        (new Date(a.date).getTime() || 0) / 1e10;
 
+                const scoreB =
+                        Number(b.rating) * 2 -
+                        Number(b.length) +
+                        (new Date(b.date).getTime() || 0) / 1e10;
+
+                return scoreB - scoreA;
+            });
+        }
     
+        return result;
+      }, [getTrails, searchTerm,sortType,nearFilter,lengthDifficulty]);
 
     const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     //    console.log('hello');
@@ -147,7 +346,11 @@ function ExploreTrailSection(){
                                 <div className="inner-filter sticky-top">
                                     <div className="search-filter">
                                         <form action="" className="bg-almost-white searchForm position-relative">
-                                            <input type="text" className="form-control" placeholder="Search" />
+                                            <input type="text" 
+                                            className="form-control" 
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchText(e.target.value)}
+                                            placeholder="Search" />
                                             <button type="submit" title="Search" className="search-btn"><i className="bi bi-search"></i></button>
                                         </form>
                                     </div>
@@ -159,8 +362,8 @@ function ExploreTrailSection(){
                                                 <select name="distance" 
                                                     id="distanceFilter"
                                                     className="form-select advance-select"
-                                                    value={filters.distance}
-                                                    onChange={handleSelectChange}
+                                                    value={nearFilter} 
+                                                    onChange={handleNearChange}
                                                     >
                                                     <option value="near">Distance Near</option>
                                                     <option value="away">Distance Away</option>
@@ -170,19 +373,24 @@ function ExploreTrailSection(){
                                                 <select name="activity" 
                                                     id="runningFilter"
                                                     className="form-select advance-select"
-                                                    value={filters.activity}
-                                                    onChange={handleSelectChange}
+                                                   value={title} // auto-selects based on URL
+                                                    onChange={(e) => console.log("Selected:", e.target.value)}
                                                     >
-                                                    <option value="running">Running</option>
-                                                    <option value="option">Option</option>
+                                                        {getActivity.map((act: any, index: number) => (
+                                                            <option key={index} value={act.title.toLowerCase()}>
+                                                            {act.title}
+                                                            </option>
+                                                        ))}
+                                                    {/* <option value="running">Running</option>
+                                                    <option value="option">Option</option> */}
                                                 </select>
                                             </div>
                                             <div className="single-select-filter">
                                                 <select name="difficulty" 
                                                     id="difficultyFIlter" 
                                                     className="form-select advance-select"
-                                                    value={filters.difficulty}
-                                                    onChange={handleSelectChange}
+                                                    value={lengthDifficulty} 
+                                                    onChange={handleDifficultyChange}
                                                     >
                                                     <option value="difficulty">Difficulty</option>
                                                     <option value="easy">Easy</option>
@@ -190,7 +398,7 @@ function ExploreTrailSection(){
                                                     <option value="hard">Hard</option>
                                                 </select>
                                             </div>
-                                            <div className="single-select-filter">
+                                            {/* <div className="single-select-filter">
                                                 <select name="length" 
                                                     id="lengthFilter" 
                                                     className="form-select advance-select"
@@ -202,7 +410,7 @@ function ExploreTrailSection(){
                                                     <option value="moderate">Moderate</option>
                                                     <option value="hard">Hard</option>
                                                 </select>
-                                            </div>
+                                            </div> */}
                                         </div>
                                     </div>
                                     <div className="mb-4">
@@ -244,13 +452,17 @@ function ExploreTrailSection(){
 
                                 <div className="row">
                                     {
-                                        sortedData.length > 0 ? (
+                                        loading  ? (
+                                           <div className="section-local-favorite d-flex justify-content-center align-items-center" style={{ minHeight: '100px' }}>
+                                                <SyncLoader color="#FC673C" size={20} />
+                                            </div>
+                                        ):(
                                             sortedData.map((trail:any, index:number)=>(
                                                 <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
                                                     <div className="local-favorite-single mb-4">
                                                         <div className="lfc-thumb position-relative">
                                                             <img
-                                                                src={trail.explore_image || '/assets/images/not-found.jpg'}
+                                                                src={trail.imagePath || '/assets/images/not-found.jpg'}
                                                                 alt="locat Trail" className="img-fluid img-fixed-size" 
                                                                 onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                                                                     const target = e.currentTarget;
@@ -262,16 +474,14 @@ function ExploreTrailSection(){
                                                             <a href="#!" className="bookmark-btn" role="button" title="Save"><i className="bi bi-bookmark"></i></a>
                                                         </div>
                                                         <div className="lfc-content">
-                                                            <h3 className="lfc-title">{trail.explore_title}</h3>
-                                                            <p className="lfc-location mb-1">{trail.explore_address}</p>
-                                                            <p className="lfc-tags"><i className="bi bi-star-fill"></i> {trail.explore_rating} · Moderate · {trail.explore_distance} km · Est. {trail.explore_time_duration}</p>
+                                                            <h3 className="lfc-title">{trail.title}</h3>
+                                                            <p className="lfc-location mb-1">{trail.address}</p>
+                                                            <p className="lfc-tags"><i className="bi bi-star-fill"></i> {trail.rating.toFixed(1)} · Moderate · {trail.length} km · Est. {trail.estimateTime}</p>
                                                             <a href="#!" className="btn-style-1 w-100">Check Details</a>
                                                         </div>
                                                     </div>
                                                 </div>
                                             ))
-                                        ):(
-                                            <p>not </p>
                                         )
                                     }
                                     

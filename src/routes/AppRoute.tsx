@@ -24,6 +24,9 @@ import AffiliateDetails from '../containers/AffiliateDetails';
 import ExploreTrail from '../containers/ExploreTrail';
 import NationalParkGuide from '../containers/NationalParkGuide';
 import GiftMembership from '../containers/GiftMembership';
+import Plan from '../containers/Plan';
+import ParkDetails from '../containers/ParkDetails';
+import GiftCustomize from '../containers/GiftCustomize';
 
 const AppRoute = () => {
   return (
@@ -36,15 +39,17 @@ const AppRoute = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} /> 
         <Route path="/affiliates" element={<Affiliate />} />
-        <Route path="/community" element={<CommunityPage />} />
         <Route path="/Trails/:country/:state/:city/:title" element={<AffiliateDetails />} />
-
-        <Route path="/affiliate-details/:title" element={<AffiliateDetails />} />
+        <Route path="/:title" element={<AffiliateDetails />} />
         <Route path="/Parks/:country/:state/:city/:title" element={<ExploreTrail />} /> 
         <Route path="/explore/:title" element={<ExploreTrail />} /> 
         <Route path="/explore/" element={<ExploreTrail />} /> 
         <Route path="/national-park-guide" element={<NationalParkGuide />} /> 
         <Route path="/gift-membership" element={<GiftMembership />} /> 
+        <Route path="/plans" element={<Plan />} /> 
+        <Route path="/guides/:country/:title" element={<ParkDetails />} /> 
+        <Route path="/gift" element={<GiftPage />} />
+        <Route path="/gift/customize" element={<GiftCustomize />} />
         
         {/* <Route path="/affiliate-2" element={<Affiliate4Page />} /> 
         <Route path="/trail" element={<FrameTrail />} />  */}
@@ -60,6 +65,7 @@ const AppRoute = () => {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/edit-profile" element={<ProfileEdit />} />
           <Route path="/profile-photo" element={<ProfilePhotos />} />
+          <Route path="/community" element={<CommunityPage />} />
           
         </Route>
 

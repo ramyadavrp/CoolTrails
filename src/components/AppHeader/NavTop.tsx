@@ -97,7 +97,7 @@ const NavTop: React.FC = () => {
                                 <div className="dropdown-menu">
                                     <ul className="list-unstyled">
                                         <li>
-                                            <Link to={''} className="dropdown-item">
+                                            <Link to={'/plans'} className="dropdown-item">
                                                 <img src="/assets/images/icons/Users.svg" alt="" />
                                                 Compare Plans
                                             </Link>

@@ -1,21 +1,84 @@
-import React, { useState,useEffect } from 'react';
+import React, { useState,useEffect,useMemo } from 'react';
 import { Link as ScrollLink } from 'react-scroll';
 import { Link as RouterLink } from 'react-router-dom';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 import { SquareLoader } from "react-spinners";
+import { SyncLoader } from "react-spinners";
+import data from '../data/park.json';
+import { encodeId, generateSlug ,slugToTitle} from '../utils/helpers';
+
 
 const BASE_URL = import.meta.env.VITE_API_URL;
+
+interface Park{
+    title:string,
+    description:string
+
+}
+
+interface Parklist{
+    park_image:string,
+    park_title:string,
+    park_address:string,
+    park_trail:string,
+    country:string
+}
 const NationalParkGuideSection: React.FC = () => {
     const [nationalParks,setNationalParks] = useState([]);
+    const[getPark,setPrak] = useState<Park[]>([]);
+    const[getParkList,setPrakList] = useState<Parklist[]>([]);
     const [loadingNParks,setLoadingNParks] = useState(true);
     const [errorsNParks,setErrorsNParks] = useState('');
+    const [country, setCountry] = useState("austraila");
+    const [Loading, setLoading] = useState(false);
 
-    window.scrollTo(0,0);
+    // window.scrollTo(0,0);
     useEffect(()=>{
         const timer = setTimeout(()=>
             setLoadingNParks(false),5000);
         return()=>clearTimeout(timer);
     },[]);
+
+        useEffect(()=>{
+            const fetchParkData= async () => {
+                try {
+                    const response = await fetch('/data/park.json'); 
+                    const json: Park[] = await response.json();
+                    setPrak(json.parks);
+                    setPrakList(json.Parklist);
+                    console.log(getPark);
+                    
+                }catch (error) {
+                console.error('Error fetching JSON:', error);
+            }
+            };
+            fetchParkData();
+        },[]);
+
+        // Unique country list
+        const countryOptions = useMemo(() => {
+            return [...new Set(getParkList.map((p) => p.country))];
+        }, []);
+        const handleMatchChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+            const newValue = e.target.value;
+            setLoading(true);
+            setCountry(newValue);
+            setTimeout(() => setLoading(false), 300);
+        };
+        // Filter countries only when region changes
+        // const filteredCountries = useMemo(() => {
+        //     return country === "All"
+        //     ? getParkList
+        //     : getParkList.filter((c) => c.country === country);
+        // }, [country, getParkList]);
+        
+
+        const filteredCountries = useMemo(() => {
+            if (!country) return getParkList; // no country selected → show all
+            return getParkList.filter((p) => p.country.toLowerCase() === country);
+            }, [getParkList, country]);
+        
     // Effect to fetch data
     useEffect(() => {
         const fetchNParks= async ()=>{
@@ -102,14 +165,23 @@ const NationalParkGuideSection: React.FC = () => {
                         </div>
                     </div>
                     <div className="row sep-foot-row">
-                        <div className="col-xl-4 col-lg-4 col-md-4 col-sm-12 col-12">
-                            <div className="sep-foot">
-                                <p className="sep-title text-midnight-navy mb-0">Trails we love</p>
-                                <p className="mb-0 text-grey">From top picks to hidden gems, find your favorite trails with
-                                    our curated collections.</p>
-                            </div>
-                        </div>
-                        <div className="col-xl-4 col-lg-4 col-md-4 col-sm-12 col-12">
+                        
+                            {
+                                getPark.length > 0 ?(
+                                    getPark.map((pk:any, index:number)=>(
+                                        <div className="col-xl-4 col-lg-4 col-md-4 col-sm-12 col-12">
+                                            <div key={index} className="sep-foot">
+                                                <p className="sep-title text-midnight-navy mb-0">{pk.title ?? ''}</p>
+                                                <p className="mb-0 text-grey">{pk.description ?? ''}</p>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p>Not found</p>
+                                )
+                            }
+                        
+                        {/* <div className="col-xl-4 col-lg-4 col-md-4 col-sm-12 col-12">
                             <div className="sep-foot">
                                 <p className="sep-title text-midnight-navy mb-0">All the details you need</p>
                                 <p className="mb-0 text-grey">Get guidance from AllTrails experts, informed by our community
@@ -122,7 +194,7 @@ const NationalParkGuideSection: React.FC = () => {
                                 <p className="mb-0 text-grey">Come prepared with helpful info like fees, reservations, and
                                     the best times to visit.</p>
                             </div>
-                        </div>
+                        </div> */}
                     </div>
                 </div>
             </section>
@@ -135,15 +207,19 @@ const NationalParkGuideSection: React.FC = () => {
                                 <h2 className="title title-sm title-dropdown d-flex align-items-center justify-content-center">
                                     <span className="me-2 text-midnight-navy">Guides to</span>  
                                     
-                                    <select name="" id="" className="advance-select" defaultValue="">
-                                        {/* <option value="" selected>Austraila</option> */}
-                                        <option value="">Austraila</option>
+                                    <select name="" 
+                                        value={country}
+                                        onChange={handleMatchChange} 
+                                        id="" className="advance-select" defaultValue="">
+                                        {/* <option value="" disabled hidden>Select</option> */}
+                                        <option value="austraila">Austraila</option>
                                         <option value="america">America</option>
                                         <option value="india">India</option>
                                     </select> 
                                 </h2>
 
-                                <p className="text-center text-grey">29 Parks • 29 Guides</p>
+                                <p className="text-center text-grey">
+                                   {filteredCountries.length }  Parks • {filteredCountries.length }  Guides</p>
                             </div>
 
                         </div>
@@ -151,39 +227,55 @@ const NationalParkGuideSection: React.FC = () => {
                     
                     <div className="row">
                             {
-                                nationalParks.map((nparks:any,index:number)=>(
-                                <div key = {index} className="col-xl-4 col-lg-6 col-md-6 col-sm-12 col-12">
-                                    <div className="guide-to-single d-flex align-items-center position-relative">
-                                        <div className="gds-thumb">
-                                            <img
-                                                src={nparks.image || '/assets/images/not-found.jpg'}
-                                                alt="Weather" 
-                                                className="w-100"
-                                                onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                                                    const target = e.currentTarget;
-                                                    target.onerror = null; // prevent infinite loop
-                                                    target.src = '/assets/images/not-found.jpg'; // fallback image
-                                                }}
-                                            />
-                                        </div>
-                                        <div className="gds-cn">
-                                            <h4 className="mb-0 text-midnight-navy">{nparks.name}</h4>
-                                            <p className="mb-0 text-grey">Tasmania • National Park</p>
-                                            <p className="mb-0 text-grey">7 Trails</p>
-                                        </div>
-                                        <div className="gds-btn">
-                                            <a href="" className="stretched-link">
-                                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
-                                                    xmlns="http://www.w3.org/2000/svg">
-                                                    <path
-                                                        d="M6.7 2.99988L10.3306 7.2356C10.7158 7.68498 10.7158 8.34811 10.3306 8.79749L6.7 13.0332"
-                                                        stroke="#717171" strokeWidth="1.1" strokeLinecap="round" />
-                                                </svg>
-                                            </a>
-                                        </div>
+                                Loading ? (
+                                    <div className="section-local-favorite d-flex justify-content-center align-items-center" style={{ minHeight: '100px' }}>
+                                        <SyncLoader color="#FC673C" size={20} />
                                     </div>
-                                </div>
-                               ))
+                                ):(
+                                    filteredCountries.map((nparks:any,index:number)=>(
+                                        <div key = {index} className="col-xl-4 col-lg-6 col-md-6 col-sm-12 col-12">
+                                            <div className="guide-to-single d-flex align-items-center position-relative">
+                                                <div className="gds-thumb">
+                                                    <img
+                                                        src={nparks.park_image || '/assets/images/not-found.jpg'}
+                                                        alt="Weather" 
+                                                        className="w-100"
+                                                        onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                                            const target = e.currentTarget;
+                                                            target.onerror = null; // prevent infinite loop
+                                                            target.src = '/assets/images/not-found.jpg'; // fallback image
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="gds-cn">
+                                                    <h4 className="mb-0 text-midnight-navy">{nparks.park_title ??''}</h4>
+                                                    <p className="mb-0 text-grey">{nparks.park_address ??''}</p>
+                                                    <p className="mb-0 text-grey">{nparks.park_trail ??''}</p>
+                                                </div>
+                                                <div className="gds-btn">
+                                                    
+                                                    <Link className="stretched-link" to={`/guides/${nparks.country}/${generateSlug(nparks.park_title || '' )}`}>
+                                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
+                                                            xmlns="http://www.w3.org/2000/svg">
+                                                            <path
+                                                                d="M6.7 2.99988L10.3306 7.2356C10.7158 7.68498 10.7158 8.34811 10.3306 8.79749L6.7 13.0332"
+                                                                stroke="#717171" strokeWidth="1.1" strokeLinecap="round" />
+                                                        </svg>                          
+                                                     </Link>
+                                                    {/* <a href="" >
+                                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
+                                                            xmlns="http://www.w3.org/2000/svg">
+                                                            <path
+                                                                d="M6.7 2.99988L10.3306 7.2356C10.7158 7.68498 10.7158 8.34811 10.3306 8.79749L6.7 13.0332"
+                                                                stroke="#717171" strokeWidth="1.1" strokeLinecap="round" />
+                                                        </svg>
+                                                    </a> */}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                )
+                                
                             }
                             
                         {/* <div className="col-xl-4 col-lg-6 col-md-6 col-sm-12 col-12">

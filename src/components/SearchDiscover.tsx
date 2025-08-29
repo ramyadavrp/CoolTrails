@@ -22,7 +22,7 @@ const SearchDiscover: React.FC = () => {
     //const [nearbytrails,setNearbytrails] =useState([]);
     const [nearbytrails, setNearbytrails] = useState<any[]>([]);
     const [latitude, setLatitude] = useState<number | null>(null);
-    const [longitude, setLongitude] = useState<number | null>(null)
+    const [longitude, setLongitude] = useState<number | null>(null);
     
     // const fetchNearbyname = async() =>{
     //     try{
@@ -54,10 +54,10 @@ const SearchDiscover: React.FC = () => {
             const response = await axios.post(`${BASE_URL}/trail/NearTrailsByLatAndLan`, {
                 take: take,
                 skip: skip,
-                // lat: latitude,
-                // lon: longitude,
-                lat: 27.1719517170742,
-                lon: 78.0420843000696,
+                lat: latitude,
+                lon: longitude,
+                // lat: 27.1719517170742,
+                // lon: 78.0420843000696,
                 maxDistance: maxDistance
             });
             setNearbytrails(response.data.data);
@@ -216,7 +216,7 @@ const SearchDiscover: React.FC = () => {
                                                         {nTrails.length} · Est. {nTrails.estimateTime}
                                                     </p>
                                                     
-                                                    <Link to={`/affiliate-details/${generateSlug(nTrails.title)}`} state={{ trail: nTrails }} className="btn-style-1 w-100">
+                                                    <Link to={`/${generateSlug(nTrails.title)}`} state={{ trail: nTrails }} className="btn-style-1 w-100">
                                                         Check Details
                                                     </Link>
                                                     
