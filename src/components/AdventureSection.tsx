@@ -1,5 +1,6 @@
 // src/components/AdventureSection.tsx
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const AdventureSection: React.FC = () => {
   return (
@@ -16,7 +17,10 @@ const AdventureSection: React.FC = () => {
                                     <p className="mb-4">Whether you want to explore offline or create your own route,
                                         choose the membership that helps you make the most of every minute outdoors.
                                     </p>
-                                    <a href="#!" className="btn-style-1">Compare Prices</a>
+                                    <Link to={'/plans'} className="btn-style-1">
+                                        Compare Prices
+                                    </Link>
+                                    {/* <a href="#!" className="btn-style-1">Compare Prices</a> */}
                                 </div>
                             </div>
                             <div

@@ -166,7 +166,7 @@ if (topLocatTrails.length === 0) return <p>No local favorites found.</p>;
                           {/* <Link to={`/affiliate-details/${locatTrail.urltitle}`} className="btn-style-1 w-100">
                               Check Details
                           </Link> */}
-                          <Link to={`/affiliate-details/${locatTrail.urltitle || generateSlug(locatTrail.title || '')}`}
+                          <Link to={`/${locatTrail.urltitle || generateSlug(locatTrail.title || '')}`}
                             className="btn-style-1 w-100"
                           >
                             Check Details
