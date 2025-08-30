@@ -1,12 +1,14 @@
 // src/components/CommunitySection.tsx
 import React, { useEffect, useState } from 'react';
 import 'owl.carousel';
+import axios from 'axios';
 
 import 'owl.carousel/dist/assets/owl.carousel.min.css';
 import 'owl.carousel/dist/assets/owl.theme.default.min.css';  
 import ProfileLeftSection from './ProfileLeftSection';
 import { SquareLoader } from "react-spinners"; 
 import data from '../data/community.json';
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 interface Community{
     member_name:string,
@@ -44,23 +46,45 @@ const CommunitySection: React.FC = () => {
             setLoading(false),3000);
         return()=>clearTimeout(timer);
     },[])
+    useEffect(() => {
+        const fetchCommunityData = async () => {
+            try {
+            const response = await axios.post(`${BASE_URL}/user/community`, {
+                LoginId: "1112virendra@gmail.com",
+            });
 
-    useEffect(()=>{
-            const fetchCommunityData= async () => {
-                try {
-                    const response = await fetch('/data/community.json'); 
-                    const json: Community[] = await response.json();
-                    setCommunity(json.suggested_members);
-                    setSuggestedNearby(json.suggested_nearby);
-                    setProfileCommunity(json.profile_Community);
-                    
-                }catch (error) {
-                console.error('Error fetching JSON:', error);
+            console.log( response.data.data);
+
+            setCommunity(response.data.data.suggested_members || []); 
+            setSuggestedNearby(response.data.data.suggested_nearby || []); 
+            setProfileCommunity(response.data.data.profile_Community || []); 
+            } catch (error) {
+            console.error("Error fetching community data", error);
+            } finally {
+            setLoading(false);
             }
-            };
-            fetchCommunityData();
-    },[]);
-    // console.log('ddd',getCommunity);
+        };
+
+        // you must call it here 👇
+        fetchCommunityData();
+        }, []);
+
+    // useEffect(()=>{
+    //         const fetchCommunityData= async () => {
+    //             try {
+    //                 const response = await fetch('/data/community.json'); 
+    //                 const json: Community[] = await response.json();
+    //                 setCommunity(json.suggested_members);
+    //                 setSuggestedNearby(json.suggested_nearby);
+    //                 setProfileCommunity(json.profile_Community);
+                    
+    //             }catch (error) {
+    //             console.error('Error fetching JSON:', error);
+    //         }
+    //         };
+    //         fetchCommunityData();
+    // },[]);
+    // console.log('ddd',getSuggestedNearby);
     useEffect(() => {
         // Initialize Owl Carousel only after data is loaded and component has rendered
         const $owlElement = $('#suggestedMembers');

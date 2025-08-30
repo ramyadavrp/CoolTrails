@@ -5,17 +5,20 @@ import data from '../data/community.json';
 import { Link } from 'react-router-dom';
 
 import { SquareLoader } from "react-spinners"; 
+import axios from 'axios';
+
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 interface Plans {
-  Plan_name?: string;
+  planName?: string;
   currency?: string;
-  monthly_amt?: number | string; // JSON gave "9.17" as string
-  total_amt?: number | string;
+  monthlyAmt?: number | string; // JSON gave "9.17" as string
+  totalAmt?: number | string;
 }
 
 interface FAQ {
-  faq_name?: string;
-  faq_description?: string;
+  question?: string;
+  answer?: string;
 }
 
 interface GiftMembershipData {
@@ -34,25 +37,54 @@ const GiftMembershipSection: React.FC = () => {
             setLoadingGiftMembership(false),6000);
         return()=>clearTimeout(timer);
     },[]);
+
     useEffect(() => {
-        const fetchGiftMembership = async () => {
-            try {
-            const response = await fetch('/data/giftMembership.json');
-            const json: GiftMembershipData = await response.json();
+    const fetchGiftMembership = async () => {
+        try {
+        const response = await axios.get(`${BASE_URL}/common/getfaqlist`);
+        // console.log(response.data.data);
+        const { plans, faq } = response.data.data;
 
-            const plans = Array.isArray(json.plans) ? json.plans : [json.plans];
+        // plans is an object → wrap it in array if you want to map
+        setAnnualPlans(plans ? [plans] : []);
 
-            setGiftMembership(json.FAQ);
-            setAnnualPlans(plans);
-            } catch (error) {
-            console.error('Error fetching JSON:', error);
-            } finally {
-            setLoadingGiftMembership(false);
-            }
-        };
+        // faq is already array
+        setGiftMembership(Array.isArray(faq) ? faq : []);
 
-        fetchGiftMembership();
+        // console.log("Plans:", plans);
+        // console.log("FAQ:", faq);
+
+        } catch (error) {
+        console.error("API Error:", error);
+        } finally {
+        setLoadingGiftMembership(false);
+        }
+    };
+
+    fetchGiftMembership();
     }, []);
+
+    // useEffect(() => {
+    // const fetchGiftMembership = async () => {
+    //     try {
+    //     const response = await fetch(`${BASE_URL}/common/getfaqlist`);
+    //     const json = await response.json();
+    //         console.log(json)
+    //     const plans = Array.isArray(json.data?.plans) ? json.data.plans : [];
+    //     const faq = Array.isArray(json.data?.faq) ? json.data.faq : [];
+
+    //     setAnnualPlans(plans);
+    //     setGiftMembership(faq);
+    //     } catch (error) {
+    //     console.error("Error fetching API:", error);
+    //     } finally {
+    //     setLoadingGiftMembership(false);
+    //     }
+    // };
+
+    // fetchGiftMembership();
+    // }, []);
+
     if (loadingGiftMembership) {
         return (
             <div
@@ -73,7 +105,7 @@ const GiftMembershipSection: React.FC = () => {
             </div>
         );
     }
-    // console.log(getAnnualPlans);
+    console.log(getAnnualPlans);
     return (
     <main className="mainContent">
         <section className="section-gift-inner position-relative overflow-hidden">
@@ -98,9 +130,9 @@ const GiftMembershipSection: React.FC = () => {
                             {
                                getAnnualPlans.map((annual,index)=>(
                                     <div className="annp-cn" key={index}>
-                                        <p className="mb-0 text-grey">{annual.Plan_name ?? ''} plan</p>
-                                        <h2 className="mb-0 text-midnight-navy anp-amt">{annual.currency ?? ''} {annual.monthly_amt ?? ''}/month</h2>
-                                        <p className="mb-0 text-grey">billed once at {annual.currency ?? ''} {annual.total_amt ?? ''}</p>
+                                        <p className="mb-0 text-grey">{annual.planName ?? ''} plan</p>
+                                        <h2 className="mb-0 text-midnight-navy anp-amt">{annual.currency ?? ''} {annual.monthlyAmt ?? ''}/month</h2>
+                                        <p className="mb-0 text-grey">billed once at {annual.currency ?? ''} {annual.totalAmt ?? ''}</p>
                                     </div>
                                 ))
                             }
@@ -196,11 +228,11 @@ const GiftMembershipSection: React.FC = () => {
                                     <div className="accordion-item" key={index}>
                                         <h2 className="accordion-header">
                                         <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target={`#faq${index}`} aria-expanded="false" aria-controls={`faq${index}`}>
-                                        {memb.faq_name ?? ''}
+                                        {memb.question ?? ''}
                                         </button>
                                         </h2>
                                         <div id={`faq${index}`} className="accordion-collapse collapse" data-bs-parent="#faqToggle">
-                                        <div className="accordion-body">{memb.faq_description ?? ''}</div>
+                                        <div className="accordion-body">{memb.answer ?? ''}</div>
                                         </div>
                                     </div>
                                 ))
