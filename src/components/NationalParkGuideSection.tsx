@@ -7,7 +7,7 @@ import { SquareLoader } from "react-spinners";
 import { SyncLoader } from "react-spinners";
 import data from '../data/park.json';
 import { encodeId, generateSlug ,slugToTitle} from '../utils/helpers';
-
+import Select from "react-select";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -203,19 +203,20 @@ const NationalParkGuideSection: React.FC = () => {
                     <div className="row">
                         <div className="col-12">
                             
-                            <div className="cooltrails-title text-center">
+                            <div className="cooltrails-title text-center" >
                                 <h2 className="title title-sm title-dropdown d-flex align-items-center justify-content-center">
                                     <span className="me-2 text-midnight-navy">Guides to</span>  
-                                    
+                                    <div>
                                     <select name="" 
                                         value={country}
                                         onChange={handleMatchChange} 
-                                        id="" className="advance-select" defaultValue="">
+                                        id="" className="form-select advance-select" defaultValue="">
                                         {/* <option value="" disabled hidden>Select</option> */}
                                         <option value="austraila">Austraila</option>
                                         <option value="america">America</option>
                                         <option value="india">India</option>
                                     </select> 
+                                    </div>
                                 </h2>
 
                                 <p className="text-center text-grey">
