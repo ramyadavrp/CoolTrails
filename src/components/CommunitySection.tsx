@@ -39,12 +39,21 @@ const CommunitySection: React.FC = () => {
     const [getCommunity, setCommunity ]= useState<Community[]>([]);
     const [getSuggestedNearby, setSuggestedNearby ]= useState<suggestedNearby[]>([]);
     const [getProfileCommunity, setProfileCommunity ]= useState<ProfileCommunity[]>([]);
+    const [loginId, setLoginId] = useState<string | null>(null)
     
     window.scrollTo(0,0);
     useEffect(()=>{
         const timer = setTimeout(()=>
             setLoading(false),3000);
         return()=>clearTimeout(timer);
+    },[])
+   
+    useEffect(()=>{
+        const storeLocal =localStorage.getItem("loginId");
+        if(storeLocal){
+            setLoginId(storeLocal);
+            console.log(storeLocal);
+        }
     },[])
     useEffect(() => {
         const fetchCommunityData = async () => {

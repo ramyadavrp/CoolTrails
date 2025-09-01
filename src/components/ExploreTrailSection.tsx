@@ -25,7 +25,8 @@ interface Trails {
     rating: any,
     length: any,
     estimateTime: number,
-    date: number
+    date: number,
+    trailId: number
 }
 interface Activity {
     explore_image: string,
@@ -37,12 +38,12 @@ interface Activity {
     date: number
 }
 
-const options = [
-    { value: "Best", label: "Best Matches" },
-    { value: "popular", label: "Most Popular" },
-    { value: "closest", label: "Closest" },
-    { value: "new", label: "Newly Added" },
-];
+// const options = [
+//     { value: "Best", label: "Best Matches" },
+//     { value: "popular", label: "Most Popular" },
+//     { value: "closest", label: "Closest" },
+//     { value: "new", label: "Newly Added" },
+// ];
 
 function ExploreTrailSection() {
     const { title } = useParams();
@@ -50,11 +51,11 @@ function ExploreTrailSection() {
     const [getActivity, setActivity] = useState<Activity[]>([]);
     const [loadingExplore, setloadingExplore] = useState(true);
     const [loading, setloading] = useState(false);
-    const [sortType, setSortType] = useState("all");
+    const [sortType, setSortType] = useState("Best");
     const [nearFilter, setNearFilter] = useState("all");
     const [lengthDifficulty, setDifficulty] = useState("all");
     const [searchTerm, setSearchText] = useState("");
-    const [selected, setSelected] = useState(options[0]);
+    // const [selected, setSelected] = useState(options[0]);
 
     const [take, setTake] = useState(10);
     const [skip, setSkip] = useState(0);
@@ -84,10 +85,10 @@ function ExploreTrailSection() {
             const response = await axios.post(`${BASE_URL}/trail/NearTrailsByLatAndLan`, {
                 take: take,
                 skip: skip,
-                lat: latitude,
-                lon: longitude,
-                // lat: 27.1719517170742,
-                // lon: 78.0420843000696,
+                // lat: latitude,
+                // lon: longitude,
+                lat: 27.1719517170742,
+                lon: 78.0420843000696,
                 maxDistance: maxDistance
             });
             setTrails(response.data.data);
@@ -143,169 +144,95 @@ function ExploreTrailSection() {
         }
         fetchActivity();
     }, []);
-    // useEffect(()=>{
-    //         const fetchExploreData= async () => {
-    //             try {
-    //                 const response = await fetch('/data/explorealltrails.json'); 
-    //                 const json: Trails[] = await response.json();
-    //                 setTrails(json.explore_trails);
-    //                 // console.log(getTrails);
-
-    //             }catch (error) {
-    //             console.error('Error fetching JSON:', error);
-    //         }
-    //         };
-    //         fetchExploreData();
-    // },[]);
-    // const handleMatchChange = (e) =>{
-    //     e.preventDefault();
-    //     setSortType(e.target.value);
-    // }
+    
     const handleNearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newValue = e.target.value;
         setloading(true);
         setNearFilter(newValue);
-        setTimeout(() => setloading(false), 300);
+        setSortType(null);
+        setDifficulty('all')
+        setTimeout(() => setloading(false), 30000);
     };
 
     const handleDifficultyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newValue = e.target.value;
         setloading(true);
         setDifficulty(newValue);
-        setTimeout(() => setloading(false), 300);
+        setSortType(null);
+        setTimeout(() => setloading(false), 3000);
     };
     const handleMatchChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newValue = e.target.value;
         setloading(true);
         setSortType(newValue);
+        setNearFilter('all');
+        setDifficulty('all');
         // Optional small delay to simulate real API/fetch
-        setTimeout(() => setloading(false), 300);
+        setTimeout(() => setloading(false), 3000);
     };
 
-    // const sortedData = useMemo(() => {
-    //     setloading(true);
-    //     const timer = setTimeout(() => setloading(false), 300); 
-
-    //     return [...getTrails].sort((a, b) => {
-    //         if (sortType === "popular") {
-    //         return Number(b.explore_rating) - Number(a.explore_rating);
-    //         }
-
-    //         if (sortType === "closest") {
-    //         return Number(a.explore_distance) - Number(b.explore_distance);
-    //         }
-
-    //         if (sortType === "new") {
-    //         return (new Date(b.date).getTime() || 0) - (new Date(a.date).getTime() || 0);
-    //         }
-
-    //         if (sortType === "best") {
-    //         // weighted formula: higher rating, closer distance, more recent date
-    //         const scoreA =
-    //             Number(a.explore_rating) * 2 -
-    //             Number(a.explore_distance) +
-    //             (new Date(a.date).getTime() || 0) / 1e10;
-
-    //         const scoreB =
-    //             Number(b.explore_rating) * 2 -
-    //             Number(b.explore_distance) +
-    //             (new Date(b.date).getTime() || 0) / 1e10;
-
-    //         return scoreB - scoreA;
-    //         }
-
-    //         return 0;
-    //     });
-    // }, [getTrails, sortType]);
-
-    // 🔍 Filter trails by explore_title
 
     useEffect(() => {
         setloading(true);
-        const timer = setTimeout(() => setloading(false), 300);
+        const timer = setTimeout(() => setloading(false), 3000);
         return () => clearTimeout(timer);
     }, [searchTerm, sortType, nearFilter, lengthDifficulty, getTrails]);
-    const sortedData = useMemo(() => {
+
+    const { sortedData, count } = useMemo<{ sortedData: Trails[]; count: number }>(() => {
         setloading(true);
-        const timer = setTimeout(() => setloading(false), 300);
+        const timer = setTimeout(() => setloading(false), 3000);
+
         let result = [...getTrails];
 
-        if (searchTerm) {
-            result = result.filter((disData) =>
-                disData.title.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-        }
-
+        // --- searching ---
+        if (searchTerm){
+            result = result.filter(trail => trail.title.toLowerCase().includes(searchTerm.toLowerCase()));
+        } 
+        // --- Filters ---
         if (nearFilter === "near") {
-            setSortType(null);
-            result = result.filter((disData) => disData.length <= 6);
+            result = result.filter(trail => trail.length <= 8);
         }
-        if (nearFilter === "away") {
-            setSortType(null);
-            result = result.filter((disData) => disData.length > 6);
+        else if (nearFilter === "away") {
+            result = result.filter(trail => trail.length > 6);
         }
 
         if (lengthDifficulty === "easy") {
-            result = result.filter((lenData) => lenData.length > 4);
+            result = result.filter(trail => trail.length < 4);
         }
-        if (lengthDifficulty === "moderate") {
-            result = result.filter((lenData) => lenData.length > 7);
+        else if (lengthDifficulty === "moderate") {
+            result = result.filter(trail => trail.length < 7);
+        }else if (lengthDifficulty === "moderate") {
+            result = result.filter(trail => trail.length > 9);
         }
-        if (lengthDifficulty === "hard") {
-            result = result.filter((lenData) => lenData.length > 10);
+        else if (lengthDifficulty === "hard") {
+            result = result.filter(trail => trail.length > 10);
         }
 
-
+        // --- Sorting ---
         if (sortType === "popular") {
-            setNearFilter('all');
-            setDifficulty('all');
-            return result.sort((a, b) => b.rating - a.rating);
+            result.sort((a, b) => b.rating - a.rating);
         }
-
-        if (sortType === "closest") {
-            setNearFilter('all');
-            setDifficulty('all');
-            return result.sort((a, b) => a.length - b.length);
+        else if (sortType === "closest") {
+            result.sort((a, b) => a.length - b.length);
         }
-
-        if (sortType === "new") {
-            setNearFilter('all');
-            setDifficulty('all');
-            return result.sort((a, b) => (new Date(b.date).getTime() || 0) - (new Date(a.date).getTime() || 0));
+        else if (sortType === "new") {
+            result.sort((a, b) => b.trailId - a.trailId);
         }
-        if (sortType === "best") {
-            setNearFilter('all');
-            setDifficulty('all');
-            const today = new Date();
+        else if (sortType === "Best") {
             result.sort((a, b) => {
-                const scoreA =
-                    Number(a.rating) * 2 -
-                    Number(a.length) +
-                    (new Date(a.date).getTime() || 0) / 1e10;
-
-                const scoreB =
-                    Number(b.rating) * 2 -
-                    Number(b.length) +
-                    (new Date(b.date).getTime() || 0) / 1e10;
-
+                const scoreA = Number(a.rating) * 2 - Number(a.length) + (new Date(a.date).getTime() || 0) / 1e10;
+                const scoreB = Number(b.rating) * 2 - Number(b.length) + (new Date(b.date).getTime() || 0) / 1e10;
                 return scoreB - scoreA;
             });
         }
 
-        return result;
+        const count = result.length;
+        return { sortedData: result, count };
     }, [getTrails, searchTerm, sortType, nearFilter, lengthDifficulty]);
 
-    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        //    console.log('hello');
-        const { name, value } = e.target;
 
-        setFilters((prev) => ({
-            ...prev,
-            [name]: [value], // use array if your state expects an array
-        }));
-
-    };
-    //    console.log(filters);
+   
+    //    console.log(sortedData);
     // console.log('ex',getTrails);
 
     useEffect(() => {
@@ -436,7 +363,7 @@ function ExploreTrailSection() {
                                 </div>
                                 <div className="resultContainer d-flex justify-content-between px-2 mb-2">
                                     <div className="res">
-                                        <p className="mb-2">{totalTrails} trails</p>
+                                        <p className="mb-2">{count} trails</p>
                                     </div>
                                     <div className="resFilter d-flex justify-content-end">
                                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="mt-1">
@@ -446,48 +373,70 @@ function ExploreTrailSection() {
                                                 strokeLinecap="round"
                                             />
                                         </svg>
-                                        <Select
+                                        <div>
+                                            <select name="" 
+                                                value={sortType}
+                                                onChange={handleMatchChange} 
+                                                id="" className="form-select advance-select" defaultValue="">
+                                                {/* <option value="" disabled hidden>Select</option> */}
+                                                <option value="Best">Best Matches</option>
+                                                <option value="popular">Most Popular</option>
+                                                <option value="closest">Closest</option>
+                                                <option value="closest">Newly Added</option>
+                                            </select> 
+                                        </div>
+                                        {/* <Select
                                             value={selected}
                                             onChange={(opt) => setSelected(opt!)}
                                             options={options}
-                                        />
+                                        /> */}
                                     </div>
                                 </div>
 
                                 <div className="row">
-                                    {
-                                        loading ? (
-                                            <div className="section-local-favorite d-flex justify-content-center align-items-center" style={{ minHeight: '100px' }}>
+                                    {loading ? (
+                                            <div
+                                                className="section-local-favorite d-flex justify-content-center align-items-center"
+                                                style={{ minHeight: '100px' }}
+                                            >
                                                 <SyncLoader color="#FC673C" size={20} />
                                             </div>
-                                        ) : (
+                                        ) : sortedData.length > 0 ? (
                                             sortedData.map((trail: any, index: number) => (
-                                                <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
+                                                <div
+                                                    key={index} // always add a key in map
+                                                    className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12"
+                                                >
                                                     <div className="local-favorite-single mb-4">
                                                         <div className="lfc-thumb position-relative">
                                                             <img
                                                                 src={trail.imagePath || '/assets/images/not-found.jpg'}
-                                                                alt="locat Trail" className="img-fluid img-fixed-size"
+                                                                alt="local Trail"
+                                                                className="img-fluid img-fixed-size"
                                                                 onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                                                                     const target = e.currentTarget;
-                                                                    target.onerror = null; // prevent infinite loop
-                                                                    target.src = '/assets/images/not-found.jpg'; // fallback image
+                                                                    target.onerror = null;
+                                                                    target.src = '/assets/images/not-found.jpg';
                                                                 }}
                                                             />
-                                                            {/* <img src="assets/images/local-favorites/img-1.jpg" alt="" className="img-fluid" /> */}
-                                                            <a href="#!" className="bookmark-btn" role="button" title="Save"><i className="bi bi-bookmark"></i></a>
+                                                            <a href="#!" className="bookmark-btn" role="button" title="Save">
+                                                                <i className="bi bi-bookmark"></i>
+                                                            </a>
                                                         </div>
                                                         <div className="lfc-content">
                                                             <h3 className="lfc-title">{trail.title}</h3>
                                                             <p className="lfc-location mb-1">{trail.address}</p>
-                                                            <p className="lfc-tags"><i className="bi bi-star-fill"></i> {trail.rating.toFixed(1)} · Moderate · {trail.length} km · Est. {trail.estimateTime}</p>
+                                                            <p className="lfc-tags">
+                                                                <i className="bi bi-star-fill"></i> {trail.rating.toFixed(1)} · Moderate · {trail.length} km · Est. {trail.estimateTime}
+                                                            </p>
                                                             <a href="#!" className="btn-style-1 w-100">Check Details</a>
                                                         </div>
                                                     </div>
                                                 </div>
                                             ))
-                                        )
-                                    }
+                                        ) : (
+                                            <p>Trails are not available!</p>
+                                    )}
 
                                     {/* <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
                                         <div className="local-favorite-single mb-4">
