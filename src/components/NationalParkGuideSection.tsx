@@ -32,6 +32,17 @@ const NationalParkGuideSection: React.FC = () => {
     const [errorsNParks,setErrorsNParks] = useState('');
     const [country, setCountry] = useState("austraila");
     const [Loading, setLoading] = useState(false);
+    // Add more button
+    const [expandedPosts, setExpandedPosts] = useState<{ [key: number]: boolean }>({});
+
+    const toggleExpand = (index: number) => {
+        setExpandedPosts(prev => ({
+        ...prev,
+        [index]: !prev[index],
+        }));
+    };
+
+    const limit = 150;
 
     // window.scrollTo(0,0);
     useEffect(()=>{
@@ -40,21 +51,21 @@ const NationalParkGuideSection: React.FC = () => {
         return()=>clearTimeout(timer);
     },[]);
 
-        useEffect(()=>{
-            const fetchParkData= async () => {
-                try {
-                    const response = await fetch('/data/park.json'); 
-                    const json: Park[] = await response.json();
-                    setPrak(json.parks);
-                    setPrakList(json.Parklist);
-                    console.log(getPark);
+        // useEffect(()=>{
+        //     const fetchParkData= async () => {
+        //         try {
+        //             const response = await fetch('/data/park.json'); 
+        //             const json: Park[] = await response.json();
+        //             setPrak(json.parks);
+        //             setPrakList(json.Parklist);
+        //             console.log(getPark);
                     
-                }catch (error) {
-                console.error('Error fetching JSON:', error);
-            }
-            };
-            fetchParkData();
-        },[]);
+        //         }catch (error) {
+        //         console.error('Error fetching JSON:', error);
+        //     }
+        //     };
+        //     fetchParkData();
+        // },[]);
 
         // Unique country list
         const countryOptions = useMemo(() => {
@@ -85,8 +96,10 @@ const NationalParkGuideSection: React.FC = () => {
             try{
                 setLoadingNParks(true); // show loader every time fetch starts
                 setErrorsNParks("");
-                const response = await axios.get(`${BASE_URL}/home/topparks/10`);
-                setNationalParks(response.data.data);
+                const response = await axios.get(`${BASE_URL}/park/list/10/0`);
+                // console.log(response.data.data);
+                setPrakList(response.data.data.parklist);
+                setPrak(response.data.data.parks);
             }catch(err){
                 console.error('API Error:', err);
                 setErrorsNParks('Unable to fetch National Parks');
@@ -97,7 +110,7 @@ const NationalParkGuideSection: React.FC = () => {
         fetchNParks();
     }, []);
     
-    //console.log(nationalParks);
+
     // if(loadingNParks) return <p>Loading Parks....</p>;
     // if(errorsNParks) return <p>{errorsNParks}</p>;
     // if(nationalParks.length === 0) return <p>NO National Parks found</p>;
@@ -123,7 +136,7 @@ const NationalParkGuideSection: React.FC = () => {
     }
     if (errorsNParks) return <p>{errorsNParks}</p>;
     
-    if (nationalParks.length === 0) return <p>NO National Parks found.</p>;
+    if (getParkList.length === 0) return <p>NO National Parks found.</p>;
     return (
         <main className="mainContent">
             <section className="section-explore-park">
@@ -168,33 +181,46 @@ const NationalParkGuideSection: React.FC = () => {
                         
                             {
                                 getPark.length > 0 ?(
-                                    getPark.map((pk:any, index:number)=>(
-                                        <div className="col-xl-4 col-lg-4 col-md-4 col-sm-12 col-12">
-                                            <div key={index} className="sep-foot">
-                                                <p className="sep-title text-midnight-navy mb-0">{pk.title ?? ''}</p>
-                                                <p className="mb-0 text-grey">{pk.description ?? ''}</p>
+                                    getPark.map((pk:any, index:number)=>{
+                                        const rawDescription = pk.description ?? '';
+                                        const cleanDescription = rawDescription
+                                            .replace(/<[^>]+>/g, '')  // Remove HTML tags
+                                            .replace(/&nbsp;| /g, '') // Remove HTML entities
+                                            .trim();
+
+                                        const shouldTruncate = cleanDescription.length > limit;
+                                        const shortText = cleanDescription.slice(0, limit);
+                                        const isExpanded = expandedPosts[index];
+
+                                        return(
+                                            <div className="col-xl-4 col-lg-4 col-md-4 col-sm-12 col-12">
+                                                <div key={index} className="sep-foot">
+                                                    <p className="sep-title text-midnight-navy mb-0">{pk.title ?? ''}</p>
+                                                    <p className="mb-0 text-grey">
+                                                    {isExpanded || !shouldTruncate ? cleanDescription : `${shortText}...`}
+                                                    {shouldTruncate && (
+                                                        <a
+                                                        href="#"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            toggleExpand(index);
+                                                        }}
+                                                        className="text-orange fw-bold ms-1"
+                                                        >
+                                                        {isExpanded ? 'Read less' : 'Read more'}
+                                                        </a>
+                                                    )}
+                                                    </p>
+
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))
+                                    )})
                                 ) : (
                                     <p>Not found</p>
                                 )
                             }
                         
-                        {/* <div className="col-xl-4 col-lg-4 col-md-4 col-sm-12 col-12">
-                            <div className="sep-foot">
-                                <p className="sep-title text-midnight-navy mb-0">All the details you need</p>
-                                <p className="mb-0 text-grey">Get guidance from AllTrails experts, informed by our community
-                                    of 80 million trail-goers.</p>
-                            </div>
-                        </div>
-                        <div className="col-xl-4 col-lg-4 col-md-4 col-sm-12 col-12">
-                            <div className="sep-foot">
-                                <p className="sep-title text-midnight-navy mb-0">Insider tips and tricks</p>
-                                <p className="mb-0 text-grey">Come prepared with helpful info like fees, reservations, and
-                                    the best times to visit.</p>
-                            </div>
-                        </div> */}
+                        
                     </div>
                 </div>
             </section>
@@ -238,7 +264,7 @@ const NationalParkGuideSection: React.FC = () => {
                                             <div className="guide-to-single d-flex align-items-center position-relative">
                                                 <div className="gds-thumb">
                                                     <img
-                                                        src={nparks.park_image || '/assets/images/not-found.jpg'}
+                                                        src={nparks.parkImage || '/assets/images/not-found.jpg'}
                                                         alt="Weather" 
                                                         className="w-100"
                                                         onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
@@ -249,13 +275,13 @@ const NationalParkGuideSection: React.FC = () => {
                                                     />
                                                 </div>
                                                 <div className="gds-cn">
-                                                    <h4 className="mb-0 text-midnight-navy">{nparks.park_title ??''}</h4>
-                                                    <p className="mb-0 text-grey">{nparks.park_address ??''}</p>
-                                                    <p className="mb-0 text-grey">{nparks.park_trail ??''}</p>
+                                                    <h4 className="mb-0 text-midnight-navy">{nparks.parkTitle ??''}</h4>
+                                                    <p className="mb-0 text-grey">{nparks.parkAddress ??''}</p>
+                                                    <p className="mb-0 text-grey">{nparks.parkTrail ??''}</p>
                                                 </div>
                                                 <div className="gds-btn">
                                                     
-                                                    <Link className="stretched-link" to={`/guides/${nparks.country}/${generateSlug(nparks.park_title || '' )}`}>
+                                                    <Link className="stretched-link" to={`/guides/${nparks.country}/${generateSlug(nparks.parkTitle || '' )}`}>
                                                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
                                                             xmlns="http://www.w3.org/2000/svg">
                                                             <path
