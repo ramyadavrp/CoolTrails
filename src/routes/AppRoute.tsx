@@ -27,6 +27,7 @@ import GiftMembership from '../containers/GiftMembership';
 import Plan from '../containers/Plan';
 import ParkDetails from '../containers/ParkDetails';
 import GiftCustomize from '../containers/GiftCustomize';
+import CommunityPageCmtDetails from '../containers/CommunityPageCmtDetails';
 
 const AppRoute = () => {
   return (
@@ -66,6 +67,8 @@ const AppRoute = () => {
           <Route path="/edit-profile" element={<ProfileEdit />} />
           <Route path="/profile-photo" element={<ProfilePhotos />} />
           <Route path="/community" element={<CommunityPage />} />
+          <Route path="/explore/recording/:title" element={<CommunityPageCmtDetails />} />
+          
           
         </Route>
 

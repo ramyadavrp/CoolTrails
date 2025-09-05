@@ -1,31 +1,37 @@
 {
   "suggested_members": [
     {
+      "member_id":1,
       "member_name": "Rekish",
       "member_country": "Dubai",
       "member_image": "/assets/images/profile/suggested-members/2.png"
     },
     {
+      "member_id":2,
       "member_name": "Rahul Singh",
       "member_country": "Dubai",
       "member_image": "/assets/images/profile/suggested-members/4.png"
     },
     {
+       "member_id":3,
       "member_name": "Anna B",
       "member_country": "Dubai",
       "member_image": "/assets/images/profile/suggested-members/2.png"
     },
     {
+       "member_id":4,
       "member_name": "Laila",
       "member_country": "Dubai",
       "member_image": "/assets/images/profile/suggested-members/3.png"
     },
     {
+       "member_id":5,
       "member_name": "Rekish",
       "member_country": "Dubai",
       "member_image": "/assets/images/profile/suggested-members/2.png"
     },
     {
+       "member_id":6,
       "member_name": "Rekish",
       "member_country": "Dubai",
       "member_image": "/assets/images/profile/suggested-members/2.png"
@@ -33,20 +39,29 @@
   ],
 
   "suggested_nearby": [
-    { "name":"Thomas",
+    {  "id":1,
+      "name":"Thomas",
       "date": "22 Mar",
       "logo": "/assets/images/profile/thomas.png",
       "image_near": "/assets/images/profile/feed/feed-img-1.png",
       "title": "Forest of Meudon - Virofly",
       "rating": 4,
+      "islike": true,
+      "isComment": false,
+      "isShare": true,
       "description": "Hike through the forest of Meudon and Viroflay, where wooded paths offer a soothing setting, punctuated by unobstructed views, and invite you to discover the local flora and fauna."
     },
-    { "name":"James",
+    { 
+      "id":2,
+      "name":"James",
       "date": "22 May",
       "logo": "/assets/images/profile/james.png",
       "image_near": "/assets/images/profile/feed/feed-img-2.png",
       "title": "Forest of Meudon - Virofly",
       "rating": 4.5,
+      "islike": true,
+      "isComment": false,
+      "isShare": true,
       "description": "Hike through the forest of Meudon and Viroflay, where wooded paths offer a soothing setting, punctuated by unobstructed views, and invite you to discover the local flora and fauna."
     }
      
@@ -55,6 +70,7 @@
   
   "profile_Community": [
     {
+      "p_id":"1",
       "p_image":"/assets/images/profile/profile-md.png",
       "p_name": "Amit Singh",
       "address": "Dubai, United Arab Emirates",
@@ -62,5 +78,61 @@
       "followers": 10,
       "following": 15
     }
-  ]
+  ],
+
+  "do_like": {
+    "like_summery": [
+      {
+        "count":2,
+        "is_like": true,
+        "links":[]
+        
+      }
+    ],
+    "description": "2 likes"
+  },
+
+  "do_comments": {
+    "alldata":{
+      "id": 10,
+      "name": "1112virendra",
+      "date": "September 04, 2025",
+      "logo": null,
+      "image_near": "",
+      "title": "Feed Test",
+      "rating": 0.0,
+      "description": "This is a sample post description",
+      "liked_by_user": false,
+      "islike": true,
+      "isComment": false,
+      "postAddress":"Yamkeshwar tehsil, Uttarakhand, India",
+      "isShare": true,
+      "length":"5.3",
+      "estimateTime":"3h"
+    },
+    "comments": [
+      {
+        "comment_id": 101,
+        "user_id": "99550145",
+        "user_Profile": "",
+        "user_name": "Alice",
+        "text": "Great post!",
+        "date": "September 03, 2025",
+        "time":"10:50"
+      },
+      {
+        "comment_id": 102,
+        "user_id": "99550146",
+        "user_Profile": "",
+        "user_name": "Bob",
+        "text": "Thanks for sharing",
+        "date": "September 04, 2025",
+        "time":"10:00"
+      }
+    ],
+    "like_count": 5,
+    "share_count": 2,
+    "comment_count": 2
+  }
 }
+
