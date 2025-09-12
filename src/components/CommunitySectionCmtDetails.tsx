@@ -27,6 +27,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
     const [CommunityLoading,setCommunityLoading] = useState(true);
     const [getprofileCommunity, setProfileCommunity ]= useState<any[]>([]);
     const [getfollowingBy, setFollowingBy ]= useState<any[]>([]);
+    const [getpostData, setPostdata ]= useState<any[]>([]);
     const [text, setInputTextValue] = useState('');
     const pageTitle = slugToTitle(title);
 
@@ -58,10 +59,22 @@ const CommunitySectionCmtDetails: React.FC = () => {
                 id: 1,
                 });
 
-                console.log(response.data.data);
+                // console.log(response.data.data);
 
                 setProfileCommunity(response.data.data.profile_Community || []);
                 setFollowingBy(response.data.data.following_by || []);
+                // console.log(response.data.data.following_by.comments.postDto || []);
+                console.log("following",response.data.data.following_by);
+                console.log("comments",response.data.data.following_by.comments);
+                // console.log("comments",response.data.data.following_by.comments.postDto);
+                   const followingBy = response.data.data.following_by;
+
+                // get all postDat objects
+                const postDats = followingBy.comments?.map(c => c.postDto
+                ) || [];
+                setPostdata(postDats);
+                console.log("postDats", postDats);
+
 
             } catch (error) {
                 console.error("Error fetching community data", error);
@@ -210,7 +223,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
 
                                 <div className="tuf-left-content d-flex align-items-center">
                                     <div className="tusc-cn-1">
-                                        <p className="mb-0">Users Favorite</p>
+                                        <p className="mb-0">Users Favorite </p>
                                     </div>
                                     <div className="tusc-cn-2">
                                         <p className="mb-0 text-midnight-navy">One of the most loved homes on Airbnb,
@@ -241,16 +254,16 @@ const CommunitySectionCmtDetails: React.FC = () => {
                             </div>
                             <div className="trail-stats d-flex flex-wrap">
                                 <div className="trail-stat-single text-midnight-navy px-2">
-                                    <h3>10<span>km</span></h3>
+                                    <h3> {getpostData[0].length}<span>km</span></h3>
                                     <p className="mb-0">Length</p>
                                 </div>
                                 <div className="trail-stat-single text-midnight-navy px-2">
-                                    <h3>378<span>m</span></h3>
+                                    <h3>{getpostData[0].elevationGain}<span>m</span></h3>
                                     <p className="mb-0">Elevation gain</p>
                                 </div>
                                 <div className="trail-stat-single text-midnight-navy px-2">
                                     <img src="/assets/images/icons/loop.svg" alt="" className="tss-icon"/>
-                                    <p className="mb-0">Loop</p>
+                                    <p className="mb-0">{getpostData[0].trailType}</p>
                                 </div>
                             </div>
                             <div className="trail-desc trail-detail-widget">

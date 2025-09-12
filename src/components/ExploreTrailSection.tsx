@@ -91,6 +91,7 @@ function ExploreTrailSection() {
                 lon: 78.0420843000696,
                 maxDistance: maxDistance
             });
+            
             setTrails(response.data.data);
             console.log('Server response:', response.data.data);
         } catch (err) {
@@ -99,6 +100,7 @@ function ExploreTrailSection() {
             setloadingExplore(false);
         }
     };
+    console.log('hhf',getTrails);
     useEffect(() => {
         // Users Current location
         if (navigator.geolocation) {
@@ -429,7 +431,10 @@ function ExploreTrailSection() {
                                                             <p className="lfc-tags">
                                                                 <i className="bi bi-star-fill"></i> {trail.rating.toFixed(1)} · Moderate · {trail.length} km · Est. {trail.estimateTime}
                                                             </p>
-                                                            <a href="#!" className="btn-style-1 w-100">Check Details</a>
+                                                            <Link to={`/${trail.urlTitle|| generateSlug(trail.title || '')}`} className="btn-style-1 w-100">
+                                                           Check Details
+                                                        </Link>
+                                                            {/* <a href="#!" className="btn-style-1 w-100">Check Details</a> */}
                                                         </div>
                                                     </div>
                                                 </div>
