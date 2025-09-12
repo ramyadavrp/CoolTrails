@@ -75,7 +75,8 @@ const CommunitySection: React.FC = () => {
 
             setCommunity(response.data.data.suggested_members || []); 
             setSuggestedNearby(response.data.data.suggested_nearby || []); 
-            setProfileCommunity(response.data.data.profile_Community || []); 
+            setProfileCommunity(response.data.data.profile_Community || []);
+             
             } catch (error) {
             console.error("Error fetching community data", error);
             } finally {
@@ -266,7 +267,7 @@ const CommunitySection: React.FC = () => {
                                                 </div>
                                             ))
                                         ):(
-                                            <p>not found</p>
+                                            <p>Not Available !</p>
                                         )
                                     }
                                     
