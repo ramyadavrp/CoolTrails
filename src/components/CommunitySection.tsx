@@ -7,7 +7,7 @@ import 'owl.carousel/dist/assets/owl.carousel.min.css';
 import 'owl.carousel/dist/assets/owl.theme.default.min.css';  
 import ProfileLeftSection from './ProfileLeftSection';
 import { SquareLoader } from "react-spinners"; 
-import data from '../data/community.json';
+// import data from '../data/community.json';
 import { decodeId,encodeId, generateSlug ,slugToTitle} from '../utils/helpers';
 
 const BASE_URL = import.meta.env.VITE_API_URL;
@@ -45,10 +45,12 @@ const CommunitySection: React.FC = () => {
     // LIKE
     const [likedPosts, setLikedPosts] = useState<{ [key: number]: boolean }>({});
     const [likeCounts, setLikeCounts] = useState<{ [key: number]: number }>({});
-    const [likeCount, setLikeCount] = useState(0);
+    // const [likeCount, setLikeCount] = useState(0);
     const [liked, setLiked] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [loginId, setLoginId] = useState<string | null>(null)
+    // const [loginId, setLoginId] = useState<string | null>(null)
+    const [loginId, setLoginId] = useState("");
+    const [userId, setUserId] = useState<string>("");
     
     // window.scrollTo(0,0);
     useEffect(()=>{
@@ -56,70 +58,116 @@ const CommunitySection: React.FC = () => {
             setCommunityLoading(false),3000);
         return()=>clearTimeout(timer);
     },[])
-   
-    useEffect(()=>{
-        const storeLocal =localStorage.getItem("loginId");
-        if(storeLocal){
-            setLoginId(storeLocal);
-            console.log(storeLocal);
-        }
-    },[])
     useEffect(() => {
+        const storedId = localStorage.getItem("id");
+        // console.log("Stored ID:", storedId); // should print the ID string
+        if (storedId) {
+            // setUserId(storedId); 
+            setUserId(storedId.trim());
+        }  
+    }, []);
+    useEffect(() => {
+        const storeLocal = localStorage.getItem("email");
+        if (storeLocal) {
+            setLoginId(storeLocal);
+            // setUserID(userId);
+        }
+    }, []);
+// console.log('uu',likeddata);
+    useEffect(() => {
+        if (!loginId) return;  // wait until loginId is set
+
         const fetchCommunityData = async () => {
             try {
             const response = await axios.post(`${BASE_URL}/user/community`, {
-                LoginId: "1112virendra@gmail.com",
+                LoginId: loginId,
             });
 
-            console.log( response.data.data);
-
-            setCommunity(response.data.data.suggested_members || []); 
-            setSuggestedNearby(response.data.data.suggested_nearby || []); 
+            // console.log(response.data.data);
+            const apidata = response.data.data;
+            // console.log(apidata);
+            setCommunity(response.data.data.suggested_members || []);
+            setSuggestedNearby(apidata.suggested_nearby || []);
+            
             setProfileCommunity(response.data.data.profile_Community || []);
-             
+            // console.log('ddd',apidata.suggested_nearby);
+            
+             // initialize like counts & liked status for suggested_nearby
+            if (Array.isArray(apidata.suggested_nearby)) {
+                const initialCounts: { [key: number]: number } = {};
+                const initialLiked: { [key: number]: boolean } = {};
+
+                apidata.suggested_nearby.forEach((item: any) => {
+                initialCounts[item.id] = item.like_count || 0;
+                initialLiked[item.id] = item.do_like || false; // if backend sends this
+                });
+
+                setLikeCounts(initialCounts);
+                setLikedPosts(initialLiked);
+            }
+
             } catch (error) {
-            console.error("Error fetching community data", error);
+            console.error("Error fetching community data", error.response?.data || error);
             } finally {
             setCommunityLoading(false);
             }
         };
 
         fetchCommunityData();
-    }, []);
-    const userID = "e08ee354-20e2-4af6-a37f-c30127cf322d" ;
-    const LikeHandle = useCallback( async (id: number) => {
-            if (id !== 0) {
-                // prevent double-like on frontend
-                // if (likedPosts[id]) {
-                //     alert();
-                // console.log("Already liked by this user");
-                // return;
-                // }
-                try {
-                    const response = await axios.post(`${BASE_URL}/feed/like`, {
-                    PostId: id,
-                    UserId: userID,
-                    });
+    }, [loginId]);
+    // console.log('ddd',getSuggestedNearby);
+    // console.log("Dynamic userId value:", userId, typeof userId);
+    // const userID = "e08ee354-20e2-4af6-a37f-c30127cf322d" ;
+    const LikeHandle = useCallback(async (id: number) => {
+        if (id !== 0) {
+            // prevent double-like on frontend (optional safeguard)
+            if (likedPosts[id]) {
+                alert("You already liked this post!");
+                return;
+            }
 
-                    if (response.data.status === "success") {
+            try {
+                const response = await axios.post(
+                    `${BASE_URL}/feed/like`,
+                    {
+                        PostId: id,
+                        UserId: userId, 
+                        // UserId: "e08ee354-20e2-4af6-a37f-c30127cf322d", 
+                    },
+                    {
+                        headers: {
+                            "Content-Type": "application/json",
+                            Accept: "application/json",
+                        },
+                    }
+                );
+
+                console.log("API Response:", response.data);
+
+                if (response.data.status === "success") {
+                    // ✅ user just liked
                     setLikedPosts((prev) => ({
                         ...prev,
-                        [id]: true, // mark only this post as liked
+                        [id]: true,
                     }));
 
-                    // setLikeCounts((prev) => ({
-                    //     ...prev,
-                    //     [id]: (prev[id] || 0) + 1, // increment count only for this post
-                    // }));
-                    }
-                } catch (error) {
-                    console.error("Error liking post", error);
-                } finally {
-                    setCommunityLoading(false);
+                    setLikeCounts((prev) => ({
+                        ...prev,
+                        [id]: (prev[id] || 0) + 1,
+                    }));
+                } else if (response.data.status === "already") {
+                    alert("You already liked this post!");
+                } else {
+                    console.warn("Unhandled response:", response.data);
                 }
+            } catch (error) {
+                console.error("Error liking post", error);
+            } finally {
+                setCommunityLoading(false);
             }
-        },[BASE_URL]
-    );
+        }
+    }, [BASE_URL, likedPosts]); 
+
 
     
     
@@ -236,8 +284,8 @@ const CommunitySection: React.FC = () => {
                                 <div className="owl-carousel owl-theme" id="suggestedMembers">
                                     {
                                         getCommunity.length> 0 ?(
-                                            getCommunity.map((getCom,index)=>(
-                                                <div className="suggested-member-single bg-almost-white d-flex align-items-center">
+                                            getCommunity.map((getCom:any,index:number)=>(
+                                                <div key={index} className="suggested-member-single bg-almost-white d-flex align-items-center">
                                                     <div className="sms-img">
                                                         
                                                         <img
@@ -259,8 +307,8 @@ const CommunitySection: React.FC = () => {
                                                         <button className="btn-style-1">Follow</button>
                                                         <a href="" title="cancle">
                                                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                <path d="M18 6L6 18" stroke="#717171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                                                <path d="M6 6L18 18" stroke="#717171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                                                <path d="M18 6L6 18" stroke="#717171" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                                <path d="M6 6L18 18" stroke="#717171" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                                             </svg>
                                                         </a>
                                                     </div>
@@ -419,7 +467,7 @@ const CommunitySection: React.FC = () => {
                                                     {
                                                       getSuggestedNearby.length> 0 ?(
                                                         getSuggestedNearby.map((getSug,index)=>(
-                                                            <div className="single-feed position-relative">
+                                                            <div key={index} className="single-feed position-relative">
                                                                 <div className="feed-head d-flex justify-content-between">
                                                                     <div className="feed-user-info d-flex align-items-center">
                                                                         <a href="">
@@ -504,7 +552,8 @@ const CommunitySection: React.FC = () => {
                                                                             d="M2.32083 3.55228C1.54093 4.54475 1.06838 5.90073 1.06838 7.31638C1.06838 10.4899 3.18627 13.1538 5.42249 15.071C6.52965 16.0202 7.63942 16.7633 8.47356 17.2694C8.89001 17.5221 9.23633 17.7148 9.47719 17.8437C9.52521 17.8694 9.56902 17.8926 9.60833 17.9131C9.64866 17.8909 9.6937 17.8658 9.74322 17.8379C9.98467 17.7017 10.3316 17.499 10.7488 17.2351C11.5842 16.7066 12.6957 15.9365 13.8047 14.9685C16.049 13.0096 18.1624 10.3462 18.1624 7.31638C18.1624 5.90094 17.6899 4.54496 16.91 3.55244C16.1327 2.56318 15.0713 1.95607 13.8722 1.95607C12.2147 1.95607 10.9292 3.03556 10.0949 4.73481L9.61539 5.71147L9.1359 4.73481C8.30155 3.03545 7.01597 1.95607 5.35855 1.95607C4.15962 1.95607 3.09813 2.56307 2.32083 3.55228ZM9.61539 18.5159C9.38365 18.9972 9.38328 18.997 9.38328 18.997L9.38088 18.9959L9.37479 18.9929L9.35294 18.9822C9.33413 18.9729 9.307 18.9594 9.27206 18.9417C9.20214 18.9063 9.10102 18.8541 8.97313 18.7857C8.71741 18.6489 8.35422 18.4467 7.91934 18.1828C7.05075 17.6558 5.89022 16.8793 4.72708 15.8821C2.4227 13.9064 0 10.9706 0 7.31638C0 5.67359 0.545529 4.08235 1.48078 2.89218C2.41859 1.69872 3.76928 0.887695 5.35855 0.887695C7.23013 0.887695 8.65337 1.9365 9.61539 3.41643C10.5774 1.93657 12.0006 0.887695 13.8722 0.887695C15.4616 0.887695 16.8123 1.69886 17.7501 2.89234C18.6853 4.08262 19.2308 5.67386 19.2308 7.31638C19.2308 10.8327 16.8036 13.7691 14.5073 15.7734C13.3459 16.787 12.1872 17.5893 11.3199 18.138C10.8857 18.4126 10.5231 18.6246 10.268 18.7685C10.1404 18.8404 10.0395 18.8954 9.96987 18.9328C9.9351 18.9515 9.90807 18.9657 9.88937 18.9755L9.86773 18.9868L9.8617 18.9899L9.85994 18.9908L9.85935 18.9911C9.85935 18.9911 9.85897 18.9913 9.61539 18.5159ZM9.61539 18.5159L9.85935 18.9911L9.62281 19.1123L9.38328 18.997L9.61539 18.5159Z"
                                                                             fill={likedPosts[getSug.id] ? "#FC673C" : "#7D7D7D"}
                                                                             />
-                                                                        </svg>{getSug.like_count || 0} {likedPosts[getSug.id] ? "Liked" : "Like"} 
+                                                                        </svg>{likeCounts[getSug.id] || 0} {likedPosts[getSug.id] ? "Liked" : "Like"}
+                                                                        {/* {getSug.like_count || 0} {likedPosts[getSug.id] ? "Liked" : "Like"}  */}
                                                                         {/* {likeCounts[getSug.id] || 0} {likedPosts[getSug.id] ? "Liked" : "Like"} */}
                                                                     </button>
 
@@ -622,7 +671,7 @@ const CommunitySection: React.FC = () => {
                                         <aside className="profile-sidebar sticky-top" id="profile-sidebar-community">
                                             {
                                                 getProfileCommunity.map((pr,index)=>(
-                                                    <div className="profile-sidebar-top  bg-almost-white">
+                                                    <div key={index} className="profile-sidebar-top  bg-almost-white">
                                                         <div className="sidebar-profile">
                                                             <div className="profile-img">
                                                                 {/* <img src="assets/images/profile/profile-md.png" alt="" /> */}

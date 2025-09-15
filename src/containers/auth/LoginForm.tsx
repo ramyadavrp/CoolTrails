@@ -40,6 +40,8 @@ const LoginForm = () => {
       console.log(data);
       if (data.status === "success") {
         localStorage.setItem("token", data.token);
+        localStorage.setItem("email", email); 
+        localStorage.setItem("id", data.user.id); 
         navigate('/profile');
       } else {
         setError(data.message || "Login failed");
