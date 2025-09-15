@@ -30,7 +30,7 @@ const NationalParkGuideSection: React.FC = () => {
     const[getParkList,setPrakList] = useState<Parklist[]>([]);
     const [loadingNParks,setLoadingNParks] = useState(true);
     const [errorsNParks,setErrorsNParks] = useState('');
-    const [country, setCountry] = useState("austraila");
+    const [country, setCountry] = useState("india");
     const [Loading, setLoading] = useState(false);
     // Add more button
     const [expandedPosts, setExpandedPosts] = useState<{ [key: number]: boolean }>({});
@@ -196,7 +196,7 @@ const NationalParkGuideSection: React.FC = () => {
                                             <div className="col-xl-4 col-lg-4 col-md-4 col-sm-12 col-12">
                                                 <div key={index} className="sep-foot">
                                                     <p className="sep-title text-midnight-navy mb-0">{pk.title ?? ''}</p>
-                                                    <p className="mb-0 text-grey">
+                                                    <p className="mb-0 text-grey" style={{ textAlign: 'justify'}}>
                                                     {isExpanded || !shouldTruncate ? cleanDescription : `${shortText}...`}
                                                     {shouldTruncate && (
                                                         <a
