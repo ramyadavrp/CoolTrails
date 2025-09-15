@@ -85,10 +85,10 @@ function ExploreTrailSection() {
             const response = await axios.post(`${BASE_URL}/trail/NearTrailsByLatAndLan`, {
                 take: take,
                 skip: skip,
-                // lat: latitude,
-                // lon: longitude,
-                lat: 27.1719517170742,
-                lon: 78.0420843000696,
+                lat: latitude,
+                lon: longitude,
+                // lat: 27.1719517170742,
+                // lon: 78.0420843000696,
                 maxDistance: maxDistance
             });
             

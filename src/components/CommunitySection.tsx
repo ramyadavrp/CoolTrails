@@ -45,9 +45,14 @@ const CommunitySection: React.FC = () => {
     // LIKE
     const [likedPosts, setLikedPosts] = useState<{ [key: number]: boolean }>({});
     const [likeCounts, setLikeCounts] = useState<{ [key: number]: number }>({});
+    const [getFollow, setFollow] = useState<{ [key: number]: boolean }>({});
     // const [likeCount, setLikeCount] = useState(0);
     const [liked, setLiked] = useState(false);
-    const [loading, setLoading] = useState(false);
+    // state for loading per post
+    const [loading, setLoading] = useState<Record<number, boolean>>({});
+
+
+
     // const [loginId, setLoginId] = useState<string | null>(null)
     const [loginId, setLoginId] = useState("");
     const [userId, setUserId] = useState<string>("");
@@ -73,7 +78,7 @@ const CommunitySection: React.FC = () => {
             // setUserID(userId);
         }
     }, []);
-// console.log('uu',likeddata);
+    //console.log('uu',getCommunity);
     useEffect(() => {
         if (!loginId) return;  // wait until loginId is set
 
@@ -83,10 +88,18 @@ const CommunitySection: React.FC = () => {
                 LoginId: loginId,
             });
 
-            // console.log(response.data.data);
+            console.log(response.data.data);
             const apidata = response.data.data;
             // console.log(apidata);
+            const members = response.data.data.suggested_members || []
             setCommunity(response.data.data.suggested_members || []);
+            // Initialize follow state
+            const initialFollow: { [key: string]: boolean } = {};
+            
+            members.forEach((it: { id: string; do_follow?: boolean }) => {
+                initialFollow[it.id] = it.do_follow || false;
+            });
+            setFollow(initialFollow);
             setSuggestedNearby(apidata.suggested_nearby || []);
             
             setProfileCommunity(response.data.data.profile_Community || []);
@@ -100,6 +113,7 @@ const CommunitySection: React.FC = () => {
                 apidata.suggested_nearby.forEach((item: any) => {
                 initialCounts[item.id] = item.like_count || 0;
                 initialLiked[item.id] = item.do_like || false; // if backend sends this
+               
                 });
 
                 setLikeCounts(initialCounts);
@@ -116,13 +130,15 @@ const CommunitySection: React.FC = () => {
         fetchCommunityData();
     }, [loginId]);
     // console.log('ddd',getSuggestedNearby);
-    // console.log("Dynamic userId value:", userId, typeof userId);
+    //  console.log("Dynamic userId value:", userId, typeof userId);
     // const userID = "e08ee354-20e2-4af6-a37f-c30127cf322d" ;
+     
     const LikeHandle = useCallback(async (id: number) => {
+         setLoading(prev => ({ ...prev, [id]: true }));
         if (id !== 0) {
             // prevent double-like on frontend (optional safeguard)
             if (likedPosts[id]) {
-                alert("You already liked this post!");
+                // alert("You already liked this post!");
                 return;
             }
 
@@ -142,7 +158,7 @@ const CommunitySection: React.FC = () => {
                     }
                 );
 
-                console.log("API Response:", response.data);
+                // console.log("API Response:", response.data);
 
                 if (response.data.status === "success") {
                     // ✅ user just liked
@@ -156,7 +172,7 @@ const CommunitySection: React.FC = () => {
                         [id]: (prev[id] || 0) + 1,
                     }));
                 } else if (response.data.status === "already") {
-                    alert("You already liked this post!");
+                    // alert("You already liked this post!");
                 } else {
                     console.warn("Unhandled response:", response.data);
                 }
@@ -164,13 +180,68 @@ const CommunitySection: React.FC = () => {
                 console.error("Error liking post", error);
             } finally {
                 setCommunityLoading(false);
+                 setLoading(prev => ({ ...prev, [id]: true }));
             }
         }
     }, [BASE_URL, likedPosts]); 
 
 
+    const handleFollow = useCallback(async (id: number) => {
+        
+        if(id !==0){
+            alert(id);
+            try{
+                const response = await axios.post(
+                    `${BASE_URL}/user/follow`,
+                    {
+                        FollowerId: id,
+                        UserId: userId, 
+                        
+                    },
+                    {
+                        headers: {
+                            "Content-Type": "application/json",
+                            Accept: "application/json",
+                        },
+                    }
+                );
+                 console.log("API follow Response:", response.data);
+                if (response.data.status === "success") {
+                     setFollow((prev) => ({
+                        ...prev,
+                        [id]: true, 
+                    }));
+                } else if (response.data.status === "already") {
+                    // alert("You already liked this post!");
+                } else {
+                    console.warn("Unhandled response:", response.data);
+                }
+            }catch (error) {
+                console.error("Error liking post", error);
+            }finally{
+
+            }
+        }
+    }, [userId]);
     
     
+    // const handleShare = async (id:any) => {
+    //     try {
+    //     const response = await axios.post(`${BASE_URL}/feed/share`, {
+    //         PostId: id,
+    //         UserId: userId
+    //     }, {
+    //         headers: { "Content-Type": "application/json" }
+    //     });
+
+    //     console.log("Share response:", response.data);
+    //     alert("Post shared successfully!");
+    //     } catch (error) {
+    //     console.error("Error sharing post:", error);
+    //     alert("Failed to share post.");
+    //     }
+    // };
+
 
     // useEffect(()=>{
     //         const fetchCommunityData= async () => {
@@ -304,7 +375,9 @@ const CommunitySection: React.FC = () => {
                                                         <p className="mb-0 text-grey sms-dt-location">{getCom.member_country ?? 'N/A'}</p>
                                                     </div>
                                                     <div className="sms-btn d-flex align-items-center">
-                                                        <button className="btn-style-1">Follow</button>
+                                                        <button 
+                                                        onClick={()=>handleFollow(getCom.id)}
+                                                        className="btn-style-1">{getFollow[getCom.id] ? "Following" : "Follow"}</button>
                                                         <a href="" title="cancle">
                                                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                                 <path d="M18 6L6 18" stroke="#717171" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -529,15 +602,17 @@ const CommunitySection: React.FC = () => {
                                                                     </p>
                                                                 </div>
                                                                 <div className="feed-footer d-flex">
-                                                                   <button 
-                                                                        disabled={loading}
-                                                                        onClick={() => LikeHandle(getSug.id)}
-                                                                        className="like-btn"
-                                                                        style={{
+                                                                   <button
+                                                                            key={getSug.id}
+                                                                            disabled={Boolean(loading[getSug.id] || likedPosts[getSug.id])}
+                                                                            onClick={() => LikeHandle(getSug.id)}
+                                                                            className="like-btn"
+                                                                            style={{
                                                                             background: "transparent",
                                                                             padding: "6px 12px",
-                                                                            cursor: "pointer",
-                                                                        }}
+                                                                            cursor: loading[getSug.id] || likedPosts[getSug.id] ? "":"pointer",
+                                                                            opacity: loading[getSug.id] || likedPosts[getSug.id] ? 0.6 : 1,
+                                                                            }}
                                                                         >
                                                                         <svg 
                                                                             width="20" 
@@ -571,7 +646,9 @@ const CommunitySection: React.FC = () => {
                                                                                                     
                                                                         
                                                                     </button>
-                                                                    <button className="share-btn">
+                                                                    <button 
+                                                                    // onClick={()=> handleShare(getSug.id)}
+                                                                    className="share-btn">
                                                                         <svg width="21" height="22" viewBox="0 0 21 22" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                                             <path
                                                                                 d="M20.4601 7.96745L12.4501 1.32995C12.2278 1.14185 11.9555 1.02254 11.6665 0.986577C11.3775 0.950618 11.0842 0.999567 10.8226 1.12745C10.5648 1.2485 10.3468 1.44044 10.194 1.68083C10.0413 1.92123 9.96015 2.20014 9.96009 2.48495V3.98495C7.04123 5.00521 4.51317 6.91027 2.72794 9.43487C0.942708 11.9595 -0.0108345 14.9779 9.28794e-05 18.0699C-0.000854163 18.8512 0.0618532 19.6313 0.187593 20.4024C0.212056 20.5575 0.284563 20.701 0.394897 20.8127C0.505231 20.9244 0.647828 20.9986 0.802593 21.0249H0.930093C1.06577 21.0246 1.19881 20.9874 1.31504 20.9174C1.43126 20.8474 1.52632 20.7472 1.59009 20.6274C2.44778 19.0138 3.63682 17.5997 5.07928 16.4778C6.52173 15.3559 8.18501 14.5515 9.96009 14.1174V15.7374C9.96015 16.0223 10.0413 16.3012 10.194 16.5416C10.3468 16.782 10.5648 16.9739 10.8226 17.0949C11.029 17.1924 11.2543 17.2436 11.4826 17.2449C11.8375 17.2432 12.1803 17.1156 12.4501 16.8849L16.0951 13.8849L16.1626 13.8324L20.4601 10.2699C20.6273 10.1291 20.7618 9.95349 20.854 9.75527C20.9463 9.55706 20.994 9.34107 20.994 9.12245C20.994 8.90382 20.9463 8.68784 20.854 8.48963C20.7618 8.29141 20.6273 8.11575 20.4601 7.97495V7.96745ZM15.2626 12.6174L15.1951 12.6699L11.4451 15.7449V13.1799C11.4494 13.1602 11.4494 13.1397 11.4451 13.1199C11.4451 13.1199 11.4451 13.0749 11.4451 13.0524C11.4451 13.0299 11.4451 12.9999 11.4076 12.9699C11.3934 12.9237 11.3758 12.8786 11.3551 12.8349C11.3279 12.7887 11.2923 12.748 11.2501 12.7149C11.2263 12.6773 11.1958 12.6442 11.1601 12.6174C11.1208 12.5831 11.0781 12.5529 11.0326 12.5274L10.9201 12.4749H10.7551H10.6801H10.6201H10.5526C6.94145 13.0978 3.70388 15.0747 1.50009 18.0024C1.50308 15.1499 2.41916 12.3733 4.11423 10.079C5.80929 7.7847 8.19431 6.09331 10.9201 5.25245H10.9576C11.0071 5.23451 11.0548 5.21191 11.1001 5.18495C11.1527 5.15668 11.2029 5.12407 11.2501 5.08745L11.3401 4.98245C11.3719 4.94716 11.3973 4.90654 11.4151 4.86245C11.4346 4.82167 11.4497 4.77892 11.4601 4.73495C11.4643 4.68254 11.4643 4.62986 11.4601 4.57745V2.52245L19.5001 9.11495L15.2626 12.6174Z"
