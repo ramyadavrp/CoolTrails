@@ -216,7 +216,7 @@ const CommunitySection: React.FC = () => {
                     console.warn("Unhandled response:", response.data);
                 }
             }catch (error) {
-                console.error("Error liking post", error);
+                //console.error("Error liking post", error);
             }finally{
 
             }
