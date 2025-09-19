@@ -3,6 +3,7 @@ import React, { useState,useEffect } from 'react';
 import { Link as ScrollLink } from 'react-scroll';
 import data from '../data/community.json';
 import { Link } from 'react-router-dom';
+import StarRating from './AffiliateDetails/StarRating';
 import { useParams } from 'react-router-dom';
 import { decodeId,encodeId, generateSlug ,slugToTitle} from '../utils/helpers';
 const BASE_URL = import.meta.env.VITE_API_URL;
@@ -22,70 +23,142 @@ interface suggestedNearby{
     description:string
 }
 const CommunitySectionCmtDetails: React.FC = () => {
-    const { title } = useParams();
+    const { slug } = useParams();
     const [activeTab, setActiveTab] = useState('');
     const [CommunityLoading,setCommunityLoading] = useState(true);
     const [getprofileCommunity, setProfileCommunity ]= useState<any[]>([]);
     const [getfollowingBy, setFollowingBy ]= useState<any[]>([]);
+    const [getComments, setComments ]= useState<any[]>([]);
     const [getpostData, setPostdata ]= useState<any[]>([]);
-    const [text, setInputTextValue] = useState('');
-    const pageTitle = slugToTitle(title);
+    const [commenttext, setInputTextValue] = useState('');
+    // const pageTitle = slugToTitle(title);
+     const [loginId, setLoginId] = useState("");
+     const [userId, setUserId] = useState<string>("");
+    useEffect(() => {
+        const storeLocal = localStorage.getItem("email");
+        // console.log(storeLocal)
+        if (storeLocal) {
+            setLoginId(storeLocal);
+        }
+    }, []);
+    useEffect(() => {
+            const storedId = localStorage.getItem("id");
+            console.log("Stored IDss:", storedId); // should print the ID string
+            if (storedId) {
+                // setUserId(storedId); 
+                setUserId(storedId.trim());
+            }  
+        }, []);
+    // console.log('login',loginId)
+    const handleCommentSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+            e.preventDefault();
+            if (!commenttext.trim()) {
+                console.warn("Comment is empty!");
+                return;
+            }
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        console.log("Submitted:", text);
-        // setInputTextValue("");
-    };
-    // useEffect(() => {
-    //         console.log(title);
-    //     if (title) {
-    //         try {
-    //         // const trailId = Number(decodeId(encodedId)); // safely decode
-    //         // fetchData();
-    //         // fetchData(title);
-    //         } catch (err) {
-    //         console.error('Failed to decode ID:', err);
-    //         }
-    //     }
-    //     // fetchData();
-    //     }, []);
-    
+            try {
+                const response = await axios.post(
+                        `${BASE_URL}/feed/comment/`,
+                    {
+                        PostId: 1,
+                        UserId: userId,   
+                        CommentText: commenttext,  
+                    },
+                    {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Accept: "application/json",
+                    },
+                    }
+                );
+                // console.log("Comment posted:", response.data);
+                if (response.data.status === "success") {
+                    console.log("Comment resposn posted:", response.data);
+
+                    //setComments((prev) => [...prev, response.data.comment_text]);
+                    // Clear input
+                    setInputTextValue("");
+                } else {
+                    console.warn("Failed to post comment:", response.data);
+                }
+            } catch (error) {
+                console.error("Error posting comment:", error);
+            }
+        };
+
+       
         // const fetchData= async (title:String) => {
         useEffect(() => {
-        const fetchPostDetail = async () => {
-            try {
-                const response = await axios.post(`${BASE_URL}/user/community/1`, {
-                LoginId: "1113virendra@gmail.com",
-                id: 1,
-                });
-
-                // console.log(response.data.data);
-
-                setProfileCommunity(response.data.data.profile_Community || []);
-                setFollowingBy(response.data.data.following_by || []);
-                // console.log(response.data.data.following_by.comments.postDto || []);
-                console.log("following",response.data.data.following_by);
-                console.log("comments",response.data.data.following_by.comments);
-                // console.log("comments",response.data.data.following_by.comments.postDto);
-                   const followingBy = response.data.data.following_by;
-
-                // get all postDat objects
-                const postDats = followingBy.comments?.map(c => c.postDto
-                ) || [];
-                setPostdata(postDats);
-                console.log("postDats", postDats);
-
-
-            } catch (error) {
-                console.error("Error fetching community data", error);
-            } finally {
-                setCommunityLoading(false);
+            if (!loginId || !slug) {
+                //console.log("Skipping API call: loginId or slug not ready");
+                return;
             }
+            const fetchPostDetail = async (slug:any) => {
+                try {
+                const response = await axios.post(
+                    `${BASE_URL}/user/community/1`,
+                    {
+                    LoginId: loginId,
+                    // LoginId: "1113virendra@gmail.com",
+                    slug: slug,
+                    },
+                    {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Accept: "application/json",
+                    },
+                    }
+                );
+                console.log(response.data);
+                setProfileCommunity(response.data?.data?.profile_Community || []);
+                const followingBy = response.data?.data?.following_by;
+                setFollowingBy(followingBy || []);
+                setComments(response.data.data.following_by.comments);
+                
+
+                // console.log("followingBy raw:", followingBy);
+                // console.log("isArray:", Array.isArray(followingBy));
+
+                let postDats = [];
+
+                if (Array.isArray(followingBy)) {
+                followingBy.forEach(item => {
+                    if (!item) return;
+
+                    if (Array.isArray(item.comments)) {
+                    item.comments.forEach(c => c?.postDto && postDats.push(c.postDto));
+                    } else if (item.comments?.postDto) {
+                    postDats.push(item.comments.postDto);
+                    } else if (item.postDto) {
+                    postDats.push(item.postDto);
+                    }
+                });
+                } else if (followingBy && typeof followingBy === "object") {
+                if (Array.isArray(followingBy.comments)) {
+                    postDats = followingBy.comments.map(c => c?.postDto).filter(Boolean);
+                } else if (followingBy.comments?.postDto) {
+                    postDats = [followingBy.comments.postDto];
+                } else if (followingBy.postDto) {
+                    postDats = [followingBy.postDto];
+                }
+                }
+
+                // console.log("postDats", postDats);
+                setPostdata(postDats);
+
+                } catch (error) {
+                console.error("Error fetching community data", error);
+                } finally {
+                setCommunityLoading(false);
+                }
             };
 
-            fetchPostDetail();
-        }, []);
-        // console.log( getfollowingBy);
+            fetchPostDetail(slug);
+        }, [loginId,slug]); 
+
+
+        console.log( getpostData);
     if (CommunityLoading) {
         return (
             <div
@@ -106,6 +179,8 @@ const CommunitySectionCmtDetails: React.FC = () => {
             </div>
         );
     }
+
+
     return (
         <main className="mainContent">
             <section className="section-trail-detail">
@@ -113,7 +188,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                     <div className="row">
                         <div className="col-xl-12">
                             <div className="trail-dt-top">
-                                <h1 className="trail-dt-title">{getfollowingBy.title??''}</h1>
+                                <h1 className="trail-dt-title">{getfollowingBy.title ?? ''}</h1>
                                 <p className="trail-dt-address text-grey mb-0">Shella Bholaganj, East Khasi Hills, MEGHALAYA, India <span className="tdt-add"> | <i className="bi bi-star-fill"></i> {getfollowingBy.rating??''} Moderate </span> <span className="tdt-separator">|</span> {getfollowingBy.date??''}<span className="t-dt-r-and-o"></span></p>
                                 
                             </div>
@@ -232,17 +307,20 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                 </div>
 
                                 <div className="tuf-right-content d-flex align-items-center">
+                                   
                                     <div className="tusc-cn-1 text-center">
-                                        <p className="mb-0">4.84</p>
-                                        <div className="rating">
+                                        <p className="mb-0">{getfollowingBy.rating}</p>
+                                        <StarRating rating={Number(getfollowingBy.rating)}/>
+                                        {/* <div className="rating">
                                             <i className="bi bi-star-fill"></i>
                                             <i className="bi bi-star-fill"></i>
                                             <i className="bi bi-star-fill"></i>
                                             <i className="bi bi-star-fill"></i>
                                             <i className="bi bi-star-fill"></i>
-                                        </div>
+                                        </div> */}
                                     </div>
                                     <div className="tusc-cn-2 text-center">
+                                        
                                         <p className="mb-0 text-midnight-navy"><span className="d-block review-no">31</span>
                                             <span>Reviews</span>
                                         </p>
@@ -254,16 +332,16 @@ const CommunitySectionCmtDetails: React.FC = () => {
                             </div>
                             <div className="trail-stats d-flex flex-wrap">
                                 <div className="trail-stat-single text-midnight-navy px-2">
-                                    <h3> {getpostData[0].length}<span>km</span></h3>
+                                    <h3> {getpostData.length ?? '0'}<span>km</span></h3>
                                     <p className="mb-0">Length</p>
                                 </div>
                                 <div className="trail-stat-single text-midnight-navy px-2">
-                                    <h3>{getpostData[0].elevationGain}<span>m</span></h3>
+                                    <h3>{getpostData.elevationGain ?? '0'}<span>m</span></h3>
                                     <p className="mb-0">Elevation gain</p>
                                 </div>
                                 <div className="trail-stat-single text-midnight-navy px-2">
                                     <img src="/assets/images/icons/loop.svg" alt="" className="tss-icon"/>
-                                    <p className="mb-0">{getpostData[0].trailType}</p>
+                                    <p className="mb-0">{getpostData.trailType ?? ''}</p>
                                 </div>
                             </div>
                             <div className="trail-desc trail-detail-widget">
@@ -292,7 +370,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                             d="M2.32083 3.55228C1.54093 4.54475 1.06838 5.90073 1.06838 7.31638C1.06838 10.4899 3.18627 13.1538 5.42249 15.071C6.52965 16.0202 7.63942 16.7633 8.47356 17.2694C8.89001 17.5221 9.23633 17.7148 9.47719 17.8437C9.52521 17.8694 9.56902 17.8926 9.60833 17.9131C9.64866 17.8909 9.6937 17.8658 9.74322 17.8379C9.98467 17.7017 10.3316 17.499 10.7488 17.2351C11.5842 16.7066 12.6957 15.9365 13.8047 14.9685C16.049 13.0096 18.1624 10.3462 18.1624 7.31638C18.1624 5.90094 17.6899 4.54496 16.91 3.55244C16.1327 2.56318 15.0713 1.95607 13.8722 1.95607C12.2147 1.95607 10.9292 3.03556 10.0949 4.73481L9.61539 5.71147L9.1359 4.73481C8.30155 3.03545 7.01597 1.95607 5.35855 1.95607C4.15962 1.95607 3.09813 2.56307 2.32083 3.55228ZM9.61539 18.5159C9.38365 18.9972 9.38328 18.997 9.38328 18.997L9.38088 18.9959L9.37479 18.9929L9.35294 18.9822C9.33413 18.9729 9.307 18.9594 9.27206 18.9417C9.20214 18.9063 9.10102 18.8541 8.97313 18.7857C8.71741 18.6489 8.35422 18.4467 7.91934 18.1828C7.05075 17.6558 5.89022 16.8793 4.72708 15.8821C2.4227 13.9064 0 10.9706 0 7.31638C0 5.67359 0.545529 4.08235 1.48078 2.89218C2.41859 1.69872 3.76928 0.887695 5.35855 0.887695C7.23013 0.887695 8.65337 1.9365 9.61539 3.41643C10.5774 1.93657 12.0006 0.887695 13.8722 0.887695C15.4616 0.887695 16.8123 1.69886 17.7501 2.89234C18.6853 4.08262 19.2308 5.67386 19.2308 7.31638C19.2308 10.8327 16.8036 13.7691 14.5073 15.7734C13.3459 16.787 12.1872 17.5893 11.3199 18.138C10.8857 18.4126 10.5231 18.6246 10.268 18.7685C10.1404 18.8404 10.0395 18.8954 9.96987 18.9328C9.9351 18.9515 9.90807 18.9657 9.88937 18.9755L9.86773 18.9868L9.8617 18.9899L9.85994 18.9908L9.85935 18.9911C9.85935 18.9911 9.85897 18.9913 9.61539 18.5159ZM9.61539 18.5159L9.85935 18.9911L9.62281 19.1123L9.38328 18.997L9.61539 18.5159Z"
                                             fill="#7D7D7D"
                                             />
-                                        </svg>{getfollowingBy.likeCount?? 0} like
+                                        </svg>{getfollowingBy.like_count?? 0} like
                                         
                                     </button>
                                     <button className="comment-btn">
@@ -320,7 +398,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                             
                             <div className="row">
                             {
-                                getfollowingBy.comments.map((cmt:any,index:number)=>(
+                                getComments.map((cmt:any,index:number)=>(
 
                                     <div key={index}  className="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12">
                                         <div  className="testimonial-single position-relative">
@@ -356,10 +434,10 @@ const CommunitySectionCmtDetails: React.FC = () => {
                             </div>
                             <div className='row d-flex justify-content-center'>
                                 <div className="col-xl-10 col-lg-12 col-md-12 col-sm-12 col-12">
-                                    <form onSubmit={handleSubmit} className="flex flex-col items-center">
+                                    <form onSubmit={handleCommentSubmit} className="flex flex-col items-center">
                                         <div className="input-group mb-3">
                                         <input
-                                            value={text}
+                                            value={commenttext}
                                             onChange={(e) => setInputTextValue(e.target.value)}
                                             type="text"
                                             className="form-control"

@@ -37,11 +37,12 @@ const LoginForm = () => {
       });
 
       const data = response.data;
-      console.log(data);
+      console.log(data.user.loginid);
       if (data.status === "success") {
         localStorage.setItem("token", data.token);
         localStorage.setItem("email", email); 
         localStorage.setItem("id", data.user.id); 
+        localStorage.setItem("login", data.user.loginid); 
         navigate('/profile');
       } else {
         setError(data.message || "Login failed");
