@@ -7,6 +7,8 @@ import 'owl.carousel/dist/assets/owl.carousel.min.css';
 import 'owl.carousel/dist/assets/owl.theme.default.min.css';  
 import ProfileLeftSection from './ProfileLeftSection';
 import { SquareLoader } from "react-spinners"; 
+import StarRating from './AffiliateDetails/StarRating';
+
 // import data from '../data/community.json';
 import { decodeId,encodeId, generateSlug ,slugToTitle} from '../utils/helpers';
 
@@ -590,11 +592,12 @@ const CommunitySection: React.FC = () => {
                                                                         <h6 className="feed-title text-midnight-navy">{getSug.title ?? 'N/A'}</h6>
                                                                     </Link>
                                                                     <div className="rating">
+                                                                        <StarRating rating={Number(getSug.rating)}/>
+                                                                        {/* <img src="/assets/images/icons/Star.svg" alt="" />
                                                                         <img src="/assets/images/icons/Star.svg" alt="" />
                                                                         <img src="/assets/images/icons/Star.svg" alt="" />
                                                                         <img src="/assets/images/icons/Star.svg" alt="" />
-                                                                        <img src="/assets/images/icons/Star.svg" alt="" />
-                                                                        <img src="/assets/images/icons/Star.svg" alt="" />
+                                                                        <img src="/assets/images/icons/Star.svg" alt="" /> */}
                                                                     </div>
                                                                     <p className="text-midnight-navy">
                                                                         {getSug.description ?? 'N/A'}
