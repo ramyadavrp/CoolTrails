@@ -72,13 +72,14 @@ const CommunitySection: React.FC = () => {
         }  
     }, []);
     useEffect(() => {
-        const storeLocal = localStorage.getItem("email");
+        const storeLocal = localStorage.getItem("login");
+        // console.log(storeLocal)
         if (storeLocal) {
             setLoginId(storeLocal);
             // setUserID(userId);
         }
     }, []);
-    //console.log('uu',getCommunity);
+    // console.log('uu',setLoginId);
     useEffect(() => {
         if (!loginId) return;  // wait until loginId is set
 
@@ -88,7 +89,7 @@ const CommunitySection: React.FC = () => {
                 LoginId: loginId,
             });
 
-            console.log(response.data.data);
+            console.log('community',response.data.data);
             const apidata = response.data.data;
             // console.log(apidata);
             const members = response.data.data.suggested_members || []
@@ -207,12 +208,10 @@ const CommunitySection: React.FC = () => {
                 );
                  console.log("API follow Response:", response.data);
                 if (response.data.status === "success") {
-                     setFollow((prev) => ({
+                    setFollow((prev) => ({
                         ...prev,
-                        [id]: true, 
+                        [id]: response.data.do_follow, // true = Following, false = Follow
                     }));
-                } else if (response.data.status === "already") {
-                    // alert("You already liked this post!");
                 } else {
                     console.warn("Unhandled response:", response.data);
                 }
@@ -258,7 +257,7 @@ const CommunitySection: React.FC = () => {
     //         };
     //         fetchCommunityData();
     // },[]);
-    // console.log('ddd',getSuggestedNearby);
+    //  console.log('ddd',getSuggestedNearby);
 
 
     useEffect(() => {
@@ -640,8 +639,8 @@ const CommunitySection: React.FC = () => {
                                                                                 fill="#7D7D7D"
                                                                             />
                                                                         </svg>
-                                                                        <Link to={`/explore/recording/${generateSlug(getSug.title)}`} className="dropdown-item">
-                                                                            Comment
+                                                                        <Link to={`/explore/recording/${getSug.slug}`} className="dropdown-item">
+                                                                            {(getSug.comment_count) || 0} Comment
                                                                         </Link>
                                                                                                     
                                                                         
@@ -655,7 +654,7 @@ const CommunitySection: React.FC = () => {
                                                                                 fill="#7D7D7D"
                                                                             />
                                                                         </svg>
-                                                                        Share
+                                                                        {(getSug.share_count) || 0}  Share
                                                                     </button>
                                                                 </div>
                                                             </div>
@@ -785,8 +784,18 @@ const CommunitySection: React.FC = () => {
                                             
                                             <div className="profile-sidebar-menu  bg-almost-white">
                                                 <ul className="list-unstyled profile-menu">
-                                                    <li className="active"><a href="profile-feed.html">Feed</a></li>
-                                                    <li><a href="profile-photos.html">Photos</a></li>
+                                                    <li className="active">
+                                                        <Link to={'/profile-feed'}>
+                                                            Feed
+                                                        </Link>
+                                                        {/* <a href="profile-feed.html">Feed</a> */}
+                                                    </li>
+                                                    <li>
+                                                        <Link to={'/profile-photo'}>
+                                                            Photos
+                                                        </Link>
+                                                        {/* <a href="profile-photos.html">Photos</a> */}
+                                                    </li>
                                                     <li><a href="">Reviews</a></li>
                                                     <li><a href="">Activities</a></li>
                                                     <li><a href="">Completed</a></li>

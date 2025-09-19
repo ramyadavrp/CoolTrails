@@ -65,9 +65,10 @@ const AppRoute = () => {
         <Route element={<PrivateRoute />}>
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/edit-profile" element={<ProfileEdit />} />
+          <Route path="/profile-feed" element={<ProfilePage />} />
           <Route path="/profile-photo" element={<ProfilePhotos />} />
           <Route path="/community" element={<CommunityPage />} />
-          <Route path="/explore/recording/:title" element={<CommunityPageCmtDetails />} />
+          <Route path="/explore/recording/:slug" element={<CommunityPageCmtDetails />} />
           
           
         </Route>
