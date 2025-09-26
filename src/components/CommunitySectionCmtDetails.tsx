@@ -1,16 +1,28 @@
 // src/components/AffiliateTrail.tsx
-import React, { useState,useEffect,useCallback } from 'react';
+import React, { useState,useEffect,useCallback,useRef } from 'react';
 import { Link as ScrollLink } from 'react-scroll';
 import data from '../data/community.json';
 import { Link } from 'react-router-dom';
 import StarRating from './AffiliateDetails/StarRating';
-import { useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import { decodeId,encodeId, generateSlug ,slugToTitle} from '../utils/helpers';
 const BASE_URL = import.meta.env.VITE_API_URL;
 import axios from 'axios';
 import { SquareLoader } from "react-spinners"; 
 
+import mapboxgl from "mapbox-gl";
+import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
+import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
+import "mapbox-gl/dist/mapbox-gl.css";
 
+mapboxgl.accessToken = "pk.eyJ1IjoiMTExMnZpcmVuZHJhIiwiYSI6ImNtYmE0emNyNjBwbHMyanNibHBpZHgxMjUifQ.5FSp2VZ1T1kXcGV38bC5jA";
+
+interface Point {
+  title: string;
+  latitude: number;
+  longitude: number;
+  pointOrder: number;
+}
 
 interface suggestedNearby{
     id:number,
@@ -20,32 +32,463 @@ interface suggestedNearby{
     image_near:string,
     title:string,
     rating:number,
-    description:string
+    description?:string
 }
+interface FollowingBy {
+    id: number;
+    title: string;
+    image_near: string;
+    rating: number;
+    comment_count:number,
+    like_count:number,
+    do_like:boolean,
+    share_count:number,
+    total_reviews:number,
+    description?: string,
+    address?: string,
+    trailType?: string,
+    user_favorite?: string
+}
+type ShareOption = {
+  label: string;
+//   icon: JSX.Element | (() => JSX.Element);
+   action: (cmt: any) => void
+};
 const CommunitySectionCmtDetails: React.FC = () => {
     const { slug } = useParams();
+    const location = useLocation();
+    const statePostId = location.state?.postId;
+    const [postId, setPostId] = useState(statePostId || localStorage.getItem("postId"));
     const [activeTab, setActiveTab] = useState('');
     const [CommunityLoading,setCommunityLoading] = useState(true);
     const [getprofileCommunity, setProfileCommunity ]= useState<any[]>([]);
-    const [getfollowingBy, setFollowingBy ]= useState<any[]>([]);
+    const [getfollowingBy, setFollowingBy] = useState<FollowingBy | null>(null);
     const [getComments, setComments ]= useState<any[]>([]);
     const [getpostData, setPostdata ]= useState<any[]>([]);
     const [commenttext, setInputTextValue] = useState('');
     const [isExpanded, setIsExpanded] = useState(false);
-    
-        const [visibleCount, setVisibleCount] = useState(5);
+    const [visibleCount, setVisibleCount] = useState(5);
     // const pageTitle = slugToTitle(title);
     const [getImages, setImages] = useState([]);   
-     const [currentIndex, setCurrentIndex] = useState(0); // image arrow
-     const [loginId, setLoginId] = useState("");
-     const [userId, setUserId] = useState<string>("");
+    const [currentIndex, setCurrentIndex] = useState(0); // image arrow
+    const [loginId, setLoginId] = useState("");
+    const [userId, setUserId] = useState<string>("");
+    // comment popup
+    const [isOpen, setIsOpen] = useState(false);
+    const [isSpam, setSpamModal] = useState(false);
+    const [selectedComment, setSelectedComment] = useState<any>(null);
+  
+    // map state
+    const mapContainer = useRef<HTMLDivElement | null>(null);
+    const walkerMarkerRef = useRef<mapboxgl.Marker | null>(null);
+    const animationRef = useRef<number | null>(null);
+    const mapRef = useRef<mapboxgl.Map | null>(null);
+
+    const [points, setPoints] = useState<[number, number][]>([]);
+    const [titles, setTitles] = useState<string[]>([]);
+    const [markers, setMarkers] = useState<mapboxgl.Marker[]>([]);
+    const [loopClosed, setLoopClosed] = useState(false);
+    // Review
+    const [showReviews, setShowReviews] = useState(true);
+
+    // Initialize map
+    useEffect(() => {
+        if (!mapContainer.current) return;
+
+        const map = new mapboxgl.Map({
+            container: mapContainer.current,
+            style: "mapbox://styles/mapbox/streets-v12",
+            center: [78.0421, 27.1751],
+            zoom: 16, 
+            pitch: 0,
+            bearing: 0,
+            antialias: true,
+        });  
+
+        mapRef.current = map;
+
+        const geocoder = new MapboxGeocoder({
+            
+            accessToken: mapboxgl.accessToken,
+            mapboxgl: mapboxgl,
+            marker: false,
+            placeholder: "Search location",
+        });
+
+        map.addControl(geocoder);
+
+        map.on("load", () => {
+            map.addSource("route", {
+                type: "geojson",
+                data: { type: "Feature", properties: {},geometry: { type: "LineString", coordinates: [] as [number, number] [] } },
+            });
+
+            map.addLayer({
+                id: "route-layer",
+                type: "line",
+                source: "route",
+                layout: { "line-join": "round", "line-cap": "round" },
+                paint: { "line-color": "#3b9ddd", "line-width": 5 },
+            }); 
+
+            // Walker marker
+            const el = document.createElement("div");
+            el.style.width = "30px";
+            el.style.height = "30px";
+            el.style.backgroundImage = "url('https://img.icons8.com/color/48/person-male--v1.png')";
+            el.style.backgroundSize = "cover";
+            el.style.borderRadius = "50%";
+            el.style.border = "2px solid white";
+
+            walkerMarkerRef.current = new mapboxgl.Marker(el).setLngLat([0, 0]).addTo(map);
+
+             loadMap();   
+        });  
+        return () => {
+        map.remove();
+        if (animationRef.current) cancelAnimationFrame(animationRef.current);
+        };
+        
+    }, []); 
+
+    // Map click handler
+    useEffect(() => {
+        const map = mapRef.current;
+       
+        if (!map) return;
+ 
+        // const handleClick = async (e: mapboxgl.MapMouseEvent) => {
+
+        //     if (loopClosed) return alert("Loop already closed.");
+        //     const coords: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+        //     //alert(coords);
+        //     if (points.length > 2) {
+        //         const first = points[0];
+        //         const dist = Math.sqrt(Math.pow(first[0] - coords[0], 2) + Math.pow(first[1] - coords[1], 2));
+        //         if (dist < 0.0001) {
+        //         setLoopClosed(true);
+        //         alert("Loop closed!");
+        //         await updateRoute([...points, coords]);
+        //         return;
+        //         }
+        //     }
+
+        //     const title = prompt("Enter title for this point:");
+        //     if (!title) return;
+
+        //     const marker = new mapboxgl.Marker()
+        //         .setLngLat(coords)
+        //         .setPopup(new mapboxgl.Popup().setText(title))
+        //         .addTo(map);
+        //     marker.togglePopup();
+
+        //     setPoints((prev) => [...prev, coords]);
+        //     setTitles((prev) => [...prev, title]);
+        //     setMarkers((prev) => [...prev, marker]);
+
+        //     await updateRoute([...points, coords]);
+        // };
+        // Map click handler
+        const handleClick = async (e: mapboxgl.MapMouseEvent) => {
+            if (loopClosed) return alert("Loop already closed.");
+
+            const coords: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+
+            if (points.length > 2) {
+                const first = points[0];
+                const dist = Math.sqrt(Math.pow(first[0] - coords[0], 2) + Math.pow(first[1] - coords[1], 2));
+                if (dist < 0.0001) {
+                    setLoopClosed(true);
+                    alert("Loop closed!");
+                    setPoints(prev => {
+                        const newPoints = [...prev, coords];
+                        updateRoute(newPoints);
+                        return newPoints;
+                    });
+                    return;
+                }
+            }
+
+            const title = prompt("Enter title for this point:");
+            if (!title) return;
+
+            const marker = new mapboxgl.Marker({ draggable: true })
+                .setLngLat(coords)
+                .setPopup(new mapboxgl.Popup().setText(title))
+                .addTo(mapRef.current!);
+
+            marker.togglePopup();
+
+            // Marker drag updates points
+            marker.on("dragend", () => {
+                const lngLat = marker.getLngLat();
+                setPoints(prev => {
+                    const newPoints = [...prev];
+                    const idx = markers.indexOf(marker);
+                    if (idx !== -1) newPoints[idx] = [lngLat.lng, lngLat.lat];
+                    updateRoute(newPoints);
+                    return newPoints;
+                });
+            });
+
+            // Add marker and points
+            setMarkers(prev => [...prev, marker]);
+            setTitles(prev => [...prev, title]);
+            setPoints(prev => {
+                const newPoints = [...prev, coords];
+                updateRoute(newPoints); // ✅ always pass latest points
+                return newPoints;
+            });
+        };
+
+
+
+
+            map.on("click", handleClick);
+
+            return () => {   
+            map.off("click", handleClick);  
+            };
+    }, [points, titles, loopClosed]);   
+
+    // Get route using Mapbox Directions API
+    const getRoute = async (start: [number, number], end: [number, number]) => {
+        const url = `https://api.mapbox.com/directions/v5/mapbox/walking/${start[0]},${start[1]};${end[0]},${end[1]}?geometries=geojson&access_token=${mapboxgl.accessToken}`;
+        const res = await fetch(url);
+        const json = await res.json();
+        return json.routes?.[0]?.geometry.coordinates || null;
+    };
+
+
+    const updateRoute = async (pts: [number, number][]) => {
+        const map = mapRef.current;
+        if (!map) return;
+        if (pts.length < 2) {
+            const source = map.getSource("route") as mapboxgl.GeoJSONSource;
+            if (source) {
+                source.setData({
+                type: "Feature",
+                properties: {},
+                geometry: {
+                    type: "LineString",
+                    coordinates: [],
+                },
+                });
+            }
+            return;
+        }
+        let fullRoute: [number, number][] = [];
+
+        for (let i = 0; i < pts.length - 1; i++) {
+        const route = await getRoute(pts[i], pts[i + 1]);
+        if (!route) return;
+        if (i > 0) route.shift();
+        fullRoute = fullRoute.concat(route);
+        }
+
+        if (loopClosed && pts.length > 2) {
+        const closeRoute = await getRoute(pts[pts.length - 1], pts[0]);
+        if (closeRoute) {
+            closeRoute.shift();
+            fullRoute = fullRoute.concat(closeRoute);
+        }
+        }
+
+        walkerMarkerRef.current?.setLngLat(fullRoute[0]);
+        const source = map.getSource("route") as mapboxgl.GeoJSONSource;
+        if (source) {
+            source.setData({
+                type: "Feature",
+                properties: {}, // <-- always add this to match GeoJSON spec
+                geometry: {
+                type: "LineString",
+                coordinates: fullRoute,
+                },
+            });
+        }
+        animateAlongPath(fullRoute);
+    };
+
+
+    const animateAlongPath = (coords: [number, number][]) => {
+        if (!walkerMarkerRef.current) return;
+
+        let i = 0;
+
+        const step = () => {
+        if (i >= coords.length - 1) return;
+        const start = coords[i];
+        const end = coords[i + 1];
+        let progress = 0;
+        const duration = 200;
+        const startTime = performance.now();
+
+        const animate = (t: number) => {
+            progress = Math.min((t - startTime) / duration, 1);
+            const lng = start[0] + (end[0] - start[0]) * progress;
+            const lat = start[1] + (end[1] - start[1]) * progress;
+            walkerMarkerRef.current?.setLngLat([lng, lat]);
+
+            if (progress < 1) {
+            animationRef.current = requestAnimationFrame(animate);
+            } else {
+            i++;
+            animationRef.current = requestAnimationFrame(step);
+            }
+        };
+ 
+        animationRef.current = requestAnimationFrame(animate);
+        };
+
+        if (animationRef.current) cancelAnimationFrame(animationRef.current);
+        animationRef.current = requestAnimationFrame(step);
+    };
+
+    const clearMap = () => {
+        markers.forEach((m) => m.remove());
+        setMarkers([]);
+        setPoints([]);
+        setTitles([]);
+        setLoopClosed(false);
+        walkerMarkerRef.current?.setLngLat([0, 0]);
+        mapRef.current?.getSource("route")?.setData({ type: "Feature", geometry: { type: "LineString", coordinates: [] } });
+    };
+
+    const toggle3D = () => {
+        const map = mapRef.current;
+        if (!map) return;
+        const pitch = map.getPitch();
+        map.easeTo({ pitch: pitch === 0 ? 60 : 0, bearing: pitch === 0 ? 20 : 0 });
+    };
+    const editMap = () => {
+        const edit = [...points];  
+        alert(edit);  
+        setPoints([]);
+    };
+    // const saveMap = async () => {
+    //     const payload: Point[] = points.map((p, i) => ({
+    //     title: titles[i],
+    //     latitude: p[1],
+    //     longitude: p[0], 
+    //     pointOrder: i,
+    //     }));
+
+    // const res = await fetch("/Trails/SaveMap", {
+    //   method: "POST",
+    //   headers: { "Content-Type": "application/json" },
+    //   body: JSON.stringify(payload),
+    // });
+
+    //     alert(res.ok ? "Map saved." : "Save failed.");
+    // };
+
+    // const deleteMap = async () => {
+    //     const res = await fetch("/Trails/DeleteMap", {
+    //     method: "POST",
+    //     headers: { "Content-Type": "application/json" },
+    //     body: JSON.stringify({}),
+    //     });
+
+    //     if (res.ok) {
+    //     alert("Map deleted.");
+    //     clearMap();
+    //     } else {
+    //     alert("Delete failed.");
+    //     }
+    // };
+    
+    const loadMap = async () => {
+    const res = await fetch("/Trails/Load");
+    if (!res.ok) return console.warn("Map not found.");
+    const data = await res.json();
+
+    clearMap();
+    const bounds = new mapboxgl.LngLatBounds();
+    const newPoints: [number, number][] = [];
+    const newMarkers: mapboxgl.Marker[] = [];
+    const newTitles: string[] = [];
+
+    data.points.data.forEach((p: any) => {
+        const coords: [number, number] = [p.longitude, p.latitude];
+        const marker = new mapboxgl.Marker({ draggable: true })
+            .setLngLat(coords)
+            .setPopup(new mapboxgl.Popup().setText(p.title))
+            .addTo(mapRef.current!);
+        marker.togglePopup();
+
+        marker.on("dragend", () => {
+            const lngLat = marker.getLngLat();
+            setPoints(prev => {
+                const updatedPoints = [...prev];
+                const idx = newMarkers.indexOf(marker);
+                if (idx !== -1) updatedPoints[idx] = [lngLat.lng, lngLat.lat];
+                updateRoute(updatedPoints);
+                return updatedPoints;
+            });
+        });
+
+        newPoints.push(coords);
+        newMarkers.push(marker);
+        newTitles.push(p.title);
+        bounds.extend(coords);
+    });
+
+    setPoints(newPoints);
+    setMarkers(newMarkers);
+    setTitles(newTitles);
+
+    if (newPoints.length > 2) {
+        const first = newPoints[0], last = newPoints[newPoints.length - 1];
+        const dist = Math.sqrt(Math.pow(first[0] - last[0], 2) + Math.pow(first[1] - last[1], 2));
+        setLoopClosed(dist < 0.0001);
+    }
+
+    if (!bounds.isEmpty()) mapRef.current!.fitBounds(bounds, { padding: 50, maxZoom: 17 });
+
+    updateRoute(newPoints); // ✅ use latest points
+};
+
+ 
+  // End map creation
+  
+    const options: ShareOption[] = [
+        {
+            label: "Spam",
+            action: (cmt: any) => {
+                setIsOpen(false);
+                setSelectedComment(cmt.name);
+                //alert(selectedComment)
+                setSpamModal(true);
+            },
+        },
+        {
+            label: "Harmful content",
+            action: () => {
+               alert();
+            },
+        },
+        {
+            label: "Privacy issue",
+            action: () => {
+               // setSpamModal(true);
+            },
+        },
+        {
+            label: "Other",
+            action: () => {
+                //setSpamModal(true);
+            },
+        },
+    ];
     useEffect(() => {
         const storeLocal = localStorage.getItem("email");
-        // console.log(storeLocal)
         if (storeLocal) {
             setLoginId(storeLocal);
         }
     }, []);
+    useEffect(() => {
+    if (statePostId) localStorage.setItem("postId", statePostId);
+    }, [statePostId])
 
     // image arraw move
     const handleNextImage = useCallback(() => {
@@ -56,7 +499,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
             const storedId = localStorage.getItem("id");
             // console.log("Stored IDss:", storedId); // should print the ID string
             if (storedId) {
-                // setUserId(storedId); 
                 setUserId(storedId.trim());
             }  
     }, []);
@@ -64,20 +506,27 @@ const CommunitySectionCmtDetails: React.FC = () => {
         const handleShowMore = () => {
             setVisibleCount((prev) => prev + 5); // Show 5 more each time
         };
-    // console.log('login',loginId)
+        //  console.log('PostId',postId);
+        //  console.log('UserId',userId)
+        //  console.log('loginId',loginId)
+    
         const handleCommentSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
             e.preventDefault();
             if (!commenttext.trim()) {
                 console.warn("Comment is empty!");
                 return;
             }
-
+            if (!userId) {
+                console.error("No valid userId found!");
+                return;
+            }
             try {
                 const response = await axios.post(
                         `${BASE_URL}/feed/comment/`,
                     {
-                        PostId: 8,
-                        UserId: userId,   
+                        PostId: postId,
+                        // UserId: userId,   
+                         UserId: userId,   
                         CommentText: commenttext,  
                     },
                     {
@@ -106,7 +555,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
         // const fetchData= async (title:String) => {
         useEffect(() => {
             if (!loginId || !slug) {
-                //console.log("Skipping API call: loginId or slug not ready");
                 return;
             }
             const fetchPostDetail = async (slug:any) => {
@@ -125,16 +573,11 @@ const CommunitySectionCmtDetails: React.FC = () => {
                     },
                     }
                 );
-                console.log('coo',response.data);
+                //console.log('community/1',response.data);
                 setProfileCommunity(response.data?.data?.profile_Community || []);
                 const followingBy = response.data?.data?.following_by;
                 setFollowingBy(followingBy || []);
                 setComments(response.data.data.following_by.comments);
-                
-
-                // console.log("followingBy raw:", followingBy);
-                // console.log("isArray:", Array.isArray(followingBy));
-
                 let postDats = [];
 
                 if (Array.isArray(followingBy)) {
@@ -150,15 +593,14 @@ const CommunitySectionCmtDetails: React.FC = () => {
                     }
                 });
                 } else if (followingBy && typeof followingBy === "object") {
-                if (Array.isArray(followingBy.comments)) {
-                    postDats = followingBy.comments.map(c => c?.postDto).filter(Boolean);
-                } else if (followingBy.comments?.postDto) {
-                    postDats = [followingBy.comments.postDto];
-                } else if (followingBy.postDto) {
-                    postDats = [followingBy.postDto];
+                    if (Array.isArray(followingBy.comments)) {
+                        postDats = followingBy.comments.map(c => c?.postDto).filter(Boolean);
+                    } else if (followingBy.comments?.postDto) {
+                        postDats = [followingBy.comments.postDto];
+                    } else if (followingBy.postDto) {
+                        postDats = [followingBy.postDto];
+                    }       
                 }
-                }
-
                 // console.log("postDats", postDats);
                 setPostdata(postDats);
 
@@ -173,7 +615,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
         }, [loginId,slug]); 
 
 
-        console.log( getpostData);
+        // console.log( getpostData);
     if (CommunityLoading) {
         return (
             <div
@@ -213,15 +655,168 @@ const CommunitySectionCmtDetails: React.FC = () => {
                     <div className="row">
                         <div className="col-xl-12">
                             <div className="trail-dt-top">
-                                <h1 className="trail-dt-title">{getfollowingBy.title ?? ''}</h1>
-                                <p className="trail-dt-address text-grey mb-0">Shella Bholaganj, East Khasi Hills, MEGHALAYA, India <span className="tdt-add"> | <i className="bi bi-star-fill"></i> {getfollowingBy.rating??''} Moderate </span> <span className="tdt-separator">|</span> {getfollowingBy.date??''}<span className="t-dt-r-and-o"></span></p>
+                                <h1 className="trail-dt-title">{getfollowingBy?.title ?? ''}</h1>
+                                <p className="trail-dt-address text-grey mb-0">{getfollowingBy?.address ?? 'N/A'}<span className="tdt-add"> | <i className="bi bi-star-fill"></i> {getfollowingBy?.rating??''} Moderate </span> <span className="tdt-separator">|</span> {getfollowingBy?.date??''}<span className="t-dt-r-and-o"></span></p>
                                 
                             </div>
                         </div>
                         
                     </div>
                     <div className="row">
-                           
+                           {/* {isOpen && (
+                                <div
+                                style={{
+                                    position: "fixed",
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    background: "rgba(0,0,0,0.5)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    zIndex: 1000,
+                                }}
+                                onClick={() => setIsOpen(false)}
+                                >
+                                <div
+                                    style={{
+                                    background: "white",
+                                    padding: "25px",
+                                    borderRadius: "10px",
+                                    width: "450px",
+                                    maxHeight: "80vh",
+                                    overflowY: "auto",
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                        <div>
+                                            <h3 style={{ marginTop:'34px'}}>Report an issue</h3>
+                                        <p>What would you like to report?</p>
+                                        </div>
+                                        <button className="btn-cross" onClick={() => setIsOpen(false)}>
+                                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M4 4L16 16M16 4L4 16" stroke="#05073D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                                        {options.map((opt, idx) => (
+                                            <li
+                                            key={idx}
+                                            style={{
+                                                padding: "15px",
+                                                borderBottom: "1px solid #eee",
+                                                cursor: "pointer",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "space-between", // <- push SVG to right
+                                                
+                                            }}
+                                            onClick={opt.action}
+                                            >
+                                            <span>{opt.label}</span>
+                                            
+                                            <svg
+                                                width="20"
+                                                height="20"
+                                                viewBox="0 0 20 20"
+                                                fill="none"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                            >
+                                                <path
+                                                d="M6 4L14 10L6 16"
+                                                stroke="#05073D"
+                                                strokeWidth="2"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                />
+                                            </svg>
+                                            </li>
+                                        ))}
+                                        </ul>
+
+
+                                    </div>
+                                </div>
+                            )} */}
+                            {isSpam && (
+                                <div
+                                    style={{
+                                    position: "fixed",
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    background: "rgba(0,0,0,0.5)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    zIndex: 1000,
+                                    }}
+                                    onClick={() => setSpamModal(false)}
+                                >
+                                    <div
+                                        style={{
+                                            background: "white",
+                                            padding: "25px",
+                                            borderRadius: "10px",
+                                            width: "450px",
+                                            maxHeight: "80vh",
+                                            marginTop:"80px",
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
+                                        >
+                                        <div style={{ display: "flex", justifyContent: "space-between",margin:'15px 0px 15px 0px' }}>
+                                            
+                                            <button className="btn-cross"
+                                            onClick={() => {
+                                                setSpamModal(false);
+                                                setIsOpen(true); // reopen Share modal
+                                            }}
+                                            > 
+                                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M12 4L6 10L12 16" stroke="#05073D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                            </svg>
+
+                                            </button>
+                                            <button className="btn-cross" onClick={() => setSpamModal(false)}> 
+                                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M4 4L16 16M16 4L4 16" stroke="#05073D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                            </svg>
+    
+                                            </button>
+                                        </div>
+                                        <div>
+                                             <h3 style={{ marginTop:'25px'}}>Report an issue</h3>
+                                            <p>What would you like to report?</p>
+                                            {/* <input
+                                                type="tel"
+                                                placeholder="Enter phone number"
+                                                value={phone}
+                                                onChange={(e) => setPhone(e.target.value)}
+                                                style={{ width: "100%", padding: "10px", marginBottom: "15px" }}
+                                            /> */}
+                                            <p>Spam</p>
+                                            <p style={{background:'#ccc',padding:'10px'}}>This might include unwanted solicitations, advertising or promotions, fraud or phishing.</p>
+                                            <h4>Block {selectedComment ?? ''}</h4>
+                                            <div className="row">
+                                                <div className='col-md-10'>
+                                                    You’ll no longer see their reviews, photos, or posts. Neither of you will be able to see each other’s profiles.
+                                                </div>
+                                                 <div className='col-md-2'>
+                                                   <label className="switch">
+                                                        <input type="checkbox" />
+                                                        <span className="slider"></span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <button className="btn-send">Submit report</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                )}
                         <div  className="col-xl-8 col-lg-7 col-md-12 col-sm-12 col-12 order-xl-first order-lg-first order-md-first order-sm-last order-last">
                             
                             <ul className="d-flex trail-dt-nav list-unstyled pt-3" role="tablist">
@@ -232,7 +827,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                 </ul>
                             <div className="trail-cover position-relative" id="overviewData">
                                 <img
-                                    src={getfollowingBy.image_near || '/assets/images/not-found.jpg'}
+                                    src={getfollowingBy?.image_near || '/assets/images/not-found.jpg'}
                                     alt="Com" className="w-100 br-20 coverImage" 
                                     onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                                         const target = e.currentTarget;
@@ -281,7 +876,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                 stroke="#C6C6D1" strokeWidth="1.5" strokeLinecap="round" />
                                         </svg>
                                     </a>
-                                </div>
+                                </div> 
                             </div>
                             <div   className="trail-user-favorite-card br-20 bg-almost-white d-flex justify-content-between flex-wrap">
 
@@ -290,16 +885,15 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                         <p className="mb-0">Users Favorite </p>
                                     </div>
                                     <div className="tusc-cn-2">
-                                        <p className="mb-0 text-midnight-navy">One of the most loved homes on Airbnb,
-                                            according to guests</p>
+                                        <p className="mb-0 text-midnight-navy">{getfollowingBy?.user_favorite ?? ''}</p>
                                     </div>
                                 </div>
 
                                 <div className="tuf-right-content d-flex align-items-center">
                                    
                                     <div className="tusc-cn-1 text-center">
-                                        <p className="mb-0">{getfollowingBy.rating}</p>
-                                        <StarRating rating={Number(getfollowingBy.rating)}/>
+                                        <p className="mb-0">{getfollowingBy?.rating}</p>
+                                        <StarRating rating={Number(getfollowingBy?.rating)}/>
                                         {/* <div className="rating">
                                             <i className="bi bi-star-fill"></i>
                                             <i className="bi bi-star-fill"></i>
@@ -311,12 +905,14 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                     <div className="tusc-cn-2 text-center">
                                         
                                         <p className="mb-0 text-midnight-navy"><span className="d-block review-no">31</span>
-                                            <span>Reviews</span>
+                                            <span>{getfollowingBy?.total_reviews ?? ''}</span>
                                         </p>
                                     </div>
                                     <div className="tusc-cn-3">
-                                        <a href="" className="btn-style-1">Show all Reviews</a>
+                                        <a href="#reviews"
+                                        className="btn-style-1">Show all Reviews</a>
                                     </div>
+                                    
                                 </div>
                             </div>
                             <div className="trail-stats d-flex flex-wrap">
@@ -330,7 +926,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                 </div>
                                 <div className="trail-stat-single text-midnight-navy px-2">
                                     <img src="/assets/images/icons/loop.svg" alt="" className="tss-icon"/>
-                                    <p className="mb-0">{getpostData.trailType ?? ''}</p>
+                                    <p className="mb-0">{getfollowingBy?.trailType ?? ''}</p>
                                 </div>
                             </div>
                             <div className="trail-desc1 trail-detail-widget1">
@@ -372,9 +968,10 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                             fillRule="evenodd"
                                             clipRule="evenodd"
                                             d="M2.32083 3.55228C1.54093 4.54475 1.06838 5.90073 1.06838 7.31638C1.06838 10.4899 3.18627 13.1538 5.42249 15.071C6.52965 16.0202 7.63942 16.7633 8.47356 17.2694C8.89001 17.5221 9.23633 17.7148 9.47719 17.8437C9.52521 17.8694 9.56902 17.8926 9.60833 17.9131C9.64866 17.8909 9.6937 17.8658 9.74322 17.8379C9.98467 17.7017 10.3316 17.499 10.7488 17.2351C11.5842 16.7066 12.6957 15.9365 13.8047 14.9685C16.049 13.0096 18.1624 10.3462 18.1624 7.31638C18.1624 5.90094 17.6899 4.54496 16.91 3.55244C16.1327 2.56318 15.0713 1.95607 13.8722 1.95607C12.2147 1.95607 10.9292 3.03556 10.0949 4.73481L9.61539 5.71147L9.1359 4.73481C8.30155 3.03545 7.01597 1.95607 5.35855 1.95607C4.15962 1.95607 3.09813 2.56307 2.32083 3.55228ZM9.61539 18.5159C9.38365 18.9972 9.38328 18.997 9.38328 18.997L9.38088 18.9959L9.37479 18.9929L9.35294 18.9822C9.33413 18.9729 9.307 18.9594 9.27206 18.9417C9.20214 18.9063 9.10102 18.8541 8.97313 18.7857C8.71741 18.6489 8.35422 18.4467 7.91934 18.1828C7.05075 17.6558 5.89022 16.8793 4.72708 15.8821C2.4227 13.9064 0 10.9706 0 7.31638C0 5.67359 0.545529 4.08235 1.48078 2.89218C2.41859 1.69872 3.76928 0.887695 5.35855 0.887695C7.23013 0.887695 8.65337 1.9365 9.61539 3.41643C10.5774 1.93657 12.0006 0.887695 13.8722 0.887695C15.4616 0.887695 16.8123 1.69886 17.7501 2.89234C18.6853 4.08262 19.2308 5.67386 19.2308 7.31638C19.2308 10.8327 16.8036 13.7691 14.5073 15.7734C13.3459 16.787 12.1872 17.5893 11.3199 18.138C10.8857 18.4126 10.5231 18.6246 10.268 18.7685C10.1404 18.8404 10.0395 18.8954 9.96987 18.9328C9.9351 18.9515 9.90807 18.9657 9.88937 18.9755L9.86773 18.9868L9.8617 18.9899L9.85994 18.9908L9.85935 18.9911C9.85935 18.9911 9.85897 18.9913 9.61539 18.5159ZM9.61539 18.5159L9.85935 18.9911L9.62281 19.1123L9.38328 18.997L9.61539 18.5159Z"
-                                            fill="#7D7D7D"
+                                            fill={getfollowingBy?.do_like===true  ? "#FC673C" : "#7D7D7D"}
                                             />
-                                        </svg>{getfollowingBy.like_count?? 0} like
+                                            
+                                        </svg>{getfollowingBy?.like_count?? 0}  {getfollowingBy?.do_like===true ? "Liked" : "Like"}  
                                         
                                     </button>
                                     <button className="comment-btn">
@@ -384,7 +981,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                 fill="#7D7D7D"
                                             />
                                         </svg>
-                                            {getfollowingBy.comment_count?? 0} Comment
+                                            {getfollowingBy?.comment_count?? 0} Comment
                                     </button>
                                     <button className="share-btn">
                                         <svg width="21" height="22" viewBox="0 0 21 22" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -393,7 +990,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                 fill="#7D7D7D"
                                             />
                                         </svg>
-                                        {getfollowingBy.share_count?? 0}  Share
+                                        {getfollowingBy?.share_count?? 0}  Share
                                     </button>
 
                                 </div>
@@ -432,8 +1029,35 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                             <i className="bi bi-three-dots"></i>
                                                         </a>
                                                         <ul className="dropdown-menu dropdown-sm dropdown-rounded custom-dropdown">
-                                                            <li><a className="dropdown-item" href="#">Report an issue</a></li>
-                                                            <li><a className="dropdown-item" href="#">Block</a></li>
+                                                           {userId === cmt.userId ? (
+                                                            <li>
+                                                                <a className="dropdown-item" href="#">
+                                                                Delete
+                                                                </a>
+                                                            </li>
+                                                            ) : (
+                                                            <>
+                                                                <li>
+                                                                    <a className="dropdown-item" 
+                                                                    // onClick={() => {
+                                                                    //     setIsOpen(true);
+                                                                    //     setSelectedComment(cmt.name); 
+                                                                    // }}
+                                                                    //onClick={() => setIsOpen(true)}
+                                                                     onClick={() => options[0].action(cmt)} 
+                                                                    >
+                                                                    
+                                                                    Report an issue
+                                                                </a>
+                                                                </li>
+                                                                <li>
+                                                                    {/* <a className="dropdown-item" href="#">
+                                                                        Block
+                                                                    </a> */}
+                                                                </li>
+                                                            </>
+                                                            )}
+                                                            
                                                             {/* <li><a className="dropdown-item" href="#">Action 2</a></li> */}
                                                         </ul>
                                                     </div>
@@ -518,7 +1142,44 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                     </button>
                                 </div>
                                 {/* <!-- <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d194474.440444268!2d55.959295174859626!3d25.08154936413991!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ef5a8616e5ca149%3A0x75d4f4005126006a!2sShawkah%20Dam!5e0!3m2!1sen!2sin!4v1749891263519!5m2!1sen!2sin"   allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe> --> */}
-                                <img src="/assets/images/trails/map.png" alt="" className="map-img"/>
+                                {/* <img src="/assets/images/trails/map.png" alt="" className="map-img"/> */}
+                                    <div
+                                            style={{
+                                            // position: "absolute",
+                                            top: 10,
+                                            left: 10,
+                                            background: "white",
+                                            padding: 10,
+                                            borderRadius: 8,
+                                            boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+                                            zIndex: 1,
+                                            display: "flex",
+                                            gap: "8px",
+                                            flexWrap: "wrap",
+                                            marginBottom: "25px",
+                                            justifyContent:"space-around",
+                                            }}
+                                        > 
+                                            {/* <button onClick={saveMap}>💾 Save Map</button>
+                                            <button onClick={deleteMap}>🗑️ Delete Map</button>
+                                            <button onClick={() => window.location.reload()}>🔄 Refresh</button> */}
+                                            <button onClick={toggle3D}>3D View</button>
+                                            <button onClick={clearMap}>Clear</button>
+                                            <button onClick={editMap}>Edit</button>
+                                            <button onClick={() => (window.location.href = "/Trails/Details")}>Trail Details</button> 
+                                    </div>  
+                                <div style={{ height: "100vh", width: "100%", position: "relative" }}>
+                                    {/* Map Container */}
+                                    <div
+                                        ref={mapContainer}
+                                        style={{ height: "100%", width: "100%" }}
+                                    />  
+
+                                    {/* Buttons Overlay */}
+                                     
+                                </div>
+ 
+
                                 <a href="/assets/images/trails/map.png" data-fancybox="mapImg"
                                     className="arrow-btn d-flex align-items-center justify-content-center rounded-circle">
                                     <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -538,7 +1199,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                     <li><a href=""><img src="/assets/images/icons/views.svg" alt=""/> Views </a></li>
                                     <li><a href=""><img src="/assets/images/icons/hiking.svg" alt=""/> Hiking </a></li>
                                     <li><a href=""><img src="/assets/images/icons/walking.svg" alt=""/> Walking </a></li>
-                                </ul>
+                                </ul> 
                                 <div className="d-flex flex-wrap align-items-center">
                                     <a href="" className="btn-style-3">Get Directions</a>
                                     <a href="" className="btn-style-1">Hit the Trail</a>
@@ -548,7 +1209,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                         
                     </div>
                     {/* <!-- reviews --> */}
-                    {/* <div className="trails-reviews-widget" id="reviews">
+                    <div className="trails-reviews-widget" id="reviews">
                         <div className="row">
                             <div className="col-12">
                                 <div className="section-title">
@@ -557,8 +1218,9 @@ const CommunitySectionCmtDetails: React.FC = () => {
                             </div>
 
                         </div>
-
-                        <div className="row review-row g-3">
+                        {
+                            showReviews &&(
+                                <div className="row review-row g-3">
                             <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
                                 <div className="testimonial-single position-relative">
                                     <div className="testimonial-head d-flex w-100 align-items-center position-relative">
@@ -679,7 +1341,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
-                            <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
+                            {/* <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
                                 <div className="testimonial-single position-relative">
                                     <div className="testimonial-head d-flex w-100 align-items-center position-relative">
                                         <div className="test-image">
@@ -754,14 +1416,27 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                             saved me big time!</p>
                                     </div>
                                 </div>
+                            </div> */}
+                        </div>
+                            )
+                        }
+                        
+                        <div className="row">
+                            <div className="col-12 mb-4 text-center">
+                            <button
+                                className="btn-style-1"
+                                onClick={() => setShowReviews(!showReviews)}
+                            >
+                                {showReviews ? "Hide Reviews" : "Check All Reviews"}
+                            </button>
                             </div>
                         </div>
-                        <div className="row">
+                        {/* <div className="row">
                             <div className="col-12 mb-4 text-center">
                                 <a href="" className="btn-style-1">Check All Reviews</a>
                             </div>
-                        </div>
-                    </div> */}
+                        </div> */}
+                    </div>
                     {/* <!-- review-end --> */}
                 </div>
             </section>

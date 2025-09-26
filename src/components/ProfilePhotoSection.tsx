@@ -1,9 +1,108 @@
-import React from 'react';
+import React, { useEffect, useState,useCallback } from 'react';
 import ProfileLeftSection from './ProfileLeftSection';
+import axios from 'axios';
+import { useLocation, useParams } from 'react-router-dom';
+import { SquareLoader } from "react-spinners"; 
 
+
+const BASE_URL = import.meta.env.VITE_API_URL;
+interface FeedProfile {
+    id:number,
+    mediaType:string,
+    mediaUrl:string
+}
 const ProfilePhotoSection: React.FC = () => {
+    const location = useLocation();
+    const stateUserId = location.state?.userId;
+    const [userId, setUserId] = useState(stateUserId || localStorage.getItem("userId"));
+    const [loginId, setLoginId] = useState("");
+    const [feedPhotoLoading,setFeedLoading] = useState(true);
+    const [getfeedProfie, setFeedProfile ]= useState<FeedProfile[]>([]);
+    //console.log(userId);
+    useEffect(() => {
+            const storeLocal = localStorage.getItem("login");
+             console.log(storeLocal)
+            if (storeLocal) {
+                setLoginId(storeLocal);
+                // setUserID(userId);
+            }
+    }, []);
 
-  return (
+    useEffect(() => {
+    if (!loginId || !userId) return; // wait until both are set
+
+    const fetchFeedImagesData = async () => {
+        try {
+            //console.log("Calling POST API with:", { userId, loginId });
+
+            const response = await axios.post(
+                `${BASE_URL}/feed/user/Images/${userId}`, 
+                { LoginId: loginId }, // body payload
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Accept: "application/json",
+                    },
+                }
+            );
+
+            //console.log('Images response:', response.data);
+            setFeedProfile(response.data.data);
+        } catch (error: any) {
+            console.error(
+                "Error fetching community data",
+                error.response?.status,      // HTTP status code
+                error.response?.data || error.message
+            );
+        }finally {
+        setFeedLoading(false);
+        }
+    };
+
+    fetchFeedImagesData();
+}, [loginId, userId]);
+
+
+    // useEffect(() => {
+    //     if (!loginId) return;  
+
+    //     const fetchFeedImagesData = async () => {
+    //         try {
+    //         const response = await axios.post(
+    //             `${BASE_URL}/Images/${userId}`,
+    //             { LoginId: loginId }
+    //         );
+
+    //         console.log("image", response.data.data);
+    //         } catch (error) {
+    //         console.error("Error fetching community data", error.response?.data || error.message);
+    //         }
+    //     };
+
+    //     fetchFeedImagesData();
+    //     }, [loginId]);
+    if (feedPhotoLoading) {
+            return (
+                <div
+                    style={{
+                    position: "fixed",
+                    top: 0,
+                    left: 0,
+                    width: "100vw",
+                    height: "100vh",
+                    background: "#FFF5E9",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    zIndex: 9999,
+                    }}
+                >
+                    <SquareLoader color="#FC673C" size={80} speedMultiplier={1.5} />
+                </div>
+            );
+        }
+
+    return (
         <main className="mainContent">
             <section className="section-profile-photo inner-dashboard position-relative py-3">
                 <div className="container">
@@ -71,12 +170,34 @@ const ProfilePhotoSection: React.FC = () => {
                         <div className="col-xl-9 col-lg-7 col-md-7 col-sm-12 col-12">
                             <div className="profile-inner-card bg-almost-white profile-inner-card-photos br-20">
                                 <div className="row profile-photo-row">
-                                    <div className="col-xl-6 col-lg-6 col-md-6 col-sm-6 col-12">
-                                        <div className="profile-photo-single">
-                                            <a href="assets/images/profile/photos/photo-0.jpg" data-fancybox="gallery"><img src="assets/images/profile/photos/photo-0.jpg" alt="" className="w-100" /></a>
-                                        </div>
-                                    </div>
-                                    <div className="col-xl-6 col-lg-6 col-md-6 col-sm-6 col-12">
+                                    {
+                                        getfeedProfie.length >0 ?(
+                                            getfeedProfie.map((feedprofile:any, index:number)=>(
+                                                <div className="col-xl-6 col-lg-6 col-md-6 col-sm-6 col-12">
+                                                    <div key={index} className="profile-photo-single">
+                                                        
+                                                        <a href="assets/images/profile/photos/photo-0.jpg" data-fancybox="gallery">
+                                                        <img
+                                                            src={feedprofile.mediaUrl || '/assets/images/not-found.jpg'}
+                                                            alt="Com" className="w-100" 
+                                                            onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                                                const target = e.currentTarget;
+                                                                target.onerror = null; // prevent infinite loop
+                                                                target.src = '/assets/images/not-found.jpg'; // fallback image
+                                                            }}
+                                                        />
+                                                        {/* <img src="assets/images/profile/photos/photo-0.jpg" alt="" className="w-100" /> */}
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ):(
+                                            <p>Not available! </p>
+                                        )
+                                    }
+                                    
+
+                                    {/* <div className="col-xl-6 col-lg-6 col-md-6 col-sm-6 col-12">
                                         <div className="profile-photo-single">
                                             <a href="assets/images/profile/photos/photo-01.jpg" data-fancybox="gallery"><img src="assets/images/profile/photos/photo-01.jpg" alt="" className="w-100" /></a>
                                         </div>
@@ -100,7 +221,7 @@ const ProfilePhotoSection: React.FC = () => {
                                         <div className="profile-photo-single">
                                             <a href="assets/images/profile/photos/photo-4.jpg" data-fancybox="gallery"><img src="assets/images/profile/photos/photo-4.jpg" alt="" className="w-100" /></a>
                                         </div>
-                                    </div>
+                                    </div> */}
                                 </div>
                             </div>
                         </div>
