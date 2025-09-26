@@ -24,6 +24,7 @@ interface Community{
 interface ProfileCommunity{
     p_image:string,
     p_name:string,
+    id:string,
     address:string,
     member:string,
     followers:number,
@@ -32,11 +33,14 @@ interface ProfileCommunity{
 interface suggestedNearby{
     id:number,
     name:string,
+    slug:string,
     date:string,
     logo:string,
     image_near:string,
     title:string,
     rating:number,
+    comment_count:number,
+    share_count:number,
     description:string
 }
 const CommunitySection: React.FC = () => {
@@ -75,7 +79,7 @@ const CommunitySection: React.FC = () => {
     }, []);
     useEffect(() => {
         const storeLocal = localStorage.getItem("login");
-        // console.log(storeLocal)
+         console.log(storeLocal)
         if (storeLocal) {
             setLoginId(storeLocal);
             // setUserID(userId);
@@ -190,9 +194,8 @@ const CommunitySection: React.FC = () => {
 
 
     const handleFollow = useCallback(async (id: number) => {
-        
         if(id !==0){
-            alert(id);
+            // alert(id);
             try{
                 const response = await axios.post(
                     `${BASE_URL}/user/follow`,
@@ -226,22 +229,22 @@ const CommunitySection: React.FC = () => {
     }, [userId]);
     
     
-    // const handleShare = async (id:any) => {
-    //     try {
-    //     const response = await axios.post(`${BASE_URL}/feed/share`, {
-    //         PostId: id,
-    //         UserId: userId
-    //     }, {
-    //         headers: { "Content-Type": "application/json" }
-    //     });
+    const handleShare = async (id:any) => {
+        try {
+        const response = await axios.post(`${BASE_URL}/feed/share`, {
+            PostId: id,
+            UserId: userId
+        }, {
+            headers: { "Content-Type": "application/json" }
+        });
 
-    //     console.log("Share response:", response.data);
-    //     alert("Post shared successfully!");
-    //     } catch (error) {
-    //     console.error("Error sharing post:", error);
-    //     alert("Failed to share post.");
-    //     }
-    // };
+        console.log("Share response:", response.data);
+        //alert("Post shared successfully!");
+        } catch (error) {
+        console.error("Error sharing post:", error);
+        alert("Failed to share post.");
+        }
+    };
 
 
     // useEffect(()=>{
@@ -592,7 +595,14 @@ const CommunitySection: React.FC = () => {
                                                                         <h6 className="feed-title text-midnight-navy">{getSug.title ?? 'N/A'}</h6>
                                                                     </Link>
                                                                     <div className="rating">
-                                                                        <StarRating rating={Number(getSug.rating)}/>
+                                                                        {
+                                                                            getSug.rating > 0 ?(
+                                                                                <StarRating rating={Number(getSug.rating)}/>
+                                                                            ):(
+                                                                                <p></p>
+                                                                            )
+                                                                        }
+                                                                        
                                                                         {/* <img src="/assets/images/icons/Star.svg" alt="" />
                                                                         <img src="/assets/images/icons/Star.svg" alt="" />
                                                                         <img src="/assets/images/icons/Star.svg" alt="" />
@@ -642,14 +652,16 @@ const CommunitySection: React.FC = () => {
                                                                                 fill="#7D7D7D"
                                                                             />
                                                                         </svg>
-                                                                        <Link to={`/explore/recording/${getSug.slug}`} className="dropdown-item">
-                                                                            {(getSug.comment_count) || 0} Comment
+                                                                        <Link to={`/explore/recording/${getSug.slug}`} 
+                                                                        state={{ postId: getSug.id }}   
+                                                                        className="dropdown-item">
+                                                                            {(getSug.comment_count) || 0} Comment 
                                                                         </Link>
                                                                                                     
                                                                         
                                                                     </button>
                                                                     <button 
-                                                                    // onClick={()=> handleShare(getSug.id)}
+                                                                    onClick={()=> handleShare(getSug.id)}
                                                                     className="share-btn">
                                                                         <svg width="21" height="22" viewBox="0 0 21 22" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                                             <path
@@ -766,7 +778,7 @@ const CommunitySection: React.FC = () => {
                                                             </div>
 
                                                             <div className="profile-dt">
-                                                                <h4 className="profile-username text-midnight-navy">{pr.p_name ?? ''}</h4>
+                                                                <h4 className="profile-username text-midnight-navy">{pr.p_name ?? ''} </h4>
                                                                 <h5 className="profile-address text-midnight-navy">{pr.address ?? ''}</h5>
                                                                 <p className="membership-info text-grey">{pr.member ?? '' }</p>
                                                             </div>
@@ -794,7 +806,7 @@ const CommunitySection: React.FC = () => {
                                                         {/* <a href="profile-feed.html">Feed</a> */}
                                                     </li>
                                                     <li>
-                                                        <Link to={'/profile-photo'}>
+                                                        <Link    state={{ userId: getProfileCommunity?.[0]?.id }}  to={'/profile-photo'}>
                                                             Photos
                                                         </Link>
                                                         {/* <a href="profile-photos.html">Photos</a> */}
