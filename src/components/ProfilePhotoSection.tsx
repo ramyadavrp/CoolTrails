@@ -21,7 +21,7 @@ const ProfilePhotoSection: React.FC = () => {
     //console.log(userId);
     useEffect(() => {
             const storeLocal = localStorage.getItem("login");
-             console.log(storeLocal)
+            //  console.log(storeLocal)
             if (storeLocal) {
                 setLoginId(storeLocal);
                 // setUserID(userId);
@@ -173,8 +173,8 @@ const ProfilePhotoSection: React.FC = () => {
                                     {
                                         getfeedProfie.length >0 ?(
                                             getfeedProfie.map((feedprofile:any, index:number)=>(
-                                                <div className="col-xl-6 col-lg-6 col-md-6 col-sm-6 col-12">
-                                                    <div key={index} className="profile-photo-single">
+                                                <div  key={index} className="col-xl-6 col-lg-6 col-md-6 col-sm-6 col-12">
+                                                    <div className="profile-photo-single">
                                                         
                                                         <a href="assets/images/profile/photos/photo-0.jpg" data-fancybox="gallery">
                                                         <img

@@ -77,7 +77,12 @@ const CommunitySectionCmtDetails: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [isSpam, setSpamModal] = useState(false);
     const [selectedComment, setSelectedComment] = useState<any>(null);
-  
+    const [getBlockedId, setBlocked] = useState<any>(null);
+    const [getBlockPostId, setBlockPostId] = useState<any>(null);
+    const [getBlockedUserId, setBlockedUserId] = useState<any>(null);
+    const [reasonvalue, setReasonValue] = useState<any>(null); 
+    // Review Show
+    const [showReviews, setShowReviews] = useState(true);
     // map state
     const mapContainer = useRef<HTMLDivElement | null>(null);
     const walkerMarkerRef = useRef<mapboxgl.Marker | null>(null);
@@ -88,27 +93,25 @@ const CommunitySectionCmtDetails: React.FC = () => {
     const [titles, setTitles] = useState<string[]>([]);
     const [markers, setMarkers] = useState<mapboxgl.Marker[]>([]);
     const [loopClosed, setLoopClosed] = useState(false);
-    // Review
-    const [showReviews, setShowReviews] = useState(true);
-
+    
+    // Start map creation
     // Initialize map
-    useEffect(() => {
+        useEffect(() => {
         if (!mapContainer.current) return;
 
         const map = new mapboxgl.Map({
             container: mapContainer.current,
             style: "mapbox://styles/mapbox/streets-v12",
             center: [78.0421, 27.1751],
-            zoom: 16, 
+            zoom: 16,
             pitch: 0,
             bearing: 0,
             antialias: true,
-        });  
+        });
 
         mapRef.current = map;
 
         const geocoder = new MapboxGeocoder({
-            
             accessToken: mapboxgl.accessToken,
             mapboxgl: mapboxgl,
             marker: false,
@@ -120,7 +123,11 @@ const CommunitySectionCmtDetails: React.FC = () => {
         map.on("load", () => {
             map.addSource("route", {
                 type: "geojson",
-                data: { type: "Feature", properties: {},geometry: { type: "LineString", coordinates: [] as [number, number] [] } },
+                data: {
+                    type: "Feature",
+                    properties: {},
+                    geometry: { type: "LineString", coordinates: [] as [number, number][] },
+                },
             });
 
             map.addLayer({
@@ -129,7 +136,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                 source: "route",
                 layout: { "line-join": "round", "line-cap": "round" },
                 paint: { "line-color": "#3b9ddd", "line-width": 5 },
-            }); 
+            });
 
             // Walker marker
             const el = document.createElement("div");
@@ -142,53 +149,20 @@ const CommunitySectionCmtDetails: React.FC = () => {
 
             walkerMarkerRef.current = new mapboxgl.Marker(el).setLngLat([0, 0]).addTo(map);
 
-             loadMap();   
-        });  
+            loadMap();
+        });
+
         return () => {
-        map.remove();
-        if (animationRef.current) cancelAnimationFrame(animationRef.current);
+            map.remove();
+            if (animationRef.current) cancelAnimationFrame(animationRef.current);
         };
-        
-    }, []); 
+    }, []);
 
     // Map click handler
     useEffect(() => {
         const map = mapRef.current;
-       
         if (!map) return;
- 
-        // const handleClick = async (e: mapboxgl.MapMouseEvent) => {
 
-        //     if (loopClosed) return alert("Loop already closed.");
-        //     const coords: [number, number] = [e.lngLat.lng, e.lngLat.lat];
-        //     //alert(coords);
-        //     if (points.length > 2) {
-        //         const first = points[0];
-        //         const dist = Math.sqrt(Math.pow(first[0] - coords[0], 2) + Math.pow(first[1] - coords[1], 2));
-        //         if (dist < 0.0001) {
-        //         setLoopClosed(true);
-        //         alert("Loop closed!");
-        //         await updateRoute([...points, coords]);
-        //         return;
-        //         }
-        //     }
-
-        //     const title = prompt("Enter title for this point:");
-        //     if (!title) return;
-
-        //     const marker = new mapboxgl.Marker()
-        //         .setLngLat(coords)
-        //         .setPopup(new mapboxgl.Popup().setText(title))
-        //         .addTo(map);
-        //     marker.togglePopup();
-
-        //     setPoints((prev) => [...prev, coords]);
-        //     setTitles((prev) => [...prev, title]);
-        //     setMarkers((prev) => [...prev, marker]);
-
-        //     await updateRoute([...points, coords]);
-        // };
-        // Map click handler
         const handleClick = async (e: mapboxgl.MapMouseEvent) => {
             if (loopClosed) return alert("Loop already closed.");
 
@@ -212,6 +186,8 @@ const CommunitySectionCmtDetails: React.FC = () => {
             const title = prompt("Enter title for this point:");
             if (!title) return;
 
+            const index = points.length; // assign index for this marker
+
             const marker = new mapboxgl.Marker({ draggable: true })
                 .setLngLat(coords)
                 .setPopup(new mapboxgl.Popup().setText(title))
@@ -219,37 +195,32 @@ const CommunitySectionCmtDetails: React.FC = () => {
 
             marker.togglePopup();
 
-            // Marker drag updates points
+            // marker drag updates correct index
             marker.on("dragend", () => {
                 const lngLat = marker.getLngLat();
                 setPoints(prev => {
-                    const newPoints = [...prev];
-                    const idx = markers.indexOf(marker);
-                    if (idx !== -1) newPoints[idx] = [lngLat.lng, lngLat.lat];
-                    updateRoute(newPoints);
-                    return newPoints;
+                    const updatedPoints = [...prev];
+                    updatedPoints[index] = [lngLat.lng, lngLat.lat];
+                    updateRoute(updatedPoints);
+                    return updatedPoints;
                 });
             });
 
-            // Add marker and points
             setMarkers(prev => [...prev, marker]);
             setTitles(prev => [...prev, title]);
             setPoints(prev => {
                 const newPoints = [...prev, coords];
-                updateRoute(newPoints); // ✅ always pass latest points
+                updateRoute(newPoints);
                 return newPoints;
             });
         };
 
-
-
-
             map.on("click", handleClick);
 
-            return () => {   
-            map.off("click", handleClick);  
+            return () => {
+                map.off("click", handleClick);
             };
-    }, [points, titles, loopClosed]);   
+    }, [points, titles, loopClosed]);
 
     // Get route using Mapbox Directions API
     const getRoute = async (start: [number, number], end: [number, number]) => {
@@ -259,7 +230,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
         return json.routes?.[0]?.geometry.coordinates || null;
     };
 
-
     const updateRoute = async (pts: [number, number][]) => {
         const map = mapRef.current;
         if (!map) return;
@@ -267,12 +237,12 @@ const CommunitySectionCmtDetails: React.FC = () => {
             const source = map.getSource("route") as mapboxgl.GeoJSONSource;
             if (source) {
                 source.setData({
-                type: "Feature",
-                properties: {},
-                geometry: {
-                    type: "LineString",
-                    coordinates: [],
-                },
+                    type: "Feature",
+                    properties: {},
+                    geometry: {
+                        type: "LineString",
+                        coordinates: [],
+                    },
                 });
             }
             return;
@@ -280,18 +250,18 @@ const CommunitySectionCmtDetails: React.FC = () => {
         let fullRoute: [number, number][] = [];
 
         for (let i = 0; i < pts.length - 1; i++) {
-        const route = await getRoute(pts[i], pts[i + 1]);
-        if (!route) return;
-        if (i > 0) route.shift();
-        fullRoute = fullRoute.concat(route);
+            const route = await getRoute(pts[i], pts[i + 1]);
+            if (!route) return;
+            if (i > 0) route.shift();
+            fullRoute = fullRoute.concat(route);
         }
 
         if (loopClosed && pts.length > 2) {
-        const closeRoute = await getRoute(pts[pts.length - 1], pts[0]);
-        if (closeRoute) {
-            closeRoute.shift();
-            fullRoute = fullRoute.concat(closeRoute);
-        }
+            const closeRoute = await getRoute(pts[pts.length - 1], pts[0]);
+            if (closeRoute) {
+                closeRoute.shift();
+                fullRoute = fullRoute.concat(closeRoute);
+            }
         }
 
         walkerMarkerRef.current?.setLngLat(fullRoute[0]);
@@ -299,16 +269,15 @@ const CommunitySectionCmtDetails: React.FC = () => {
         if (source) {
             source.setData({
                 type: "Feature",
-                properties: {}, // <-- always add this to match GeoJSON spec
+                properties: {},
                 geometry: {
-                type: "LineString",
-                coordinates: fullRoute,
+                    type: "LineString",
+                    coordinates: fullRoute,
                 },
             });
         }
         animateAlongPath(fullRoute);
     };
-
 
     const animateAlongPath = (coords: [number, number][]) => {
         if (!walkerMarkerRef.current) return;
@@ -316,28 +285,28 @@ const CommunitySectionCmtDetails: React.FC = () => {
         let i = 0;
 
         const step = () => {
-        if (i >= coords.length - 1) return;
-        const start = coords[i];
-        const end = coords[i + 1];
-        let progress = 0;
-        const duration = 200;
-        const startTime = performance.now();
+            if (i >= coords.length - 1) return;
+            const start = coords[i];
+            const end = coords[i + 1];
+            let progress = 0;
+            const duration = 200;
+            const startTime = performance.now();
 
-        const animate = (t: number) => {
-            progress = Math.min((t - startTime) / duration, 1);
-            const lng = start[0] + (end[0] - start[0]) * progress;
-            const lat = start[1] + (end[1] - start[1]) * progress;
-            walkerMarkerRef.current?.setLngLat([lng, lat]);
+            const animate = (t: number) => {
+                progress = Math.min((t - startTime) / duration, 1);
+                const lng = start[0] + (end[0] - start[0]) * progress;
+                const lat = start[1] + (end[1] - start[1]) * progress;
+                walkerMarkerRef.current?.setLngLat([lng, lat]);
 
-            if (progress < 1) {
+                if (progress < 1) {
+                    animationRef.current = requestAnimationFrame(animate);
+                } else {
+                    i++;
+                    animationRef.current = requestAnimationFrame(step);
+                }
+            };
+
             animationRef.current = requestAnimationFrame(animate);
-            } else {
-            i++;
-            animationRef.current = requestAnimationFrame(step);
-            }
-        };
- 
-        animationRef.current = requestAnimationFrame(animate);
         };
 
         if (animationRef.current) cancelAnimationFrame(animationRef.current);
@@ -351,7 +320,10 @@ const CommunitySectionCmtDetails: React.FC = () => {
         setTitles([]);
         setLoopClosed(false);
         walkerMarkerRef.current?.setLngLat([0, 0]);
-        mapRef.current?.getSource("route")?.setData({ type: "Feature", geometry: { type: "LineString", coordinates: [] } });
+        mapRef.current?.getSource("route")?.setData({
+            type: "Feature",
+            geometry: { type: "LineString", coordinates: [] },
+        });
     };
 
     const toggle3D = () => {
@@ -360,94 +332,59 @@ const CommunitySectionCmtDetails: React.FC = () => {
         const pitch = map.getPitch();
         map.easeTo({ pitch: pitch === 0 ? 60 : 0, bearing: pitch === 0 ? 20 : 0 });
     };
-    const editMap = () => {
-        const edit = [...points];  
-        alert(edit);  
-        setPoints([]);
-    };
-    // const saveMap = async () => {
-    //     const payload: Point[] = points.map((p, i) => ({
-    //     title: titles[i],
-    //     latitude: p[1],
-    //     longitude: p[0], 
-    //     pointOrder: i,
-    //     }));
 
-    // const res = await fetch("/Trails/SaveMap", {
-    //   method: "POST",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify(payload),
-    // });
 
-    //     alert(res.ok ? "Map saved." : "Save failed.");
-    // };
-
-    // const deleteMap = async () => {
-    //     const res = await fetch("/Trails/DeleteMap", {
-    //     method: "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify({}),
-    //     });
-
-    //     if (res.ok) {
-    //     alert("Map deleted.");
-    //     clearMap();
-    //     } else {
-    //     alert("Delete failed.");
-    //     }
-    // };
-    
     const loadMap = async () => {
-    const res = await fetch("/Trails/Load");
-    if (!res.ok) return console.warn("Map not found.");
-    const data = await res.json();
+        const res = await fetch("/Trails/Load");
+        if (!res.ok) return console.warn("Map not found.");
+        const data = await res.json();
 
-    clearMap();
-    const bounds = new mapboxgl.LngLatBounds();
-    const newPoints: [number, number][] = [];
-    const newMarkers: mapboxgl.Marker[] = [];
-    const newTitles: string[] = [];
+        clearMap();
+        const bounds = new mapboxgl.LngLatBounds();
+        const newPoints: [number, number][] = [];
+        const newMarkers: mapboxgl.Marker[] = [];
+        const newTitles: string[] = [];
 
-    data.points.data.forEach((p: any) => {
-        const coords: [number, number] = [p.longitude, p.latitude];
-        const marker = new mapboxgl.Marker({ draggable: true })
-            .setLngLat(coords)
-            .setPopup(new mapboxgl.Popup().setText(p.title))
-            .addTo(mapRef.current!);
-        marker.togglePopup();
+        data.points.data.forEach((p: any, idx: number) => {
+            const coords: [number, number] = [p.longitude, p.latitude];
+            const marker = new mapboxgl.Marker({ draggable: true })
+                .setLngLat(coords)
+                .setPopup(new mapboxgl.Popup().setText(p.title))
+                .addTo(mapRef.current!);
+            marker.togglePopup();
 
-        marker.on("dragend", () => {
-            const lngLat = marker.getLngLat();
-            setPoints(prev => {
-                const updatedPoints = [...prev];
-                const idx = newMarkers.indexOf(marker);
-                if (idx !== -1) updatedPoints[idx] = [lngLat.lng, lngLat.lat];
-                updateRoute(updatedPoints);
-                return updatedPoints;
+            // use index binding
+            marker.on("dragend", () => {
+                const lngLat = marker.getLngLat();
+                setPoints(prev => {
+                    const updatedPoints = [...prev];
+                    updatedPoints[idx] = [lngLat.lng, lngLat.lat];
+                    updateRoute(updatedPoints);
+                    return updatedPoints;
+                });
             });
+
+            newPoints.push(coords);
+            newMarkers.push(marker);
+            newTitles.push(p.title);
+            bounds.extend(coords);
         });
 
-        newPoints.push(coords);
-        newMarkers.push(marker);
-        newTitles.push(p.title);
-        bounds.extend(coords);
-    });
+        setPoints(newPoints);
+        setMarkers(newMarkers);
+        setTitles(newTitles);
 
-    setPoints(newPoints);
-    setMarkers(newMarkers);
-    setTitles(newTitles);
+        if (newPoints.length > 2) {
+            const first = newPoints[0],
+                last = newPoints[newPoints.length - 1];
+            const dist = Math.sqrt(Math.pow(first[0] - last[0], 2) + Math.pow(first[1] - last[1], 2));
+            setLoopClosed(dist < 0.0001);
+        }
 
-    if (newPoints.length > 2) {
-        const first = newPoints[0], last = newPoints[newPoints.length - 1];
-        const dist = Math.sqrt(Math.pow(first[0] - last[0], 2) + Math.pow(first[1] - last[1], 2));
-        setLoopClosed(dist < 0.0001);
-    }
+        if (!bounds.isEmpty()) mapRef.current!.fitBounds(bounds, { padding: 50, maxZoom: 17 });
 
-    if (!bounds.isEmpty()) mapRef.current!.fitBounds(bounds, { padding: 50, maxZoom: 17 });
-
-    updateRoute(newPoints); // ✅ use latest points
-};
-
+        updateRoute(newPoints);
+    };
  
   // End map creation
   
@@ -456,8 +393,11 @@ const CommunitySectionCmtDetails: React.FC = () => {
             label: "Spam",
             action: (cmt: any) => {
                 setIsOpen(false);
+                setBlocked(cmt.id);
+                setBlockPostId(cmt.postId);
+                setBlockedUserId(cmt.userId);
                 setSelectedComment(cmt.name);
-                //alert(selectedComment)
+                //  alert(getBlockedId());
                 setSpamModal(true);
             },
         },
@@ -480,6 +420,8 @@ const CommunitySectionCmtDetails: React.FC = () => {
             },
         },
     ];
+    
+
     useEffect(() => {
         const storeLocal = localStorage.getItem("email");
         if (storeLocal) {
@@ -503,6 +445,36 @@ const CommunitySectionCmtDetails: React.FC = () => {
             }  
     }, []);
 
+    const handleBlocked = (BlockPostId: any, BlockedUserId: any) => {
+        // setBlocked(blockId);
+        setBlockPostId(BlockPostId);
+        setBlockedUserId(BlockedUserId);
+        // alert(` User ID: ${BlockedUserId}  blockedBy ID: ${userId}`);
+    };
+    // Submit report API call
+        const handleSubmitReport = async () => {
+        if (!getBlockPostId || !getBlockedUserId || !userId) {
+            alert("Please select all required IDs!");
+        return;
+        }
+
+        try {
+        const response = await axios.post(`${BASE_URL}/user/Block`, {
+            PostId: getBlockPostId,
+            BlockedBy: userId,
+            BlockedUserId: getBlockedUserId,
+            BlockedReason: "This is test"
+            // BlockedReason: reasonvalue
+        });
+       // alert("Report submitted successfully!");
+        console.log('blocked',response.data);
+        // setComments(response.data)
+        } catch (error) {
+        console.error("Error submitting report:", error);
+        alert("Failed to submit report");
+        }
+    };
+        // Show comment
         const handleShowMore = () => {
             setVisibleCount((prev) => prev + 5); // Show 5 more each time
         };
@@ -533,10 +505,10 @@ const CommunitySectionCmtDetails: React.FC = () => {
                     headers: {
                         "Content-Type": "application/json",
                         Accept: "application/json",
-                    },
+                    }, 
                     }
                     );
-                    // console.log("Comment posted:", response.data);
+                    console.log("Comment posted:", response.data);
                     if (response.data.status === "success") {
                         console.log("Comment resposn posted:", response.data);
                         const newComment = response.data.comment_text;
@@ -551,7 +523,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
             }
         };  
 
-       
+    //  call api all single page data  
         // const fetchData= async (title:String) => {
         useEffect(() => {
             if (!loginId || !slug) {
@@ -573,11 +545,12 @@ const CommunitySectionCmtDetails: React.FC = () => {
                     },
                     }
                 );
-                //console.log('community/1',response.data);
+                console.log('community/1',response.data);
                 setProfileCommunity(response.data?.data?.profile_Community || []);
                 const followingBy = response.data?.data?.following_by;
                 setFollowingBy(followingBy || []);
                 setComments(response.data.data.following_by.comments);
+                console.log('comment',response.data.data.following_by.comments);
                 let postDats = [];
 
                 if (Array.isArray(followingBy)) {
@@ -663,7 +636,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                         
                     </div>
                     <div className="row">
-                           {/* {isOpen && (
+                           {isOpen && (
                                 <div
                                 style={{
                                     position: "fixed",
@@ -692,8 +665,8 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                 >
                                     <div style={{ display: "flex", justifyContent: "space-between" }}>
                                         <div>
-                                            <h3 style={{ marginTop:'34px'}}>Report an issue</h3>
-                                        <p>What would you like to report?</p>
+                                            <h3 style={{ marginTop:'34px', display:"flex", justifyContent:"center"}}>Delete comment?</h3>
+                                        <p style={{textAlign:"center"}}>Deleting a comment will erase it permanently.</p>
                                         </div>
                                         <button className="btn-cross" onClick={() => setIsOpen(false)}>
                                             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -701,7 +674,12 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                             </svg>
                                         </button>
                                     </div>
-                                    <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                                    <div style={{display:"flex", justifyContent:"center"}}>
+                                        <button className="btn-send">Delete</button>
+                                        {/* <button className="btn-style-3">Keep</button> */}
+                                    </div>
+                                    
+                                    {/* <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                                         {options.map((opt, idx) => (
                                             <li
                                             key={idx}
@@ -735,12 +713,12 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                             </svg>
                                             </li>
                                         ))}
-                                        </ul>
+                                        </ul> */}
 
 
                                     </div>
                                 </div>
-                            )} */}
+                            )}
                             {isSpam && (
                                 <div
                                     style={{
@@ -768,11 +746,11 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                         }}
                                         onClick={(e) => e.stopPropagation()}
                                         >
-                                        <div style={{ display: "flex", justifyContent: "space-between",margin:'15px 0px 15px 0px' }}>
+                                        <div style={{ display: "flex", justifyContent: "end",margin:'15px 0px 15px 0px' }}>
                                             
-                                            <button className="btn-cross"
+                                            {/* <button className="btn-cross"
                                             onClick={() => {
-                                                setSpamModal(false);
+                                                // setSpamModal(false);
                                                 setIsOpen(true); // reopen Share modal
                                             }}
                                             > 
@@ -780,8 +758,8 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                 <path d="M12 4L6 10L12 16" stroke="#05073D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                             </svg>
 
-                                            </button>
-                                            <button className="btn-cross" onClick={() => setSpamModal(false)}> 
+                                            </button> */}
+                                            <button className="btn-cross  ffssd" onClick={() => setSpamModal(false)}> 
                                             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                 <path d="M4 4L16 16M16 4L4 16" stroke="#05073D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                             </svg>
@@ -799,6 +777,13 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                 style={{ width: "100%", padding: "10px", marginBottom: "15px" }}
                                             /> */}
                                             <p>Spam</p>
+                                              {/* <input
+                                                type="text"
+                                                value={reasonvalue}
+                                                onChange={(e) => setReasonValue(e.target.value)} 
+                                                style={{background:'#ccc',padding:'10px'}}
+                                                placeholder="Enter text"
+                                                /> */}
                                             <p style={{background:'#ccc',padding:'10px'}}>This might include unwanted solicitations, advertising or promotions, fraud or phishing.</p>
                                             <h4>Block {selectedComment ?? ''}</h4>
                                             <div className="row">
@@ -807,12 +792,18 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                 </div>
                                                  <div className='col-md-2'>
                                                    <label className="switch">
-                                                        <input type="checkbox" />
+                                                        <input type="checkbox" 
+                                                      onClick={() => handleBlocked(getBlockPostId,getBlockedUserId)}
+
+                                                        />
                                                         <span className="slider"></span>
                                                     </label>
                                                 </div>
                                             </div>
-                                            <button className="btn-send">Submit report</button>
+                                            <button className="btn-send" onClick={() => {
+                                                handleSubmitReport(); // your API call
+                                                setSpamModal(false);     // close modal
+                                            }}>Submit report</button>
                                         </div>
                                     </div>
                                 </div>
@@ -1031,7 +1022,11 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                         <ul className="dropdown-menu dropdown-sm dropdown-rounded custom-dropdown">
                                                            {userId === cmt.userId ? (
                                                             <li>
-                                                                <a className="dropdown-item" href="#">
+                                                                <a className="dropdown-item" href="#"
+                                                                    onClick={()=>{
+                                                                        setIsOpen(true);
+                                                                    }}
+                                                                >
                                                                 Delete
                                                                 </a>
                                                             </li>
@@ -1157,16 +1152,15 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                             gap: "8px",
                                             flexWrap: "wrap",
                                             marginBottom: "25px",
-                                            justifyContent:"space-around",
+                                            justifyContent:"space-around", 
                                             }}
                                         > 
                                             {/* <button onClick={saveMap}>💾 Save Map</button>
                                             <button onClick={deleteMap}>🗑️ Delete Map</button>
                                             <button onClick={() => window.location.reload()}>🔄 Refresh</button> */}
-                                            <button onClick={toggle3D}>3D View</button>
-                                            <button onClick={clearMap}>Clear</button>
-                                            <button onClick={editMap}>Edit</button>
-                                            <button onClick={() => (window.location.href = "/Trails/Details")}>Trail Details</button> 
+                                            <button className="btn-style-12" onClick={toggle3D}>3D View</button>
+                                            <button  className="btn-style-12" onClick={clearMap}>Clear</button>
+                                            <button  className="btn-style-12" onClick={() => (window.location.href = "/Trails/Details")}>Trail Details</button> 
                                     </div>  
                                 <div style={{ height: "100vh", width: "100%", position: "relative" }}>
                                     {/* Map Container */}

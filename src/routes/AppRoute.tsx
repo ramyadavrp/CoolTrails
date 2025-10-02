@@ -28,6 +28,7 @@ import Plan from '../containers/Plan';
 import ParkDetails from '../containers/ParkDetails';
 import GiftCustomize from '../containers/GiftCustomize';
 import CommunityPageCmtDetails from '../containers/CommunityPageCmtDetails';
+import CompleteTrailPage from '../containers/CompleteTrailPage';
 
 const AppRoute = () => {
   return (
@@ -66,6 +67,7 @@ const AppRoute = () => {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/edit-profile" element={<ProfileEdit />} />
           <Route path="/profile-feed" element={<ProfilePage />} />
+          {/* <Route path="/complete-trail" element={<CompleteTrailPage />} /> */}
           <Route path="/profile-photo" element={<ProfilePhotos />} />
           <Route path="/community" element={<CommunityPage />} />
           <Route path="/explore/recording/:slug" element={<CommunityPageCmtDetails />} />

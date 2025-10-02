@@ -93,14 +93,14 @@ function ExploreTrailSection() {
             });
             
             setTrails(response.data.data);
-            console.log('Server response:', response.data.data);
+            // console.log('Server response:', response.data.data);
         } catch (err) {
             console.error('Failed your location:', err);
         } finally {
             setloadingExplore(false);
         }
     };
-    console.log('hhf',getTrails);
+    // console.log('hhf',getTrails);
     useEffect(() => {
         // Users Current location
         if (navigator.geolocation) {
@@ -312,7 +312,8 @@ function ExploreTrailSection() {
                                                     id="runningFilter"
                                                     className="form-select advance-select"
                                                     value={title} // auto-selects based on URL
-                                                    onChange={(e) => console.log("Selected:", e.target.value)}
+                                                    // onChange={(e) => console.log("Selected:", e.target.value)}
+                                                    onChange={(e) => (e.target.value)}
                                                 >
                                                     {getActivity.map((act: any, index: number) => (
                                                         <option key={index} value={act.title.toLowerCase()}>
