@@ -116,6 +116,8 @@ const AffiliateDetailTrail: React.FC = () => {
     const [showQR, setShowQR] = useState(false);
     const qrRef = useRef<HTMLCanvasElement>(null);
     // const [loading,setloading] = useState(false);
+     // Review Show
+    const [showReviews, setShowReviews] = useState(true);
 
     const shareUrl = window.location.href;
     const qrImage = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://example.com";
@@ -162,11 +164,13 @@ const AffiliateDetailTrail: React.FC = () => {
             });
             
             setTrailDetail(response.data.data);
+            console.log('traildetail',response.data.data)
             setNearTrails(response.data.data.nearTrails);
             setWeatherDays(response.data.data.weatherDays);
             setImages(response.data.data.imageUrls);
             setPlaceOffer(response.data.data.placeOffer);
             setItinerary(response.data.data.itinerary);
+            console.log('setItinerary',response.data.data.itinerary);
             setReviews(response.data.data.review);
             setReviewImages(response.data.data.reviews_images);
             const points = response.data.data.mapPoints;
@@ -1367,7 +1371,13 @@ const AffiliateDetailTrail: React.FC = () => {
                     </div>
                     <div className="row">
                         <div className="col-12 mb-4 text-center">
-                            <a href="" className="btn-style-1">Check All Reviews</a>
+                            <button
+                                className="btn-style-1"
+                                onClick={() => setShowReviews(!showReviews)}
+                            >
+                                {showReviews ? "Hide Reviews" : "Check All Reviews"}
+                            </button>
+                            {/* <a href="" className="btn-style-1">Check All Reviews</a> */}
                         </div>
                     </div>
                 </div>

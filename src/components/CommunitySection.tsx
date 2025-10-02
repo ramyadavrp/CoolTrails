@@ -15,6 +15,7 @@ import { decodeId,encodeId, generateSlug ,slugToTitle} from '../utils/helpers';
 const BASE_URL = import.meta.env.VITE_API_URL;
 
 interface Community{
+    id:string,
     member_name:string,
     member_country:string,
     member_image:string
@@ -110,7 +111,7 @@ const CommunitySection: React.FC = () => {
             setSuggestedNearby(apidata.suggested_nearby || []);
             
             setProfileCommunity(response.data.data.profile_Community || []);
-            // console.log('ddd',apidata.suggested_nearby);
+            // console.log('ddd',response.data.data.profile_Community);
             
              // initialize like counts & liked status for suggested_nearby
             if (Array.isArray(apidata.suggested_nearby)) {
@@ -191,16 +192,75 @@ const CommunitySection: React.FC = () => {
             }
         }
     }, [BASE_URL, likedPosts]); 
+    
 
+    // const handleFollow = useCallback(async (id: number) => {
+    //     if(id !==0){
+    //         // alert(id);
+    //         try{
+    //             const response = await axios.post(
+    //                 `${BASE_URL}/user/follow`,
+    //                 {
+    //                     FollowerId: id,
+    //                     UserId: userId, 
+                        
+    //                 },
+    //                 {
+    //                     headers: {
+    //                         "Content-Type": "application/json",
+    //                         Accept: "application/json",
+    //                     },
+    //                 }
+    //             );
+    //              console.log("API follow Response:", response.data);
+    //              if (response.data.status === "success") {
+    //         setFollow((prev) => ({
+    //             ...prev,
+    //             [id]: response.data.do_follow === true || response.data.do_follow === "true",
+    //         }));
+    //             } else {
+    //                 console.warn("Unhandled response:", response.data);
+    //             }
+    //         }catch (error) {
+    //             //console.error("Error liking post", error);
+    //         }finally{
 
-    const handleFollow = useCallback(async (id: number) => {
+    //         }
+    //     }
+    // }, [userId]);
+    const handleFollow = useCallback(
+        async (id: string) => {
+            try {
+            const response = await axios.post(`${BASE_URL}/user/follow`, {
+                FollowerId: id,
+                UserId: userId,
+            });
+
+            if (response.data.status === "success") {
+                // Update getCommunity directly
+                setCommunity((prev) =>
+                prev.map((user) =>
+                    user.id === id
+                    ? { ...user, do_follow: response.data.do_follow === true || response.data.do_follow === "true" }
+                    : user
+                )
+                );
+            }
+            } catch (error) {
+            console.error(error);
+            }
+        },
+        [userId, setCommunity] // dependencies
+        );
+
+    const handleDismissedUser = useCallback(async (id: number) => {
         if(id !==0){
-            // alert(id);
+           // alert(id);
             try{
                 const response = await axios.post(
-                    `${BASE_URL}/user/follow`,
+                    `${BASE_URL}/user/Dismissed`,
                     {
-                        FollowerId: id,
+                        DismissedById: id,
                         UserId: userId, 
                         
                     },
@@ -211,12 +271,13 @@ const CommunitySection: React.FC = () => {
                         },
                     }
                 );
-                 console.log("API follow Response:", response.data);
+                 console.log("API DismissedUser Response:", response.data);
                 if (response.data.status === "success") {
-                    setFollow((prev) => ({
-                        ...prev,
-                        [id]: response.data.do_follow, // true = Following, false = Follow
-                    }));
+                    // setFollow((prev) => ({
+                    //     ...prev,
+                    //     // [id]: true, // true = Following, false = Follow
+                    //     [id]: response.data.do_follow, // true = Following, false = Follow
+                    // }));
                 } else {
                     console.warn("Unhandled response:", response.data);
                 }
@@ -381,8 +442,18 @@ const CommunitySection: React.FC = () => {
                                                     <div className="sms-btn d-flex align-items-center">
                                                         <button 
                                                         onClick={()=>handleFollow(getCom.id)}
-                                                        className="btn-style-1">{getFollow[getCom.id] ? "Following" : "Follow"}</button>
-                                                        <a href="" title="cancle">
+                                                        className="btn-style-1">
+                                                        {
+                                                        // getFollow[getCom.id] ? "Following" : "Follow"
+                                                        getCom.do_follow ? "Following" : "Follow"
+                                                        }
+                                                        </button>
+                                                        <a href="" title="cancle"
+                                                        onClick={(e)=>{
+                                                            e.preventDefault();
+                                                            handleDismissedUser(getCom.id)}
+                                                        }
+                                                        >
                                                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                                 <path d="M18 6L6 18" stroke="#717171" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                                                 <path d="M6 6L18 18" stroke="#717171" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -811,7 +882,7 @@ const CommunitySection: React.FC = () => {
                                                         </Link>
                                                         {/* <a href="profile-photos.html">Photos</a> */}
                                                     </li>
-                                                    <li><a href="">Reviews</a></li>
+                                                    {/* <li><a href="">Reviews</a></li> */}
                                                     <li><a href="">Activities</a></li>
                                                     <li><a href="">Completed</a></li>
                                                 </ul>

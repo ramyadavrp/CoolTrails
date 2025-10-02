@@ -4449,3 +4449,15 @@ input[type="radio"]:checked::after {
         transform: translateX(26px);
     }
      /* 22-9-25 Ali */
+     /* 29/9/25 Ali */
+    .btn-style-12{
+        text-transform: none;
+        padding: 9px 20px;
+        color: white;
+        border-radius: 50px;
+        text-align: center;
+        display: inline-block;
+        background: #;
+        background: #FC673C;
+        border: none;
+    }
