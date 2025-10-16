@@ -194,6 +194,7 @@ const SearchDiscover: React.FC = () => {
                                 {
                                     nearbytrails.map((nTrails:any,index:number)=>(
                                         <div key={index} className="slider-item-single">
+                                            <Link to={`/${generateSlug(nTrails.title)}`} state={{ trail: nTrails }}>                                       
                                             <div className="local-favorite-single">
                                                 <div className="lfc-thumb position-relative">
                                                     <img
@@ -222,6 +223,7 @@ const SearchDiscover: React.FC = () => {
                                                     
                                                 </div>
                                             </div>
+                                             </Link>
                                         </div>
                                     ))   
                                 }

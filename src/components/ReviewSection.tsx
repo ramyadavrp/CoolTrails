@@ -1,5 +1,5 @@
 // src/components/ReviewSection.tsx
-import React, { useEffect, useState,useRef } from 'react';
+import React, { useEffect, useState,useRef,useCallback } from 'react';
 import axios from 'axios';
 import 'owl.carousel'; // Import OwlCarousel's JS (ensure this path is correct)
 import { Link ,useNavigate} from 'react-router-dom';
@@ -25,44 +25,101 @@ const ReviewSection: React.FC = () => {
     const [errorExplorers, setErrorExplorers] = useState('');
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const navigate = useNavigate();
-    
-   
+    const [userId, setUserId] = useState<string>("");
+    const [getFollow, setFollow] = useState<{ [key: number]: boolean }>({});
     useEffect(() => {
         const token = localStorage.getItem("token");
         setIsLoggedIn(!!token);
+        console.log(isLoggedIn);
     }, []);
+    useEffect(() => {
+        const storedId = localStorage.getItem("id");
+        // console.log("Stored ID:", storedId); // should print the ID string
+        if (storedId) {
+            setUserId(storedId.trim());
+        }  
+    }, []);
+    console.log("user ID:", userId); 
 
-    const handleFollow = (e: React.MouseEvent<HTMLButtonElement>) => {
-        e.preventDefault();
+    const handleFollow = useCallback(
+        async (id: string) => {
+            // e.preventDefault();
+            try {
 
-        if (!isLoggedIn) {
-            // not logged in → go to login page
-            navigate("/login");
-            return;
-        }
+            if (!isLoggedIn) {
+                // not logged in → go to login page
+                navigate("/login");
+                return;
+            }
+           
+            const response = await axios.post(`${BASE_URL}/user/follow`, {
+                FollowerId: id,
+                UserId: userId,
+            });
+            if (response.data.status === "success") {
+                setFollow((prev) => ({
+                        ...prev,
+                        [id]: true,
+                    }));
+                    console.log(getFollow);
+            //     const doFollow = response.data.do_follow 
+            //                     ?? response.data.data?.do_follow 
+            //                     ?? response.data.follow;
 
-        // logged in → navigate home
-        if (location.pathname !== "/") {
-            navigate("/", { replace: true });
-            // small delay so homepage mounts before scroll
-            setTimeout(() => {
-            window.scrollTo({ top: 0, behavior: "smooth" });
-            }, 100);
-        } else {
-            // already on home → just scroll
-            window.scrollTo({ top: 0, behavior: "smooth" });
-        }
+            //     //console.log("doFollow:", doFollow);
+            //     setFollow((prev) => ({
+            //         ...prev,
+            //         [id]: doFollow === true || doFollow === "true",
+            // }));
 
-        // optionally update button text or call API
-        // setBtnText("Following");
-        // axios.post("/api/follow", { profileId });
-    };
+            // console.log(response.data);
+            // if (response.data.status === "success") {
+            //     // Update getCommunity directly
+            //      console.log(response.data.do_follow);
+            //     setFollow((prev) => ({
+            //     ...prev,
+            //     [id]: response.data.do_follow === true || response.data.do_follow === "true",
+            // }));
+
+                
+            }
+            } catch (error) {
+            console.error(error);
+            }
+        },[userId] // dependencies
+    );
+
+    // const handleFollow = (e: React.MouseEvent<HTMLButtonElement>) => {
+    //     e.preventDefault();
+
+    //     if (!isLoggedIn) {
+    //         // not logged in → go to login page
+    //         navigate("/login");
+    //         return;
+    //     }
+
+    //     // logged in → navigate home
+    //     if (location.pathname !== "/") {
+    //         navigate("/", { replace: true });
+    //         // small delay so homepage mounts before scroll
+    //         setTimeout(() => {
+    //         window.scrollTo({ top: 0, behavior: "smooth" });
+    //         }, 100);
+    //     } else {
+    //         // already on home → just scroll
+    //         window.scrollTo({ top: 0, behavior: "smooth" });
+    //     }
+
+    //     // optionally update button text or call API
+    //     // setBtnText("Following");
+    //     // axios.post("/api/follow", { profileId });
+    // };
     // Effect to fetch data
     useEffect(() => {
         const fetchtopExplorers = async ()=>{
-            try{
-                const response = await axios.get(`${BASE_URL}/trail/FellowExplorers/2`);
-                //console.log(response.data.data);
+            try{ 
+                const response = await axios.get(`${BASE_URL}/trail/FellowExplorers/10`);
+                console.log(response.data.data);
                 setExplorers(response.data.data);
             }catch(err){
                 console.error('API Error:', err);
@@ -207,35 +264,18 @@ const ReviewSection: React.FC = () => {
                                                 <p>{explorer.address} Member since&nbsp;{explorer.registeredOn} </p>
                                                 
                                                 <a href="#"
-                                                 onClick={handleFollow}
-                                                  className="btn-style-1 stretched-link">{btnText}</a>
+                                               onClick={(e) => {
+                                                e.preventDefault();
+                                                handleFollow(explorer.id);
+                                            }}
+
+                                                className="btn-style-1 stretched-link">{getFollow[explorer.id] ? "Following" : "Follow"}</a>
                                             </div>
                                         </div>
                                     </div>
                                 ))}
                                 {/* Duplicate explorers for the second carousel to ensure enough items for continuous scroll */}
-                                {explorers.map((explorer:any,index:number) => (
-                                    <div key={`dup1-${explorer.userId}-${index}`}> {/* Unique key for duplicated items */}
-                                        <div className="follow-fellow-single d-flex br-20 align-items-center position-relative">
-                                            <div className="ff-thumb">
-                                            <img
-                                                src={explorer.picturePath  || '/assets/images/not-found.jpg'}
-                                                alt="explorer" className="" 
-                                                onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                                                    const target = e.currentTarget;
-                                                    target.onerror = null; // prevent infinite loop
-                                                    target.src = '/assets/images/not-found.jpg'; // fallback image
-                                                }}
-                                            />
-                                            </div>
-                                            <div className="ff-content">
-                                                <h3 className="ff-title">{explorer.fullName}</h3>
-                                                <p>{explorer.address} Member since&nbsp;{explorer.registeredOn} </p>
-                                                <a href="#" onClick={handleFollow} className="btn-style-1 stretched-link">{btnText}</a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
+                            
                             </div>
                         </div>
                     </div>
@@ -262,37 +302,21 @@ const ReviewSection: React.FC = () => {
                                             <div className="ff-content">
                                                 <h3 className="ff-title">{explorer.fullName}</h3>
                                                 <p>{explorer.address} Member since&nbsp;{explorer.registeredOn} </p>
-                                                 <a href="#" onClick={handleFollow} className="btn-style-1 stretched-link">{btnText}</a>
-
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                                {/* Duplicate explorers for the second carousel to ensure enough items for continuous scroll */}
-                                {explorers.map((explorer:any,index:number) => (
-                                    <div key={`dup2-${explorer.userId}-${index}`}> {/* Unique key for duplicated items in second carousel */}
-                                        <div className="follow-fellow-single d-flex br-20 align-items-center position-relative"
-                                            dir="rtl">
-                                            <div className="ff-thumb">
-                                            <img
-                                                src={explorer.picturePath  || '/assets/images/not-found.jpg'}
-                                                alt="explorer" className="" 
-                                                onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                                                    const target = e.currentTarget;
-                                                    target.onerror = null; // prevent infinite loop
-                                                    target.src = '/assets/images/not-found.jpg'; // fallback image
+                                                 <a href="#" 
+                                                 onClick={(e) => {
+                                                    e.preventDefault();
+                                                    handleFollow(explorer.id);
                                                 }}
-                                            />
-                                            </div>
-                                            <div className="ff-content">
-                                                <h3 className="ff-title">{explorer.fullName}</h3>
-                                                <p>{explorer.address} Member since&nbsp;{explorer.registeredOn} </p>
-                                                <a href="#" onClick={handleFollow} className="btn-style-1 stretched-link">{btnText}</a>
+
+                                                 className="btn-style-1 stretched-link">
+                                                     {getFollow[explorer.id] ? "Following" : "Follow"}
+                                                 </a>
 
                                             </div>
                                         </div>
                                     </div>
                                 ))}
+                                
                             </div>
                         </div>
                     </div>

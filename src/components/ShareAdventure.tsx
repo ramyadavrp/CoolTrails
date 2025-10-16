@@ -149,8 +149,11 @@ const ShareAdventure: React.FC = () => {
                                                 target.src = '/assets/images/not-found.jpg'; // fallback image
                                             }}
                                         />
-                                        <a href="" className="share-adv-overlay d-flex w-100 h-100 align-items-end justify-content-center text-center text-white">
-                                        <span className="d-block w-100">{adventure.title}</span></a>
+                                        {/* <a href="" className="share-adv-overlay d-flex w-100 h-100 align-items-end justify-content-center text-center text-white">
+                                        <span className="d-block w-100">{adventure.title} ddd</span></a> */}
+                                        <div  className="share-adv-overlay d-flex w-100 h-100 align-items-end justify-content-center text-center text-white">
+                                            <span className="d-block w-100">{adventure.title}</span>
+                                        </div>
                                     </div>
                                 </div>
 

@@ -4,12 +4,16 @@ import NavTop from '../components/AppHeader/NavTop';
 import AffiliateDetailTrail from '../components/AffiliateDetailTrail';
 import Footer from '../components/AppFooter/Footer';
 import SeoMeta from './SeoMeta';
+import { Helmet } from "react-helmet-async"; // ✅ correct
 
 const AffiliateDetails: React.FC = () => {
   
   return (
     <>
     <SeoMeta/>
+     {/* <Helmet>
+        <title>Affiliate Details | Cooltrails</title>
+      </Helmet> */}
     <div className="main-wrapper wrapper-trail-details">
       <NavTop />
       <AffiliateDetailTrail />  

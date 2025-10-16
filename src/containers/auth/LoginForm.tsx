@@ -37,7 +37,7 @@ const LoginForm = () => {
       });
 
       const data = response.data;
-      console.log(data.user.loginid);
+      console.log('login',data);
       if (data.status === "success") {
         localStorage.setItem("token", data.token);
         localStorage.setItem("email", email); 
@@ -54,6 +54,41 @@ const LoginForm = () => {
       setLoading(false);
     }
   };
+
+//   const handleSubmit = async (e: React.FormEvent) => {
+//   e.preventDefault();
+//   setLoading(true);
+//   setError(null);
+
+//   try {
+//     const response = await axios.post(`${BASE_URL}/auth/login`, {
+//       Username: email,
+//       Password: password,
+//     }, {
+//       headers: { "Content-Type": "application/json" }
+//     });
+
+//     const data = response.data;
+//     console.log('login', data);
+
+//     if (data.status === "success") {
+//       // Use sessionStorage instead of localStorage
+//       sessionStorage.setItem("token", data.token);
+//       sessionStorage.setItem("email", email);
+//       sessionStorage.setItem("id", data.user.id);
+//       sessionStorage.setItem("login", data.user.loginid);
+
+//       navigate('/profile');
+//     } else {
+//       setError(data.message || "Login failed");
+//     }
+//   } catch (err: any) {
+//     const message = err.response?.data?.message || err.message || "Something went wrong.";
+//     setError(message);
+//   } finally {
+//     setLoading(false);
+//   }
+// };
 
   const togglePasswordVisibility = () => {
       setShowPassword(prevShowPassword => !prevShowPassword);

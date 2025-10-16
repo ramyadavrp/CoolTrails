@@ -13,50 +13,35 @@ interface FavoriteActivity {
 }
 
 interface ProfileData {
-    email: string;
-    first_name: string;
-    last_name: string;
-    phone_no: string;
-    about_me: string;
-    member_location: string;
-    units: string;
-    activity_time_preference: string;
-    height: string;
-    weight: string;
-    birthday_month: string;
-    birthday_date: string;
-    birthday_year: string;
-    language: string;
-    new_password: string;
+    postTitle: string;
+    UserId: string;
+    Content: string;
+    CategoryId: string;
+    CountryId: string;
+    StateId: string;
+    CityId: string;
     favorite_activities: FavoriteActivity[];
 }
-const ProfileEditSection: React.FC = () => {
+const AddPostSection: React.FC = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [file, setFileName] = useState<File|null>(null);
     const [preview, setPreview] = useState<string|null>(null);
     const [message, setMessage] = useState<string | null>(null);
-    const [imgmessage, setImgMessage] = useState<string | null>(null);
-    const [uploading, setUploading] = useState<boolean>(false);
+    const [imgMessage, setImgMessage] = useState<string | null>(null);
     const [userId, setUserId] = useState<string>("");
+    const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
     
 
     const [profileData, setProfileData] = useState<ProfileData>({
-        first_name: "",
-        last_name: "",
-        email: "",
-        phone_no: "",
-        about_me: "test",
-        favorite_activities: [{"title":"Trails"}],
-        member_location: "",
-        units: "no",
-        activity_time_preference: "no",
-        height: "5",
-        weight: "5",
-        birthday_month: "",
-        birthday_date: "",   
-        birthday_year: "",
-        language: "Hindi",
-        new_password: ""
+        postTitle: "",
+        UserId: "",
+        Content: "",
+        CategoryId: "",
+        CountryId: "",
+        StateId: "",
+        CityId: "",
+        favorite_activities: [{"title":"Trails"}]
     });
     useEffect(() => {
             const storedId = localStorage.getItem("id");
@@ -65,41 +50,21 @@ const ProfileEditSection: React.FC = () => {
                 setUserId(storedId.trim());
             }  
         }, []);
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
 
-        setFileName(file);
-        setPreview(URL.createObjectURL(file));
-
-        // Automatically upload
-        const formData = new FormData();
-        formData.append("userid", userId); 
-        formData.append("profile_photo", file);
-
-        try {
-            const res = await axios.post(`${BASE_URL}/user/updateprofilephoto`, formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
-            console.log("Uploaded:", res.data);
-            if (res.data.status === "success") {
-                // If backend returns image URL, use it
-                if (res.data.data?.profile_photo_url) {
-                    setPreview(res.data.data.profile_photo_url);
-                }
-
-                setImgMessage("Image uploaded successfully!");
-            } else {
-                setImgMessage(res.data.message || "Upload failed");
-            }
-            setTimeout(() => setImgMessage(""), 2000);
-        } catch (err) {
-            console.error("Upload error:", err);
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = e.target.files?.[0];
+        if (selectedFile) {
+            setFileName(selectedFile);
+            setImgMessage('Image uploaded successfully!');
+            // Preview image
+            const reader = new FileReader();
+            reader.onloadend = () => setPreview(reader.result as string);
+            reader.readAsDataURL(selectedFile);
         }
     };
-
-    const handleDeleteImage = () =>{
-        setFileName(null);
+    const handleDeleteImage =() =>{
+        setPreview(null);
+        setImgMessage('Removed Image.');
     }
     const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -111,52 +76,72 @@ const ProfileEditSection: React.FC = () => {
         }));
     };
 
-    const getPayload = () => ({
-    ...profileData,
-    favorite_activities: profileData.favorite_activities.length
-        ? profileData.favorite_activities.map(a => ({ title: a.title }))
-        : [{ title: "Trails" }],
-    });
+
     const handleProfileUpdate = async () => {
-        const payload = getPayload();
-        // console.log("Payload being sent:", JSON.stringify(payload, null, 2));
+        if (!userId) {
+            setMessage('User ID not loaded yet!');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("UserId", userId);
+        formData.append("Title", profileData.postTitle);
+        formData.append("Content", profileData.Content);
+        formData.append("CategoryId", profileData.CategoryId);
+        formData.append("CountryId", profileData.CountryId);
+        formData.append("StateId", profileData.StateId);
+        formData.append("CityId", profileData.CityId);
+        if (file) formData.append("MediaFiles", file);
 
         try {
-            const response = await axios.post(`${BASE_URL}/user/profileupdate`, payload, {
-            headers: { "Content-Type": "application/json" }
+            const response = await axios.post(`${BASE_URL}/feed/create`, formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data"
+                }
             });
 
             if (response.data.status === "success") {
-                console.log(response.data);
-                setMessage('Profile Updated Successfuly !');
-            //   alert("Profile updated successfully!");
+                setMessage('Feed added successfully!');
+                
             } else {
-            alert(response.data.message || "Unexpected response from server.");
+                //alert(response.data.message || "Unexpected response from server");
             }
         } catch (error: any) {
+            if (error.response?.data?.errors) {
+            // Flatten array of messages into single string per field
+            const formattedErrors: { [key: string]: string } = {};
+            for (const key in error.response.data.errors) {
+                formattedErrors[key] = error.response.data.errors[key].join(", ");
+            }
+            setErrors(formattedErrors);
+            }
             console.error("Update failed:", error.response?.data || error);
-            alert("Failed to update profile. Check console for details.");
+            //alert("Failed to update feed. Check console for details.");
         }
     };
-         useEffect(() => {
-            if (message) {
-                const timer = setTimeout(() => {
-                setMessage(null); 
-                }, 3000); 
 
-                return () => clearTimeout(timer);
-            }
-        }, [message]);
-        useEffect(() => {
-            // Initialize Masonry after the component mounts
-            const grid = document.querySelector('.edit-profile-row');
-            if (grid && typeof Masonry !== 'undefined') {
-            new Masonry(grid, {
-                itemSelector: '.grid-item', // Adjust if your grid items have different classes
-                percentPosition: true
-            });
-            }
-        }, []);
+   
+   
+    useEffect(() => {
+        if (message) {
+            const timer = setTimeout(() => {
+            setMessage(null); 
+            }, 3000); 
+
+            return () => clearTimeout(timer);
+        }
+    }, [message]);
+
+    useEffect(() => {
+        // Initialize Masonry after the component mounts
+        const grid = document.querySelector('.edit-profile-row');
+        if (grid && typeof Masonry !== 'undefined') {
+        new Masonry(grid, {
+            itemSelector: '.grid-item', // Adjust if your grid items have different classes
+            percentPosition: true
+        });
+        }
+    }, []);
 
   return (
     <main className="mainContent">
@@ -165,7 +150,7 @@ const ProfileEditSection: React.FC = () => {
                 <div className="row">
                     <div className="col-12">
                         <div className="cooltrails-title">
-                            <h2 className="title title-sm">Edit Profile</h2>
+                            <h2 className="title title-sm">Add Post</h2>
                             {message && <div style={{color:'#FC673C' , textAlign:'center'}}>{message}</div>}
                         </div>
                     </div>
@@ -193,8 +178,10 @@ const ProfileEditSection: React.FC = () => {
                                             <button type="button" className="btn"  onClick={() => fileInputRef.current?.click()} >
                                                 <svg width="25" height="23" viewBox="0 0 25 23" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17 8.5L19 8.5C21.2091 8.5 23 10.2909 23 12.5L23 17.5C23 19.7091 21.2091 21.5 19 21.5L7 21.5C4.79086 21.5 3 19.7091 3 17.5L3 12.5C3 10.2909 4.79086 8.5 7 8.5L9 8.5" stroke="#05073D" strokeWidth="1.5" strokeLinecap="round"/><path d="M16 5.5L13.7071 3.20711C13.3166 2.81658 12.6834 2.81658 12.2929 3.20711L10 5.5" stroke="#05073D" strokeWidth="1.5" strokeLinecap="round"/><path d="M13 3.5L13 15.5" stroke="#05073D" strokeWidth="1.5" strokeLinecap="round"/></svg>
                                                 Upload photo</button>
-                                                {imgmessage && <div style={{color:'#FC673C' , fontSize: "11px",textAlign:'center'}}>{imgmessage}</div>}
+                                               
                                             <input type="file" ref={fileInputRef} onChange={handleFileChange} />
+                                            {imgMessage && <div style={{color:'#FC673C' , fontSize: "11px",textAlign:'center'}}>{imgMessage}</div>}
+                                           
                                         </div>
                                         <button className="delete-btn" onClick={handleDeleteImage}>
                                             <svg width="25" height="25" viewBox="0 0 25 25" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -209,7 +196,7 @@ const ProfileEditSection: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                    <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12 grid-item">
+                    {/* <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12 grid-item">
                         <div className="bg-almost-white br-20 profile-card-2">
                             <h2 className="profile-card-title text-midnight-navy">Bio</h2>
                             <div className="bg-lavender-gray bio">
@@ -218,33 +205,41 @@ const ProfileEditSection: React.FC = () => {
                                     for new trails and sharing honest tips to help others hike smarter.</p>
                             </div>
                         </div>
-                    </div>
+                    </div> */}
                     <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12 grid-item">
                         <div className="bg-almost-white br-20 profile-card-2">
-                            <h2 className="profile-card-title text-midnight-navy">Personal information</h2>
+                            <h2 className="profile-card-title text-midnight-navy">Post information</h2>
                             <div className="profile-inner-form">
                                 <div className="form-floating mb-3">
-                                    <input type="email" className="form-control" name="email" id="emailIn" placeholder=""
-                                        value={profileData.email}
+                                    <input type="email" className={`form-control ${errors.Title ? "is-invalid" : ""}`} name="postTitle" id="postTitle" placeholder=""
+                                        value={profileData.postTitle}
                                         onChange={handleInputChange}
                                          />
-                                    <label htmlFor="emailIn">Email address</label>
+                                    <label htmlFor="postTitle">Title</label>
+                                    {errors.Title && <div className="invalid-feedback">{errors.Title}</div>}
                                 </div>
                                 <div className="form-floating mb-3">
-                                    <input type="text" className="form-control" name="first_name" id="first_name" placeholder=""
-                                        value={profileData.first_name}
+                                    
+                                    <textarea
+                                        className={`form-control ${errors.Title ? "is-invalid" : ""}`}
+                                        name="Content"
+                                        id="description"
+                                        rows={4}
+                                        placeholder="Enter about yourself"
+                                        value={profileData.Content}
                                         onChange={handleInputChange}
-                                         />
-                                    <label htmlFor="fullName">Full Name</label>
+                                    />
+                                    <label htmlFor="description">Description</label>
+                                    {errors.Content && <div className="invalid-feedback">{errors.Content}</div>}
                                 </div>
-                                <div className="form-floating mb-3">
+                                {/* <div className="form-floating mb-3">
                                     <input type="text" className="form-control" name="phone_no" id="phone" placeholder=""
                                          value={profileData.phone_no}
                                         onChange={handleInputChange}
                                          />
                                     <label htmlFor="phone">Phone Number</label>
-                                </div> 
-                                <div className="mb-3">
+                                </div>  */}
+                                {/* <div className="mb-3">
                                     <div className="input-group flex-nowrap custom-form-group">
                                         <span className="input-group-text" id="addon-wrapping">
                                             <svg width="13" height="16" viewBox="0 0 10 13" fill="none"
@@ -262,7 +257,7 @@ const ProfileEditSection: React.FC = () => {
                                         onChange={handleInputChange}
                                             aria-label="Username" aria-describedby="addon-wrapping" />
                                     </div>
-                                </div>
+                                </div> */}
                             </div>
                         </div>
                     </div> 
@@ -302,10 +297,106 @@ const ProfileEditSection: React.FC = () => {
                                 <div className="fav-activity-add-btn"> <button><svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 2.08331V7.91665" stroke="#05073D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M2.08301 5H7.91634" stroke="#05073D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/> </svg>  Add More</button></div>
                                 
                             </div>
+                            
+                        </div>
+                        <div className="my-4">
+                            <button className="btn-style-1" onClick={handleProfileUpdate}>Add Post</button>
+                            <button className="btn-style-0">Cancel</button>
                         </div>
                     </div>
-                    
                     <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12 grid-item">
+                        <div className="bg-almost-white br-20 profile-card-2">
+                            {/* <h2 className="profile-card-title text-midnight-navy">Calorie counter info</h2> */}
+                            <div className="profile-inner-form">
+                                <div className="row">
+                                    <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
+                                        <div className="form-floating mb-3">
+                                            <select className="form-select" name="CategoryId" id="category" 
+                                                 value={profileData.CategoryId}
+                                                onChange={handleInputChange} 
+                                            >
+                                                <option value="1">Category1</option>
+                                                <option value="2">Category2</option>
+                                            </select>
+                                            <label htmlFor="category">Category</label>
+                                        </div>
+                                    </div>
+                                    <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
+                                        <div className="form-floating mb-3">
+                                            <select className="form-select" name="CountryId" id="CountryId"
+                                                value={profileData.CountryId}
+                                                onChange={handleInputChange}
+                                            >
+                                                <option value="1">India</option>
+                                                <option value="2">Dubai</option>
+                                            </select>
+                                            <label htmlFor="CountryId">Country</label>
+                                        </div>
+                                    </div>
+                                    <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
+                                        <div className="form-floating mb-3">
+                                            <select className="form-select" name="StateId" id="StateId"
+                                            value={profileData.StateId}
+                                                onChange={handleInputChange}
+                                            >
+                                                <option value="1">State1</option>
+                                                <option value="2">State2</option>
+                                            </select>
+                                            <label htmlFor="StateId">State</label>
+                                        </div>
+                                    </div>
+                                    <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
+                                        <div className="form-floating mb-3">
+                                            <select className="form-select" name="CityId" id="CityId"
+                                            value={profileData.CityId}
+                                                onChange={handleInputChange}
+                                            >
+                                                <option value="1">city1</option>
+                                                <option value="2">city2</option>
+                                            </select>
+                                            <label htmlFor="CityId">City</label>
+                                        </div>
+                                    </div>
+                                    {/* <div className="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-12">
+                                        <div className="form-floating mb-3"> 
+                                                <input type="text" className="form-control" placeholder="" name="birthday_date" id="birthdate"  
+                                                value={profileData.birthday_date}
+                                                onChange={handleInputChange}
+                                                /> 
+                                            <label htmlFor="birthdate">Date</label>
+                                        </div>
+                                            
+                                    </div>
+                                    <div className="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-12">
+                                            <div className="form-floating mb-3">
+                                            <input type="text" className="form-control" placeholder="" name="birthday_year" id="birthYear"  
+                                             value={profileData.birthday_year}
+                                                onChange={handleInputChange}
+                                            /> 
+                                            <label htmlFor="birthYear">Year</label>
+                                        </div>                                             
+                                    </div> */}
+                                    
+                                    {/* <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12">
+                                        <div className="form-floating mb-3">
+                                            <select className="form-select" name="language" id="mktLang">
+                                                <option >English[US]</option>
+                                                <option value="">Hindi</option>
+                                            </select>
+                                            <label htmlFor="mktLang">Marketing Language</label>
+                                        </div>
+                                    </div> */}
+                                    
+                                </div>
+
+                            </div>
+                        </div>
+                        
+                    </div>
+                    
+                    
+                    
+                    {/* <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12 grid-item">
                         <div className="row g-4">
                             <div className="col-xl-6 col-lg-12 col-md-12 col-sm-12 col-12">
                                 <div className="bg-almost-white br-20 profile-card-2 radio-card">
@@ -356,96 +447,9 @@ const ProfileEditSection: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-                    </div> 
-                    <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12 grid-item">
-                        <div className="bg-almost-white br-20 profile-card-2">
-                            <h2 className="profile-card-title text-midnight-navy">Calorie counter info</h2>
-                            <div className="profile-inner-form">
-                                <div className="row">
-                                    <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
-                                        <div className="form-floating mb-3">
-                                            <select className="form-select" name="height" id="height" 
-                                                 value={profileData.height}
-                                                onChange={handleInputChange} 
-                                            >
-                                                <option value="1">Unspecified</option>
-                                                <option value="2">One</option>
-                                            </select>
-                                            <label htmlFor="height">Height</label>
-                                        </div>
-                                    </div>
-                                    <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
-                                        <div className="form-floating mb-3">
-                                            <select className="form-select" name="weight" id="weight"
-                                                value={profileData.weight}
-                                                onChange={handleInputChange}
-                                            >
-                                                <option value="1">Unspecified</option>
-                                                <option value="2">One</option>
-                                            </select>
-                                            <label htmlFor="weight">Weight</label>
-                                        </div>
-                                    </div>
-                                    <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
-                                        <div className="form-floating mb-3">
-                                            <select className="form-select" name="birthday_month" id="birthday"
-                                            value={profileData.birthday_month}
-                                                onChange={handleInputChange}
-                                            >
-                                                <option >Month</option>
-                                                <option value="01">January</option>
-                                            </select>
-                                            <label htmlFor="birthday">Birthday</label>
-                                        </div>
-                                    </div>
-                                    <div className="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-12">
-                                        <div className="form-floating mb-3"> 
-                                                <input type="text" className="form-control" placeholder="" name="birthday_date" id="birthdate"  
-                                                value={profileData.birthday_date}
-                                                onChange={handleInputChange}
-                                                /> 
-                                            <label htmlFor="birthdate">Date</label>
-                                        </div>
-                                            
-                                    </div>
-                                    <div className="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-12">
-                                            <div className="form-floating mb-3">
-                                            <input type="text" className="form-control" placeholder="" name="birthday_year" id="birthYear"  
-                                             value={profileData.birthday_year}
-                                                onChange={handleInputChange}
-                                            /> 
-                                            <label htmlFor="birthYear">Year</label>
-                                        </div>                                             
-                                    </div>
-                                    
-                                    <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12">
-                                        <div className="form-floating mb-3">
-                                            <select className="form-select" name="language" id="mktLang">
-                                                <option >English[US]</option>
-                                                <option value="">Hindi</option>
-                                            </select>
-                                            <label htmlFor="mktLang">Marketing Language</label>
-                                        </div>
-                                    </div>
-                                    <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12">
-                                        <div className="form-floating mb-3">
-                                            <input type="password" className="form-control" placeholder="" name="new_password" id="password" 
-                                            value={profileData.new_password}
-                                                onChange={handleInputChange}
-                                            />
-                                            <label htmlFor="password">Set a new password</label>
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-                        </div>
-                            <div className="my-4">
-                            <button className="btn-style-1" onClick={handleProfileUpdate}>Save Chanegs</button>
-                            <button className="btn-style-0">Cancel</button>
-                        </div>
-                    </div>
-                    <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12 grid-item">
+                    </div>  */}
+                    
+                    {/* <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12 grid-item">
                         <div className="bg-almost-white br-20 profile-card-2">
                             <h2 className="profile-card-title text-midnight-navy">Social Media</h2>
                             <div className="platform-logins">
@@ -456,7 +460,7 @@ const ProfileEditSection: React.FC = () => {
                             </div>
 
                         </div>
-                    </div>
+                    </div> */}
                 </div> 
             </div>
         </section>
@@ -464,4 +468,4 @@ const ProfileEditSection: React.FC = () => {
   );
 };
 
-export default ProfileEditSection;
+export default AddPostSection;

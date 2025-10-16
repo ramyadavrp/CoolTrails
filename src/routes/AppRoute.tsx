@@ -29,6 +29,7 @@ import ParkDetails from '../containers/ParkDetails';
 import GiftCustomize from '../containers/GiftCustomize';
 import CommunityPageCmtDetails from '../containers/CommunityPageCmtDetails';
 import CompleteTrailPage from '../containers/CompleteTrailPage';
+import AddPost from '../containers/AddPost';
 
 const AppRoute = () => {
   return (
@@ -71,6 +72,7 @@ const AppRoute = () => {
           <Route path="/profile-photo" element={<ProfilePhotos />} />
           <Route path="/community" element={<CommunityPage />} />
           <Route path="/explore/recording/:slug" element={<CommunityPageCmtDetails />} />
+          <Route path="/add-post" element={<AddPost />} />
           
           
         </Route>

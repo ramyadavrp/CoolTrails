@@ -18,7 +18,7 @@ const ProfileLeftSection: React.FC = () => {
                         <h4 className="profile-username text-midnight-navy">Amit Singh</h4>
                         <h5 className="profile-address text-midnight-navy">Dubai, United Arab Emirates</h5>
                         <p className="membership-info text-grey">Member since May 2025</p>
-                        <button className="btn-style-1">Follow</button>
+                        {/* <button className="btn-style-1">Follow</button> */}
                     </div> 
                         <div className="followings d-flex justify-content-between position-relative">
                         <div className="follower">
