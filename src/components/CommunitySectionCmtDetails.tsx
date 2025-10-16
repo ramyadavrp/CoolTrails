@@ -5,7 +5,7 @@ import data from '../data/community.json';
 import { Link } from 'react-router-dom';
 import StarRating from './AffiliateDetails/StarRating';
 import { useLocation, useParams } from 'react-router-dom';
-import { decodeId,encodeId, generateSlug ,slugToTitle} from '../utils/helpers';
+import { decodeId,encodeId, generateSlug ,slugToTitle,timeAgo} from '../utils/helpers';
 const BASE_URL = import.meta.env.VITE_API_URL;
 import axios from 'axios';
 import { SquareLoader } from "react-spinners"; 
@@ -80,7 +80,13 @@ const CommunitySectionCmtDetails: React.FC = () => {
     const [getBlockedId, setBlocked] = useState<any>(null);
     const [getBlockPostId, setBlockPostId] = useState<any>(null);
     const [getBlockedUserId, setBlockedUserId] = useState<any>(null);
-    const [reasonvalue, setReasonValue] = useState<any>(null); 
+    // const [reasonvalue, setReasonValue] = useState<any>(null); 
+    const [message, setMessage] = useState<string | null>(null);
+    const [getBlocekedTextvalidation, setBlocekedTextValidation] = useState<string | null>(null);
+    // Popup comment check
+    const [checkedUsers, setCheckedUsers] = useState<{ [userId: string]: boolean }>({});
+    const [reasonValue, setReasonValue] = useState<{ [userId: string]: string }>({});
+
     // Review Show
     const [showReviews, setShowReviews] = useState(true);
     // map state
@@ -88,15 +94,18 @@ const CommunitySectionCmtDetails: React.FC = () => {
     const walkerMarkerRef = useRef<mapboxgl.Marker | null>(null);
     const animationRef = useRef<number | null>(null);
     const mapRef = useRef<mapboxgl.Map | null>(null);
-
+  
     const [points, setPoints] = useState<[number, number][]>([]);
     const [titles, setTitles] = useState<string[]>([]);
     const [markers, setMarkers] = useState<mapboxgl.Marker[]>([]);
     const [loopClosed, setLoopClosed] = useState(false);
+     // map state close
     
+     
     // Start map creation
     // Initialize map
         useEffect(() => {
+           
         if (!mapContainer.current) return;
 
         const map = new mapboxgl.Map({
@@ -108,9 +117,8 @@ const CommunitySectionCmtDetails: React.FC = () => {
             bearing: 0,
             antialias: true,
         });
-
-        mapRef.current = map;
-
+        mapRef.current = map; 
+        
         const geocoder = new MapboxGeocoder({
             accessToken: mapboxgl.accessToken,
             mapboxgl: mapboxgl,
@@ -421,6 +429,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
         },
     ];
     
+    
 
     useEffect(() => {
         const storeLocal = localStorage.getItem("email");
@@ -431,7 +440,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
     useEffect(() => {
     if (statePostId) localStorage.setItem("postId", statePostId);
     }, [statePostId])
-
+    //console.log('ss',statePostId)
     // image arraw move
     const handleNextImage = useCallback(() => {
         setCurrentIndex(i => (i + 1) % getImages.length);
@@ -445,42 +454,76 @@ const CommunitySectionCmtDetails: React.FC = () => {
             }  
     }, []);
 
-    const handleBlocked = (BlockPostId: any, BlockedUserId: any) => {
+
+
+    const handleTextareaChange = (BlockedUserId: string, value: string) => {
+        setReasonValue((prev) => ({ ...prev, [BlockedUserId]: value }));
+    };
+    const handleBlocked = (BlockPostId: any, BlockedUserId: any,checked: boolean) => {
         // setBlocked(blockId);
         setBlockPostId(BlockPostId);
         setBlockedUserId(BlockedUserId);
-        // alert(` User ID: ${BlockedUserId}  blockedBy ID: ${userId}`);
+         setCheckedUsers((prev) => ({ ...prev, [BlockedUserId]: checked }));
+        // alert(` User ID: ${BlockedUserId}  blockedBy ID: ${userId} admin: ${reasonvalue}`);
     };
     // Submit report API call
-        const handleSubmitReport = async () => {
-        if (!getBlockPostId || !getBlockedUserId || !userId) {
-            alert("Please select all required IDs!");
-        return;
-        }
+    //commentreportanissue
+        const handleSubmitReport = async (getBlockedUserId:any) => {
+            // console.log('dnkl',checkedUsers); 
+             const reason = reasonValue[getBlockedUserId];
+            //  alert(reason);
+            if (!getBlockPostId || !getBlockedUserId || !userId) {
+                alert("Please select all required IDs!");
+            return;
+            }
+            
+        //    if (!reasonvalue.trim()) {
+        //     setBlocekedTextValidation("This field is required!");
+        //     return;
+        //     }
 
-        try {
-        const response = await axios.post(`${BASE_URL}/user/Block`, {
-            PostId: getBlockPostId,
-            BlockedBy: userId,
-            BlockedUserId: getBlockedUserId,
-            BlockedReason: "This is test"
-            // BlockedReason: reasonvalue
-        });
-       // alert("Report submitted successfully!");
-        console.log('blocked',response.data);
-        // setComments(response.data)
-        } catch (error) {
-        console.error("Error submitting report:", error);
-        alert("Failed to submit report");
-        }
-    };
+            try {
+            const response = await axios.post(`${BASE_URL}/user/commentreportanissue`, {
+                // PostId: 2,
+                // issueRaisedBy: '360ccff6-2f3b-4f27-9d06-692ca03657c3',
+                // UserId: '9458d7d7-9268-457c-b27a-3011976bb2e4',
+                PostId: 2,
+                issueRaisedBy: userId,
+                UserId: getBlockedUserId,
+                // BlockedReason: "This is test"
+                Remark: reason
+                // BlockedReason: reason
+            });
+        // alert("Report submitted successfully!");
+            console.log('blocked',response.data);
+            if(response.data.status=== "success"){
+                setMessage('User blocked.');
+            }else{
+                setMessage('Error submitting report.');
+            }
+            // setComments(response.data)
+            } catch (error) {
+            console.error("Error submitting report:", error);
+            alert("Failed to submit report");
+            }
+        };
+        // blocked user mess hide
+        useEffect(() => {
+            if (message) {
+                const timer = setTimeout(() => {
+                setMessage(null); 
+                }, 3000); 
+
+                return () => clearTimeout(timer);
+            }
+        }, [message]);
         // Show comment
         const handleShowMore = () => {
             setVisibleCount((prev) => prev + 5); // Show 5 more each time
         };
-        //  console.log('PostId',postId);
-        //  console.log('UserId',userId)
-        //  console.log('loginId',loginId)
+         console.log('PostId',postId);
+         console.log('UserId',userId)
+         console.log('loginId',loginId)
     
         const handleCommentSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
             e.preventDefault();
@@ -532,7 +575,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
             const fetchPostDetail = async (slug:any) => {
                 try {
                 const response = await axios.post(
-                    `${BASE_URL}/user/community/1`,
+                    `${BASE_URL}/user/community/${slug}`,
                     {
                     LoginId: loginId,
                     // LoginId: "1113virendra@gmail.com",
@@ -588,7 +631,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
         }, [loginId,slug]); 
 
 
-        // console.log( getpostData);
+        console.log( 'dsklfas',getComments);
     if (CommunityLoading) {
         return (
             <div
@@ -735,6 +778,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                     }}
                                     onClick={() => setSpamModal(false)}
                                 >
+                                   
                                     <div
                                         style={{
                                             background: "white",
@@ -767,7 +811,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                             </button>
                                         </div>
                                         <div>
-                                             <h3 style={{ marginTop:'25px'}}>Report an issue</h3>
+                                            <h3 style={{ marginTop:'25px',cursor:'pointer'}}>Report an issue</h3>
                                             <p>What would you like to report?</p>
                                             {/* <input
                                                 type="tel"
@@ -777,14 +821,31 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                 style={{ width: "100%", padding: "10px", marginBottom: "15px" }}
                                             /> */}
                                             <p>Spam</p>
-                                              {/* <input
-                                                type="text"
-                                                value={reasonvalue}
-                                                onChange={(e) => setReasonValue(e.target.value)} 
-                                                style={{background:'#ccc',padding:'10px'}}
+                                             
+                                                <textarea
+                                                 value={reasonValue[getBlockedUserId] || ""}
+                                                 onChange={(e) => handleTextareaChange(getBlockedUserId, e.target.value)}
+                                                // onChange={(e) => {
+                                                //  const value = e.target.value.trim(); 
+                                                //     setCheckedUsers((prev) => ({
+                                                //         ...prev,
+                                                //         [getBlockedUserId]: value, // only this user
+                                                //         }));    
+                                                // }}
                                                 placeholder="Enter text"
-                                                /> */}
-                                            <p style={{background:'#ccc',padding:'10px'}}>This might include unwanted solicitations, advertising or promotions, fraud or phishing.</p>
+                                                style={{
+                                                    background: '#ccc',
+                                                    padding: '10px',
+                                                    width: '100%', 
+                                                    borderRadius: '4px', 
+                                                    border: '1px solid #999',
+                                                    resize: 'vertical', 
+                                                }}
+                                                />
+                                                {getBlocekedTextvalidation && (
+                                                <p style={{ color: "red", marginTop: "5px" }}>{getBlocekedTextvalidation}</p>
+                                                )}
+                                            {/* <p style={{background:'#ccc',padding:'10px'}}>This might include unwanted solicitations, advertising or promotions, fraud or phishing.</p> */}
                                             <h4>Block {selectedComment ?? ''}</h4>
                                             <div className="row">
                                                 <div className='col-md-10'>
@@ -792,18 +853,43 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                 </div>
                                                  <div className='col-md-2'>
                                                    <label className="switch">
-                                                        <input type="checkbox" 
-                                                      onClick={() => handleBlocked(getBlockPostId,getBlockedUserId)}
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={checkedUsers[getBlockedUserId] || false}
+                                                        onChange={(e) => handleBlocked(getBlockPostId, getBlockedUserId,e.target.checked)}
+                                                        // onChange={(e) => {
+                                                        //     handleBlocked(getBlockPostId, getBlockedUserId, reasonvalue,); // your API call or logic
+                                                        //     setCheckedUsers((prev) => ({
+                                                        //     ...prev,
+                                                        //     [getBlockedUserId]: e.target.checked, // only this user
+                                                        //     }));    
+                                                        // }}
+                                                    />
 
-                                                        />
+                                                        {/* <input type="checkbox" 
+                                                        onClick={() => handleBlocked(getBlockPostId,getBlockedUserId,reasonvalue)}
+
+                                                        /> */}
                                                         <span className="slider"></span>
                                                     </label>
                                                 </div>
                                             </div>
-                                            <button className="btn-send" onClick={() => {
-                                                handleSubmitReport(); // your API call
-                                                setSpamModal(false);     // close modal
-                                            }}>Submit report</button>
+                                            
+                                            <button
+                                                className="btn-send"
+                                                disabled={
+                                                !checkedUsers[getBlockedUserId] &&
+                                                !(reasonValue[getBlockedUserId]?.trim())
+                                                }
+                                                onClick={() => {
+                                                handleSubmitReport(getBlockedUserId); // send this user's data
+                                                setCheckedUsers((prev) => ({ ...prev, [getBlockedUserId]: false }));
+                                                setReasonValue((prev) => ({ ...prev, [getBlockedUserId]: "" }));
+                                                setSpamModal(false);
+                                                }}
+                                            >
+                                                Submit report
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -813,7 +899,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                             <ul className="d-flex trail-dt-nav list-unstyled pt-3" role="tablist">
                                     <li className="active" data-bs-toggle="list"><a href="#overviewData" role="button"
                                             className="active">Overview</a></li>
-                                    <li data-bs-toggle="list"><a href="#trailGuide" role="button">Following </a></li>
+                                    {/* <li data-bs-toggle="list"><a href="#trailGuide" role="button">Following </a></li> */}
                                     
                                 </ul>
                             <div className="trail-cover position-relative" id="overviewData">
@@ -891,12 +977,12 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                             <i className="bi bi-star-fill"></i>
                                             <i className="bi bi-star-fill"></i>
                                             <i className="bi bi-star-fill"></i>
-                                        </div> */}
+                                         </div> */}
                                     </div>
                                     <div className="tusc-cn-2 text-center">
                                         
                                         <p className="mb-0 text-midnight-navy"><span className="d-block review-no">31</span>
-                                            <span>{getfollowingBy?.total_reviews ?? ''}</span>
+                                            {/* <span>{getfollowingBy?.total_reviews ?? ''}</span> */}
                                         </p>
                                     </div>
                                     <div className="tusc-cn-3">
@@ -974,7 +1060,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                         </svg>
                                             {getfollowingBy?.comment_count?? 0} Comment
                                     </button>
-                                    <button className="share-btn">
+                                    {/* <button className="share-btn">
                                         <svg width="21" height="22" viewBox="0 0 21 22" fill="none" xmlns="http://www.w3.org/2000/svg">
                                             <path
                                                 d="M20.4601 7.96745L12.4501 1.32995C12.2278 1.14185 11.9555 1.02254 11.6665 0.986577C11.3775 0.950618 11.0842 0.999567 10.8226 1.12745C10.5648 1.2485 10.3468 1.44044 10.194 1.68083C10.0413 1.92123 9.96015 2.20014 9.96009 2.48495V3.98495C7.04123 5.00521 4.51317 6.91027 2.72794 9.43487C0.942708 11.9595 -0.0108345 14.9779 9.28794e-05 18.0699C-0.000854163 18.8512 0.0618532 19.6313 0.187593 20.4024C0.212056 20.5575 0.284563 20.701 0.394897 20.8127C0.505231 20.9244 0.647828 20.9986 0.802593 21.0249H0.930093C1.06577 21.0246 1.19881 20.9874 1.31504 20.9174C1.43126 20.8474 1.52632 20.7472 1.59009 20.6274C2.44778 19.0138 3.63682 17.5997 5.07928 16.4778C6.52173 15.3559 8.18501 14.5515 9.96009 14.1174V15.7374C9.96015 16.0223 10.0413 16.3012 10.194 16.5416C10.3468 16.782 10.5648 16.9739 10.8226 17.0949C11.029 17.1924 11.2543 17.2436 11.4826 17.2449C11.8375 17.2432 12.1803 17.1156 12.4501 16.8849L16.0951 13.8849L16.1626 13.8324L20.4601 10.2699C20.6273 10.1291 20.7618 9.95349 20.854 9.75527C20.9463 9.55706 20.994 9.34107 20.994 9.12245C20.994 8.90382 20.9463 8.68784 20.854 8.48963C20.7618 8.29141 20.6273 8.11575 20.4601 7.97495V7.96745ZM15.2626 12.6174L15.1951 12.6699L11.4451 15.7449V13.1799C11.4494 13.1602 11.4494 13.1397 11.4451 13.1199C11.4451 13.1199 11.4451 13.0749 11.4451 13.0524C11.4451 13.0299 11.4451 12.9999 11.4076 12.9699C11.3934 12.9237 11.3758 12.8786 11.3551 12.8349C11.3279 12.7887 11.2923 12.748 11.2501 12.7149C11.2263 12.6773 11.1958 12.6442 11.1601 12.6174C11.1208 12.5831 11.0781 12.5529 11.0326 12.5274L10.9201 12.4749H10.7551H10.6801H10.6201H10.5526C6.94145 13.0978 3.70388 15.0747 1.50009 18.0024C1.50308 15.1499 2.41916 12.3733 4.11423 10.079C5.80929 7.7847 8.19431 6.09331 10.9201 5.25245H10.9576C11.0071 5.23451 11.0548 5.21191 11.1001 5.18495C11.1527 5.15668 11.2029 5.12407 11.2501 5.08745L11.3401 4.98245C11.3719 4.94716 11.3973 4.90654 11.4151 4.86245C11.4346 4.82167 11.4497 4.77892 11.4601 4.73495C11.4643 4.68254 11.4643 4.62986 11.4601 4.57745V2.52245L19.5001 9.11495L15.2626 12.6174Z"
@@ -982,14 +1068,16 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                             />
                                         </svg>
                                         {getfollowingBy?.share_count?? 0}  Share
-                                    </button>
+                                    </button> */}
 
                                 </div>
                                 
                             </div>
                             
                                 <div className="row">
+                                {message && <div style={{color:'#FC673C' , textAlign:'center'}}>{message}</div>}
                                 {
+                                    
                                     // getComments.map((cmt:any,index:number)=>(
                                     getComments.slice(0, visibleCount).map((cmt: any, index: number) => (
                                         <div key={index}  className="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12">
@@ -1008,9 +1096,10 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                         />
                                                     </div>
                                                     <div className="test-head">
-                                                        <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">{cmt.name ?? 'N/A'}</h3>
+                                                       
+                                                        <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">{cmt.name ?? 'N/A'}<span style={{color:'gray',fontSize:'14px'}} className="d-inline-block mx-1">•  {timeAgo(cmt.createdOn)}</span> </h3>
                                                         {/* <StarRating rating={Number(review.rating)}/> */}
-                                                        <p className="mb-0">{cmt.commentText ?? 'N/A'}<span className="d-inline-block mx-1">•</span> hh</p>
+                                                        <p className="mb-0">{cmt.commentText ?? 'N/A'}</p>
                                                     </div>
                                                     {/* <div className="right-abs">
                                                         <i className="bi bi-three-dots"></i>
@@ -1023,6 +1112,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                            {userId === cmt.userId ? (
                                                             <li>
                                                                 <a className="dropdown-item" href="#"
+                                                                style={{ cursor: 'pointer' }}
                                                                     onClick={()=>{
                                                                         setIsOpen(true);
                                                                     }}
@@ -1033,7 +1123,9 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                             ) : (
                                                             <>
                                                                 <li>
-                                                                    <a className="dropdown-item" 
+                                                                    <a 
+                                                                    className="dropdown-item" 
+                                                                    style={{cursor: 'pointer' }}
                                                                     // onClick={() => {
                                                                     //     setIsOpen(true);
                                                                     //     setSelectedComment(cmt.name); 
@@ -1041,7 +1133,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                                     //onClick={() => setIsOpen(true)}
                                                                      onClick={() => options[0].action(cmt)} 
                                                                     >
-                                                                    
                                                                     Report an issue
                                                                 </a>
                                                                 </li>
@@ -1194,10 +1285,10 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                     <li><a href=""><img src="/assets/images/icons/hiking.svg" alt=""/> Hiking </a></li>
                                     <li><a href=""><img src="/assets/images/icons/walking.svg" alt=""/> Walking </a></li>
                                 </ul> 
-                                <div className="d-flex flex-wrap align-items-center">
+                                {/* <div className="d-flex flex-wrap align-items-center">
                                     <a href="" className="btn-style-3">Get Directions</a>
                                     <a href="" className="btn-style-1">Hit the Trail</a>
-                                </div>
+                                </div> */}
                             </div>
                         </div> 
                         

@@ -31,7 +31,7 @@ const SeoMeta: React.FC = () => {
             const response = await axios.get(`${BASE_URL}/SeoMetaTags/home`);
             setSeo(response.data);
             
-            // console.log(response.data);
+             console.log(response.data);
             
             }catch(err){
                 console.error('API Error:', err);
@@ -50,7 +50,7 @@ const SeoMeta: React.FC = () => {
     return (
         <Helmet>
         {/* Default fields */}
-            <title>{seo.title}</title>
+            {/* <title>{seo.title}</title> */}
             <meta name="description" content={seo.metaDescription} />
             <meta name="keywords" content={seo.metaKeywords} />
             <link rel="canonical" href={seo.canonicalUrl} />

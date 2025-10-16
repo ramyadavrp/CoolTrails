@@ -2656,7 +2656,7 @@ input[type="radio"]:checked::after {
 }
 
 .wrapper-national-park {
-    background-image: url("./assets/images/bg/Ntional-Park-Guides.svg");
+    background-image: url("/assets/images/bg/Ntional-Park-Guides.svg");
 }
 
 .wrapper-gift {
@@ -4389,6 +4389,11 @@ input[type="radio"]:checked::after {
         background-color: #FC673C;
         display: inline-block;
         transition: all 0.2s linear;
+    }
+    /* 6-10-25 Ali */
+    .btn-send:disabled {
+        background-color: #ccc; 
+        cursor: not-allowed;
     }
     .btn-download{
         float:center;

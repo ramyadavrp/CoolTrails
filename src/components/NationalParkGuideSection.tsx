@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import { SquareLoader } from "react-spinners";
 import { SyncLoader } from "react-spinners";
 import data from '../data/park.json';
-import { encodeId, generateSlug ,slugToTitle} from '../utils/helpers';
+import { encodeId, generateSlug ,slugToTitle,usePageTitle} from '../utils/helpers';
 import Select from "react-select";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
@@ -35,6 +35,9 @@ const NationalParkGuideSection: React.FC = () => {
     // Add more button
     const [expandedPosts, setExpandedPosts] = useState<{ [key: number]: boolean }>({});
 
+    usePageTitle("Cooltrails | National Park Guides");
+    
+        
     const toggleExpand = (index: number) => {
         setExpandedPosts(prev => ({
         ...prev,
@@ -226,6 +229,20 @@ const NationalParkGuideSection: React.FC = () => {
             </section>
             <section className="section-to-dest default-padding">
                 <div className="container"> 
+                    {/* <div className="row">
+                        <div className="col-12">
+                            
+                            <div className="cooltrails-title text-center">
+                                <h2 className="title title-sm title-dropdown d-flex align-items-center justify-content-center"><span class="me-2 text-midnight-navy">Guides to</span>  <select name="" id="" class="advance-select">
+                                    <option value="" selected>Austraila</option>
+                                    <option value="">America</option>
+                                    <option value="">India</option>
+                                </select> </h2>
+                                <p className="text-center text-grey">29 Parks • 29 Guides</p>
+                            </div>
+
+                        </div>
+                    </div> */}
                     <div className="row">
                         <div className="col-12">
                             

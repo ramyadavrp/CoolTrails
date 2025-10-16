@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 
 import { SquareLoader } from "react-spinners"; 
 import axios from 'axios';
+import { decodeId,encodeId, generateSlug ,slugToTitle,usePageTitle } from '../utils/helpers';
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -29,6 +30,9 @@ const GiftMembershipSection: React.FC = () => {
     const [loadingGiftMembership,setLoadingGiftMembership] = useState(true);
     const [getGiftMembership, setGiftMembership ]= useState<FAQ[]>([]);
     const [getAnnualPlans, setAnnualPlans ]= useState<Plans[]>([]);
+    
+    usePageTitle("Cooltrails | Gift Membership");
+
     useEffect(() => {
         window.scrollTo(0, 0);
     }, []);
@@ -105,7 +109,7 @@ const GiftMembershipSection: React.FC = () => {
             </div>
         );
     }
-    console.log(getAnnualPlans);
+    // console.log(getAnnualPlans);
     return (
     <main className="mainContent">
         <section className="section-gift-inner position-relative overflow-hidden">

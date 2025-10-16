@@ -4,7 +4,7 @@ import axios from 'axios';
 import { SyncLoader } from "react-spinners";
 import path from 'path';
 import { Link } from 'react-router-dom';
-import { decodeId, encodeId, generateSlug, slugToTitle } from '../utils/helpers';
+import { decodeId, encodeId, generateSlug, slugToTitle,usePageTitle } from '../utils/helpers';
 import data from '../data/explorealltrails.json';
 import { SquareLoader } from "react-spinners";
 import Select from "react-select";
@@ -64,6 +64,8 @@ function ExploreTrailSection() {
     const [nearbytrails, setNearbytrails] = useState<any[]>([]);
     const [latitude, setLatitude] = useState<number | null>(null);
     const [longitude, setLongitude] = useState<number | null>(null);
+     usePageTitle("Cooltrails | Explore ");
+    
 
     const [filters, setFilters] = useState({
         distance: [],    // e.g., ["near", "away"]

@@ -16,6 +16,8 @@ import Footer from '../components/AppFooter/Footer';
 import { SquareLoader } from "react-spinners"; 
 import { Helmet } from 'react-helmet-async';
 import axios from 'axios';
+import { decodeId,encodeId, generateSlug ,slugToTitle,usePageTitle } from '../utils/helpers';
+
 // import SeoMeta from '../containers/SeoMeta'
 const BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -24,6 +26,7 @@ const Home: React.FC = () => {
   const handleClick = () => {
     alert('Button clicked!');
   };
+ usePageTitle("Cooltrails | Home");
   // Loader
   // window.scrollTo(0,0);
 

@@ -138,9 +138,11 @@ if (topLocatTrails.length === 0) return <p>No local favorites found.</p>;
                 <div className="local-favorite-slider owl-carousel owl-theme br-20 overflow-hidden" id="localFavorite">
                   {topLocatTrails.map((locatTrail: any, index: number) => (
                     <div key={index} className="slider-item-single">
+                      <Link to={`/${locatTrail.urltitle || generateSlug(locatTrail.title || '')}`}>
                       <div className="local-favorite-single">
                         <div className="lfc-thumb position-relative">
                           {/* Fix image source path - add leading slash for public assets */}
+                           
                           <img
                               src={locatTrail.image || '/assets/images/not-found.jpg'}
                               alt="locat Trail" className="img-fluid img-fixed-size" 
@@ -174,6 +176,7 @@ if (topLocatTrails.length === 0) return <p>No local favorites found.</p>;
                           {/* <a href="#!" className="btn-style-1 w-100"></a> */}
                         </div>
                       </div>
+                      </Link>
                     </div>
                   ))}
                 </div>

@@ -11,7 +11,7 @@ import { SyncLoader } from "react-spinners";
 
 import path from 'path';
 import { Link } from 'react-router-dom';
-import { decodeId,encodeId, generateSlug ,slugToTitle} from '../utils/helpers';
+import { decodeId,encodeId, generateSlug ,slugToTitle,usePageTitle} from '../utils/helpers';
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import mapboxgl from 'mapbox-gl';
@@ -88,6 +88,7 @@ mapboxgl.accessToken = 'pk.eyJ1IjoiMTExMnZpcmVuZHJhIiwiYSI6ImNtYmE0emNyNjBwbHMya
 const AffiliateDetailTrail: React.FC = () => {
     const { country, state, city, title } = useParams();
     // const { id: encodedId, slug } = useParams(); // url link
+     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [trailDetail, setTrailDetail] = useState<TrailDetail | null>(null);
     const [loadingDetailTrails, setLoadingDetailTrails] = useState(true);
     const [errorDetailTrails, setErrorDetailTrails] = useState('');
@@ -125,7 +126,9 @@ const AffiliateDetailTrail: React.FC = () => {
     //     const loadpage = setTimeout(()=>setLoadingDetailTrails(false), 1000);
     //     return clearTimeout(loadpage);
     // },[]);
-
+    usePageTitle("Cooltrails | Trail");
+    
+    
     //  loader time set 
     // window.scrollTo(0,0);
    useLayoutEffect(() => {
@@ -138,6 +141,13 @@ const AffiliateDetailTrail: React.FC = () => {
         
         return()=>clearTimeout(timer);
     },[])
+    
+    useEffect(() => {
+        // Check if token exists in localStorage
+        const token = localStorage.getItem("token");
+        setIsLoggedIn(!!token);
+    }, []);
+
     // image arraw move
     const handleNextImage = useCallback(() => {
         setCurrentIndex(i => (i + 1) % getImages.length);
@@ -164,13 +174,13 @@ const AffiliateDetailTrail: React.FC = () => {
             });
             
             setTrailDetail(response.data.data);
-            console.log('traildetail',response.data.data)
+            // console.log('traildetail',response.data.data)
             setNearTrails(response.data.data.nearTrails);
             setWeatherDays(response.data.data.weatherDays);
             setImages(response.data.data.imageUrls);
             setPlaceOffer(response.data.data.placeOffer);
             setItinerary(response.data.data.itinerary);
-            console.log('setItinerary',response.data.data.itinerary);
+            // console.log('setItinerary',response.data.data.itinerary);
             setReviews(response.data.data.review);
             setReviewImages(response.data.data.reviews_images);
             const points = response.data.data.mapPoints;
@@ -189,7 +199,7 @@ const AffiliateDetailTrail: React.FC = () => {
 
     useEffect(() => {
         if (!getmapPoints.length || map.current) return;
-
+        console.log(getmapPoints);
         const firstPoint = getmapPoints[0];
 
         map.current = new mapboxgl.Map({
@@ -198,12 +208,13 @@ const AffiliateDetailTrail: React.FC = () => {
             center: [firstPoint.longitude, firstPoint.latitude],
             zoom: 13,       
         });
-
-        map.current.addControl(new mapboxgl.NavigationControl());
+        // Zoom in zoom out (+, - button)
+        // map.current.addControl(new mapboxgl.NavigationControl());
 
         map.current.on('load', async () => {
             //  setloading(true);
             const formattedPoints = getmapPoints.map(p => [p.longitude, p.latitude]);
+            console.log('map',formattedPoints);
             setPoints(formattedPoints);
 
             const bounds = new mapboxgl.LngLatBounds();
@@ -1181,7 +1192,10 @@ const AffiliateDetailTrail: React.FC = () => {
                         <div className="col-12">
                             <div className="section-title review">
                                 <h2 className="title">Reviews</h2>
-                                <a href="" className="btn-style-review">Review trail</a>
+                                {isLoggedIn ? (
+                                    <a href="" className="btn-style-review">Review trail</a>
+                                ):(null )}
+                                
                             </div>
                         </div>
                     </div>
