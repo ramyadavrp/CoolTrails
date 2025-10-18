@@ -30,7 +30,7 @@ const ReviewSection: React.FC = () => {
     useEffect(() => {
         const token = localStorage.getItem("token");
         setIsLoggedIn(!!token);
-        console.log(isLoggedIn);
+        // console.log(isLoggedIn);
     }, []);
     useEffect(() => {
         const storedId = localStorage.getItem("id");
@@ -39,7 +39,7 @@ const ReviewSection: React.FC = () => {
             setUserId(storedId.trim());
         }  
     }, []);
-    console.log("user ID:", userId); 
+    // console.log("user ID:", userId); 
 
     const handleFollow = useCallback(
         async (id: string) => {
@@ -61,7 +61,7 @@ const ReviewSection: React.FC = () => {
                         ...prev,
                         [id]: true,
                     }));
-                    console.log(getFollow);
+                    // console.log(getFollow);
             //     const doFollow = response.data.do_follow 
             //                     ?? response.data.data?.do_follow 
             //                     ?? response.data.follow;
@@ -119,7 +119,7 @@ const ReviewSection: React.FC = () => {
         const fetchtopExplorers = async ()=>{
             try{ 
                 const response = await axios.get(`${BASE_URL}/trail/FellowExplorers/10`);
-                console.log(response.data.data);
+                // console.log(response.data.data);
                 setExplorers(response.data.data);
             }catch(err){
                 console.error('API Error:', err);
