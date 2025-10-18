@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom';
 import axios from 'axios'; // Import axios
 import { useNavigate } from 'react-router-dom'; // Import useNavigate for redirection
 import { Trash2, Upload } from "lucide-react";
+import { SquareLoader } from "react-spinners";
+import { SyncLoader } from "react-spinners";
 
 declare const Masonry: any;
 const BASE_URL = import.meta.env.VITE_API_URL;
@@ -22,6 +24,26 @@ interface ProfileData {
     CityId: string;
     favorite_activities: FavoriteActivity[];
 }
+interface Categorylist{
+    id:string,
+    name:string
+}
+interface CountryList{
+    id:string,
+    name:string
+}
+interface StateList{
+    id:string,
+    name:string
+}
+interface CityList{
+    id:string,
+    name:string
+}
+interface ImagePreview {
+  file: File;
+  preview: string;
+}
 const AddPostSection: React.FC = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [file, setFileName] = useState<File|null>(null);
@@ -30,9 +52,14 @@ const AddPostSection: React.FC = () => {
     const [imgMessage, setImgMessage] = useState<string | null>(null);
     const [userId, setUserId] = useState<string>("");
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
-
-    
-
+    const [loadingFeed,setLoadingFeed] = useState(true);
+    const [errorsFeed,setErrorsFeed] = useState('');
+    const[getCategoryList,setCategoryList] = useState<Categorylist[]>([]);
+    const[getCountryList,setCountryList] = useState<CountryList[]>([]);
+    const[getCountryId,setCountryId] = useState<CountryList[]>([]);
+    const[getStateList,setStateList] = useState<StateList[]>([]);
+    const[getCityList,setCityList] = useState<CityList[]>([]);
+    const [images, setImages] = useState<ImagePreview[]>([]);
     const [profileData, setProfileData] = useState<ProfileData>({
         postTitle: "",
         UserId: "",
@@ -43,6 +70,9 @@ const AddPostSection: React.FC = () => {
         CityId: "",
         favorite_activities: [{"title":"Trails"}]
     });
+
+    
+
     useEffect(() => {
             const storedId = localStorage.getItem("id");
             if (storedId) {
@@ -51,17 +81,41 @@ const AddPostSection: React.FC = () => {
             }  
         }, []);
 
+    // const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    //     const selectedFile = e.target.files?.[0];
+    //     if (selectedFile) {
+    //         setFileName(selectedFile);
+    //         setImgMessage('Image uploaded successfully!');
+    //         // Preview image
+    //         const reader = new FileReader();
+    //         reader.onloadend = () => setPreview(reader.result as string);
+    //         reader.readAsDataURL(selectedFile);
+    //     }
+    // };
+    
+    //Multiple image upload
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const selectedFile = e.target.files?.[0];
-        if (selectedFile) {
-            setFileName(selectedFile);
-            setImgMessage('Image uploaded successfully!');
-            // Preview image
-            const reader = new FileReader();
-            reader.onloadend = () => setPreview(reader.result as string);
-            reader.readAsDataURL(selectedFile);
-        }
+        const files = e.target.files;
+        if (!files) return;
+        const fileArray = Array.from(files);
+        console.log(fileArray);
+        const newImages: ImagePreview[] = [];
+
+        fileArray.forEach((file) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setImages((prev) => [...prev, { file, preview: reader.result as string }]);
+        };
+        reader.readAsDataURL(file);
+        });
+
+        setImgMessage("Image(s) uploaded successfully!");
+        e.target.value = ""; // reset input to allow re-selecting same files
     };
+    const handleRemoveImage = (index: number) => {
+        setImages((prev) => prev.filter((_, i) => i !== index));
+    };
+
     const handleDeleteImage =() =>{
         setPreview(null);
         setImgMessage('Removed Image.');
@@ -70,6 +124,7 @@ const AddPostSection: React.FC = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
     ) => {
         const { name, value } = e.target;
+    //    console.log('add',profileData.CountryId);
         setProfileData(prev => ({
             ...prev,
             [name]: value
@@ -119,7 +174,83 @@ const AddPostSection: React.FC = () => {
             //alert("Failed to update feed. Check console for details.");
         }
     };
+    useEffect(() => {
+        const categoryList= async ()=>{
+            try{
+                //setLoadingFeed(true); // show loader every time fetch starts
+                setErrorsFeed("");
+                const response = await axios.get(`${BASE_URL}/common/categorylist`);
+                console.log(response.data.data);
+                setCategoryList(response.data.data);
+            }catch(err){
+                console.error('API Error:', err);
+                setErrorsFeed('Unable to fetch Category');
+            } finally{
+                setLoadingFeed(false);
+            }
+        };
+        categoryList();
+    }, []);
 
+    useEffect(() => {
+        const countryList= async ()=>{
+            try{
+                //setLoadingFeed(true); // show loader every time fetch starts
+                setErrorsFeed("");
+                const response = await axios.get(`${BASE_URL}/common/countrylist`);
+                console.log(response.data.data);
+                setCountryList(response.data.data);
+            }catch(err){
+                console.error('API Error:', err);
+                setErrorsFeed('Unable to fetch Country');
+            } finally{
+                setLoadingFeed(false);
+            }
+        };
+        countryList();
+    }, []);
+
+    useEffect(() => {
+        // console.log('countryId',profileData.CountryId);
+        if (!profileData.CountryId) return;
+        const stateList= async ()=>{
+            try{
+                //setLoadingFeed(true); // show loader every time fetch starts
+                setErrorsFeed("");
+                const response = await axios.get(`${BASE_URL}/common/statelistbycountry/${profileData.CountryId}`);
+                console.log('state',response.data.data);
+                setStateList(response.data.data);
+                // setPrak(response.data.data.parks);
+            }catch(err){
+                console.error('API Error:', err);
+                setErrorsFeed('Unable to State');
+            } finally{
+                setLoadingFeed(false);
+            }
+        };
+        stateList();
+    }, [profileData.CountryId]);
+
+    useEffect(() => {
+        //console.log('StateId',profileData.StateId);
+        if (!profileData.StateId) return;
+        const cityList= async ()=>{
+            try{
+                //setLoadingFeed(true); // show loader every time fetch starts
+                setErrorsFeed("");
+                const response = await axios.get(`${BASE_URL}/common/citylistbystate/${profileData.StateId}`);
+                console.log('state',response.data.data);
+                setCityList(response.data.data);
+                // setPrak(response.data.data.parks);
+            }catch(err){
+                console.error('API Error:', err);
+                setErrorsFeed('Unable to State');
+            } finally{
+                setLoadingFeed(false);
+            }
+        };
+        cityList();
+    }, [profileData.StateId]);
    
    
     useEffect(() => {
@@ -142,6 +273,32 @@ const AddPostSection: React.FC = () => {
         });
         }
     }, []);
+   
+    if (loadingFeed) {
+            return (
+                <div
+                    style={{
+                    position: "fixed",
+                    top: 0,
+                    left: 0,
+                    width: "100vw",
+                    height: "100vh",
+                    background: "#FFF5E9",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    zIndex: 9999,
+                    }}
+                >
+                    <SquareLoader color="#FC673C" size={80} speedMultiplier={1.5} />
+                </div>
+            );
+        }
+    if (errorsFeed) return <p>{errorsFeed}</p>;
+    if (getCategoryList.length === 0) return <p>NO Category found.</p>;
+    if (getCountryList.length === 0) return <p>NO Country found.</p>;
+    
+    
 
   return (
     <main className="mainContent">
@@ -158,14 +315,76 @@ const AddPostSection: React.FC = () => {
                 <div className="row g-4 edit-profile-row" data-masonry='{"percentPosition": true }'>
                     <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12 grid-item">
                         <div className="bg-almost-white br-20 profile-card-2">
-                            <div className="profile-info-edit d-flex align-items-center">
+                            <>
+                            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginTop: "10px" }}>
+                               {/* {images.slice(0, 4).map((img, index) => (
+                                <div key={index} style={{ position: "relative" }}>
+                                    <img
+                                    src={img.preview}
+                                    alt={`preview-${index}`}
+                                    style={{ width: "100px", height: "100px", objectFit: "cover", borderRadius: "5px" }}
+                                    />
+                                    <button
+                                    type="button"
+                                    onClick={() => handleRemoveImage(index)}
+                                    style={{
+                                        position: "absolute",
+                                        top: 0,
+                                        right: 0,
+                                        background: "red",
+                                        color: "white",
+                                        border: "none",
+                                        borderRadius: "50%",
+                                        width: "20px",
+                                        height: "20px",
+                                        cursor: "pointer",
+                                    }}
+                                    >
+                                    &times;
+                                    </button>
+                                </div>
+                                ))} */}
+                                
+                                <div className="upload-btn-wrapper" style={{display: "flex",alignItems: "center", gap: "100px"}}>
+                                    <label htmlFor="thumbnail" style={{ minWidth: "150px" }}>Thumbnail Image</label>
+                                    <input type="file"  multiple ref={fileInputRef} onChange={handleFileChange} /> 
+                                </div>
+                                           
+                                            {/* <button type="button" className="btn"  onClick={() => fileInputRef.current?.click()} >
+                                                <svg width="25" height="23" viewBox="0 0 25 23" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17 8.5L19 8.5C21.2091 8.5 23 10.2909 23 12.5L23 17.5C23 19.7091 21.2091 21.5 19 21.5L7 21.5C4.79086 21.5 3 19.7091 3 17.5L3 12.5C3 10.2909 4.79086 8.5 7 8.5L9 8.5" stroke="#05073D" strokeWidth="1.5" strokeLinecap="round"/><path d="M16 5.5L13.7071 3.20711C13.3166 2.81658 12.6834 2.81658 12.2929 3.20711L10 5.5" stroke="#05073D" strokeWidth="1.5" strokeLinecap="round"/><path d="M13 3.5L13 15.5" stroke="#05073D" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                                                Upload photo</button>
+                                               
+                                            <input type="file"  multiple ref={fileInputRef} onChange={handleFileChange} />
+                                            {imgMessage && <div style={{color:'#FC673C' , fontSize: "11px",textAlign:'center'}}>{imgMessage}</div>}
+                                           
+                                        </div> */}
+                                    {/* {images.length > 4 && (
+                                        <div
+                                        style={{
+                                            width: "100px",
+                                            height: "100px",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            borderRadius: "5px",
+                                            background: "#eee",
+                                            fontWeight: "bold",
+                                            fontSize: "16px",
+                                        }}
+                                        >
+                                        +{images.length - 4} more
+                                        </div>
+                                    )} */}
+                            </div>
+                            </>
+                            {/* <div className="profile-info-edit d-flex align-items-center">
                                 <div className="profile-img">
                                     <img
                                         src={preview || 'assets/images/profile/profile-md.png'}
                                         alt="Profile"
                                         width={100}
                                     />
-                                    {/* <img src="assets/images/profile/profile-md.png" alt="Amit Singh" /> */}
+                                    
                                     </div>
                                 <div className="profile-info-edit-cn d-flex">
                                     <div className="pfe-title">
@@ -179,7 +398,7 @@ const AddPostSection: React.FC = () => {
                                                 <svg width="25" height="23" viewBox="0 0 25 23" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17 8.5L19 8.5C21.2091 8.5 23 10.2909 23 12.5L23 17.5C23 19.7091 21.2091 21.5 19 21.5L7 21.5C4.79086 21.5 3 19.7091 3 17.5L3 12.5C3 10.2909 4.79086 8.5 7 8.5L9 8.5" stroke="#05073D" strokeWidth="1.5" strokeLinecap="round"/><path d="M16 5.5L13.7071 3.20711C13.3166 2.81658 12.6834 2.81658 12.2929 3.20711L10 5.5" stroke="#05073D" strokeWidth="1.5" strokeLinecap="round"/><path d="M13 3.5L13 15.5" stroke="#05073D" strokeWidth="1.5" strokeLinecap="round"/></svg>
                                                 Upload photo</button>
                                                
-                                            <input type="file" ref={fileInputRef} onChange={handleFileChange} />
+                                            <input type="file"  multiple ref={fileInputRef} onChange={handleFileChange} />
                                             {imgMessage && <div style={{color:'#FC673C' , fontSize: "11px",textAlign:'center'}}>{imgMessage}</div>}
                                            
                                         </div>
@@ -193,7 +412,7 @@ const AddPostSection: React.FC = () => {
                                         </button>
                                     </div>
                                 </div>
-                            </div>
+                            </div> */}
                         </div>
                     </div>
                     {/* <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12 grid-item">
@@ -315,8 +534,12 @@ const AddPostSection: React.FC = () => {
                                                  value={profileData.CategoryId}
                                                 onChange={handleInputChange} 
                                             >
-                                                <option value="1">Category1</option>
-                                                <option value="2">Category2</option>
+                                                {
+                                                    getCategoryList.map((cat:any, index:number)=>(
+                                                        <option key={index} value={cat.id}>{cat.name}</option>
+                                                    ))
+                                                }
+                                                 
                                             </select>
                                             <label htmlFor="category">Category</label>
                                         </div>
@@ -326,9 +549,14 @@ const AddPostSection: React.FC = () => {
                                             <select className="form-select" name="CountryId" id="CountryId"
                                                 value={profileData.CountryId}
                                                 onChange={handleInputChange}
-                                            >
-                                                <option value="1">India</option>
-                                                <option value="2">Dubai</option>
+                                            >   
+                                                {
+                                                    getCountryList.map((country:any, index:number)=>(
+                                                        <option key={index} value={country.id}>{country.name}</option>
+                                                    ))
+                                                }
+                                                {/* <option value="1">India</option>
+                                                <option value="2">Dubai</option> */}
                                             </select>
                                             <label htmlFor="CountryId">Country</label>
                                         </div>
@@ -339,8 +567,13 @@ const AddPostSection: React.FC = () => {
                                             value={profileData.StateId}
                                                 onChange={handleInputChange}
                                             >
-                                                <option value="1">State1</option>
-                                                <option value="2">State2</option>
+                                                {
+                                                    getStateList.map((state:any, index:number)=>(
+                                                        <option key={index} value={state.id}>{state.name}</option>
+                                                    ))
+                                                }
+                                                {/* <option value="1">State1</option>
+                                                <option value="2">State2</option> */}
                                             </select>
                                             <label htmlFor="StateId">State</label>
                                         </div>
@@ -351,8 +584,13 @@ const AddPostSection: React.FC = () => {
                                             value={profileData.CityId}
                                                 onChange={handleInputChange}
                                             >
-                                                <option value="1">city1</option>
-                                                <option value="2">city2</option>
+                                                 {
+                                                    getCityList.map((city:any, index:number)=>(
+                                                        <option key={index} value={city.id}>{city.name}</option>
+                                                    ))
+                                                }
+                                                {/* <option value="1">city1</option>
+                                                <option value="2">city2</option> */}
                                             </select>
                                             <label htmlFor="CityId">City</label>
                                         </div>

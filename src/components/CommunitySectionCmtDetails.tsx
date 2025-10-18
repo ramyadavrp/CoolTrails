@@ -78,6 +78,8 @@ const CommunitySectionCmtDetails: React.FC = () => {
     const [isSpam, setSpamModal] = useState(false);
     const [selectedComment, setSelectedComment] = useState<any>(null);
     const [getBlockedId, setBlocked] = useState<any>(null);
+    const [getCheckblock, setCheckblock] = useState(false);
+    // const [getCheckblock, setCheckblock] = useState<{ [blockId: string]: boolean }>({});
     const [getBlockPostId, setBlockPostId] = useState<any>(null);
     const [getBlockedUserId, setBlockedUserId] = useState<any>(null);
     // const [reasonvalue, setReasonValue] = useState<any>(null); 
@@ -448,7 +450,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
 
     useEffect(() => {
             const storedId = localStorage.getItem("id");
-            // console.log("Stored IDss:", storedId); // should print the ID string
+             console.log("Stored IDss:", storedId); // should print the ID string
             if (storedId) {
                 setUserId(storedId.trim());
             }  
@@ -459,8 +461,12 @@ const CommunitySectionCmtDetails: React.FC = () => {
     const handleTextareaChange = (BlockedUserId: string, value: string) => {
         setReasonValue((prev) => ({ ...prev, [BlockedUserId]: value }));
     };
-    const handleBlocked = (BlockPostId: any, BlockedUserId: any,checked: boolean) => {
-        // setBlocked(blockId);
+    
+    const handleBlocked = (blockId:any ,BlockPostId: any, BlockedUserId: any,checked: boolean) => {
+        // console.log('checkid',checked);
+        
+        setCheckblock(checked);
+        setBlocked(blockId); 
         setBlockPostId(BlockPostId);
         setBlockedUserId(BlockedUserId);
          setCheckedUsers((prev) => ({ ...prev, [BlockedUserId]: checked }));
@@ -468,10 +474,9 @@ const CommunitySectionCmtDetails: React.FC = () => {
     };
     // Submit report API call
     //commentreportanissue
-        const handleSubmitReport = async (getBlockedUserId:any) => {
-            // console.log('dnkl',checkedUsers); 
+        const handleSubmitReport = async (getBlockedUserId:any,getBlockedId:any) => {
+             console.log('comment',getBlockedId); 
              const reason = reasonValue[getBlockedUserId];
-            //  alert(reason);
             if (!getBlockPostId || !getBlockedUserId || !userId) {
                 alert("Please select all required IDs!");
             return;
@@ -484,14 +489,23 @@ const CommunitySectionCmtDetails: React.FC = () => {
 
             try {
             const response = await axios.post(`${BASE_URL}/user/commentreportanissue`, {
+                // CommentId:2,
+                // issueRaisedBy:'360ccff6-2f3b-4f27-9d06-692ca03657c3',
+                // UserId:'9458d7d7-9268-457c-b27a-3011976bb2e4',
+                CommentId: getBlockedId,
+                issueRaisedBy: userId,
+                UserId: getBlockedUserId,
+                Remark:reason ?? '',
+                isBlocked:getCheckblock
                 // PostId: 2,
                 // issueRaisedBy: '360ccff6-2f3b-4f27-9d06-692ca03657c3',
                 // UserId: '9458d7d7-9268-457c-b27a-3011976bb2e4',
-                PostId: 2,
-                issueRaisedBy: userId,
-                UserId: getBlockedUserId,
+                // CommentId: 2,
+                // issueRaisedBy: userId,
+                // UserId: getBlockedUserId,
                 // BlockedReason: "This is test"
-                Remark: reason
+                // Remark: reason,
+                // isBlocked:true
                 // BlockedReason: reason
             });
         // alert("Report submitted successfully!");
@@ -521,9 +535,9 @@ const CommunitySectionCmtDetails: React.FC = () => {
         const handleShowMore = () => {
             setVisibleCount((prev) => prev + 5); // Show 5 more each time
         };
-         console.log('PostId',postId);
-         console.log('UserId',userId)
-         console.log('loginId',loginId)
+        //  console.log('PostId',postId);
+        //  console.log('UserId',userId)
+        //  console.log('loginId',loginId)
     
         const handleCommentSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
             e.preventDefault();
@@ -631,7 +645,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
         }, [loginId,slug]); 
 
 
-        console.log( 'dsklfas',getComments);
+        // console.log( 'dsklfas',getComments);
     if (CommunityLoading) {
         return (
             <div
@@ -856,7 +870,8 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                     <input
                                                         type="checkbox"
                                                         checked={checkedUsers[getBlockedUserId] || false}
-                                                        onChange={(e) => handleBlocked(getBlockPostId, getBlockedUserId,e.target.checked)}
+                                                        
+                                                        onChange={(e) => handleBlocked(getBlockedId,getBlockPostId, getBlockedUserId,e.target.checked)}
                                                         // onChange={(e) => {
                                                         //     handleBlocked(getBlockPostId, getBlockedUserId, reasonvalue,); // your API call or logic
                                                         //     setCheckedUsers((prev) => ({
@@ -882,7 +897,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                 !(reasonValue[getBlockedUserId]?.trim())
                                                 }
                                                 onClick={() => {
-                                                handleSubmitReport(getBlockedUserId); // send this user's data
+                                                handleSubmitReport(getBlockedUserId,getBlockedId); // send this user's data
                                                 setCheckedUsers((prev) => ({ ...prev, [getBlockedUserId]: false }));
                                                 setReasonValue((prev) => ({ ...prev, [getBlockedUserId]: "" }));
                                                 setSpamModal(false);
@@ -1097,7 +1112,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                     </div>
                                                     <div className="test-head">
                                                        
-                                                        <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">{cmt.name ?? 'N/A'}<span style={{color:'gray',fontSize:'14px'}} className="d-inline-block mx-1">•  {timeAgo(cmt.createdOn)}</span> </h3>
+                                                        <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">{cmt.name ?? 'N/A'} {cmt.id ?? 'N/A'}<span style={{color:'gray',fontSize:'14px'}} className="d-inline-block mx-1">•  {timeAgo(cmt.createdOn)}</span> </h3>
                                                         {/* <StarRating rating={Number(review.rating)}/> */}
                                                         <p className="mb-0">{cmt.commentText ?? 'N/A'}</p>
                                                     </div>
