@@ -16,7 +16,15 @@ const NavTop: React.FC = () => {
         setIsLoggedIn(false);
         navigate('/');
     };
-
+    // const handleLogout = () => {
+    // localStorage.removeItem('token');   // remove token
+    // localStorage.removeItem('email');   // optional: remove other info
+    // localStorage.removeItem('id');      
+    // localStorage.removeItem('login');   
+    // setIsLoggedIn(false);               // update UI
+    // navigate('/');                       // redirect to login/home page
+    // };
+                            
 
     return (
         <>

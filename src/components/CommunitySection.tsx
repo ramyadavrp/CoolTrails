@@ -49,6 +49,8 @@ const CommunitySection: React.FC = () => {
     const [getCommunity, setCommunity ]= useState<Community[]>([]);
     const [getSuggestedNearby, setSuggestedNearby ]= useState<suggestedNearby[]>([]);
     const [getProfileCommunity, setProfileCommunity ]= useState<ProfileCommunity[]>([]);
+    const [getCheckblock, setCheckblock] = useState(false);
+    
     // LIKE
     const [likedPosts, setLikedPosts] = useState<{ [key: number]: boolean }>({});
     const [likeCounts, setLikeCounts] = useState<{ [key: number]: number }>({});
@@ -83,6 +85,7 @@ const CommunitySection: React.FC = () => {
     // // console.log("User ID:", userId);
     // // console.log("Reason:", reason);
     // };
+    // console.log("nsme:", postSelectedname);
      const handleTextareaChange = (postId: string, value: string) => {
         console.log("Post ID:", postId);
         console.log("Value:", value);
@@ -124,21 +127,31 @@ const CommunitySection: React.FC = () => {
             alert("Failed to submit report");
         }
     }
+    const handleCheck = (postId: string,checked: boolean) => {
+        setCheckblock(checked);
+        // console.log('checked',checked);
+        // console.log('varible',getCheckblock);
+        setCheckedPost(prev => ({
+            ...prev,
+            [postId]: !prev[postId], // toggle checked state
+        }));
+    };
     const handleReportIssue = async (postId: string, post_by_userid: string, reason: string) => {
         // console.log("Post ID:", postId);
         // console.log("PostByuserId ID:", post_by_userid);
         // console.log("Reason:", reason);
-        if (!reason.trim()) {
-            setMessage("This field is required!");
-            return;
-        }
+        // if (!reason.trim()) {
+        //     setMessage("This field is required!");
+        //     return;
+        // }
 
         try {
         const response = await axios.post(`${BASE_URL}/user/reportanissue`, {
             PostId: postId,
-            issueRaisedBy: post_by_userid,
-            UserId: userId,
-            Remark: reason
+            issueRaisedBy: userId,
+            UserId: post_by_userid, 
+            Remark: reason ?? '',
+            isBlocked:true
         });
     // alert("Report submitted successfully!");
         console.log('repost',response.data);
@@ -423,12 +436,7 @@ const CommunitySection: React.FC = () => {
     //     setReasonValue(value);
     // };
 
-    const handleCheck = (postId: string) => {
-        setCheckedPost(prev => ({
-            ...prev,
-            [postId]: !prev[postId], // toggle checked state
-        }));
-    };
+    
     // useEffect(()=>{
     //         const fetchCommunityData= async () => {
     //             try {
@@ -1042,15 +1050,16 @@ const CommunitySection: React.FC = () => {
                                                                         <input
                                                                             type="checkbox"
                                                                              checked={!!checkedPost[postSelectedname.id]}
-                                                                             onChange={() => handleCheck(postSelectedname.id)}
-                                                                             onClick={() => {
-                                                                            if (postSelectedname) { // make sure it's not null
-                                                                                    handleBlock(
-                                                                                    postSelectedname.id,
-                                                                                    postSelectedname.post_by_userid
-                                                                                    );
-                                                                                } 
-                                                                            }}
+                                                                            // onChange={() => handleCheck(postSelectedname.id)}
+                                                                             onChange={(e) => handleCheck(postSelectedname.id,e.target.checked)}
+                                                                            //  onClick={() => {
+                                                                            // if (postSelectedname) { // make sure it's not null
+                                                                            //         handleBlock(
+                                                                            //         postSelectedname.id,
+                                                                            //         postSelectedname.post_by_userid
+                                                                            //         );
+                                                                            //     } 
+                                                                            // }}
                                                                              
                                                                             // checked={checkedUsers[getBlockedUserId] || false}
                                                                             // onChange={(e) => handleBlocked(getBlockPostId, getBlockedUserId,e.target.checked)}

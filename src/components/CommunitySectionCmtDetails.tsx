@@ -103,7 +103,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
     const [loopClosed, setLoopClosed] = useState(false);
      // map state close
     
-     
+       
     // Start map creation
     // Initialize map
         useEffect(() => {
