@@ -7,16 +7,16 @@ import { useNavigate } from 'react-router-dom'; // Import useNavigate for redire
 
 declare const Masonry: any;
 const ProfileEditSection: React.FC = () => {
-  useEffect(() => {
-    // Initialize Masonry after the component mounts
-    const grid = document.querySelector('.edit-profile-row');
-    if (grid && typeof Masonry !== 'undefined') {
-      new Masonry(grid, {
-        itemSelector: '.grid-item', // Adjust if your grid items have different classes
-        percentPosition: true
-      });
-    }
-  }, []);
+    useEffect(() => {
+        // Initialize Masonry after the component mounts
+        const grid = document.querySelector('.edit-profile-row');
+        if (grid && typeof Masonry !== 'undefined') {
+        new Masonry(grid, {
+            itemSelector: '.grid-item', // Adjust if your grid items have different classes
+            percentPosition: true
+        });
+        }
+    }, []);
 
   return (
     <main className="mainContent">
@@ -100,7 +100,7 @@ const ProfileEditSection: React.FC = () => {
                                                     fill="#05073D" />
                                             </svg>
                                         </span>
-                                        <input type="text" className="form-control" name="member_location" placeholder="Username"
+                                        <input type="text" className="form-control" name="member_location" placeholder="Location"
                                             aria-label="Username" aria-describedby="addon-wrapping" />
                                     </div>
                                 </div>

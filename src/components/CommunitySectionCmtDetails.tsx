@@ -4,7 +4,7 @@ import { Link as ScrollLink } from 'react-scroll';
 import data from '../data/community.json';
 import { Link } from 'react-router-dom';
 import StarRating from './AffiliateDetails/StarRating';
-import { useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import { decodeId,encodeId, generateSlug ,slugToTitle} from '../utils/helpers';
 const BASE_URL = import.meta.env.VITE_API_URL;
 import axios from 'axios';
@@ -20,32 +20,73 @@ interface suggestedNearby{
     image_near:string,
     title:string,
     rating:number,
-    description:string
+    description?:string
 }
+interface FollowingBy {
+    id: number;
+    title: string;
+    image_near: string;
+    rating: number;
+    comment_count:number,
+    like_count:number,
+    do_like:boolean,
+    share_count:number,
+    description?: string;
+}
+type ShareOption = {
+  label: string;
+//   icon: JSX.Element | (() => JSX.Element);
+//   action: () => void;
+};
 const CommunitySectionCmtDetails: React.FC = () => {
     const { slug } = useParams();
+    const location = useLocation();
+    const statePostId = location.state?.postId;
+    const [postId, setPostId] = useState(statePostId || localStorage.getItem("postId"));
     const [activeTab, setActiveTab] = useState('');
     const [CommunityLoading,setCommunityLoading] = useState(true);
     const [getprofileCommunity, setProfileCommunity ]= useState<any[]>([]);
-    const [getfollowingBy, setFollowingBy ]= useState<any[]>([]);
+    const [getfollowingBy, setFollowingBy] = useState<FollowingBy | null>(null);
     const [getComments, setComments ]= useState<any[]>([]);
     const [getpostData, setPostdata ]= useState<any[]>([]);
     const [commenttext, setInputTextValue] = useState('');
     const [isExpanded, setIsExpanded] = useState(false);
-    
-        const [visibleCount, setVisibleCount] = useState(5);
+    const [visibleCount, setVisibleCount] = useState(5);
     // const pageTitle = slugToTitle(title);
     const [getImages, setImages] = useState([]);   
-     const [currentIndex, setCurrentIndex] = useState(0); // image arrow
-     const [loginId, setLoginId] = useState("");
-     const [userId, setUserId] = useState<string>("");
+    const [currentIndex, setCurrentIndex] = useState(0); // image arrow
+    const [loginId, setLoginId] = useState("");
+    const [userId, setUserId] = useState<string>("");
+    // comment popup
+    const [isOpen, setIsOpen] = useState(false);
+//    alert(postId);
+
+    const options: ShareOption[] = [
+        {
+            label: "Copy link"
+        },
+        {
+            label: "Text"
+            
+        },
+        {
+            label: "Email"
+            
+        },
+        {
+            label: "Embed"
+            
+        },
+    ];
     useEffect(() => {
         const storeLocal = localStorage.getItem("email");
-        // console.log(storeLocal)
         if (storeLocal) {
             setLoginId(storeLocal);
         }
     }, []);
+    useEffect(() => {
+    if (statePostId) localStorage.setItem("postId", statePostId);
+    }, [statePostId])
 
     // image arraw move
     const handleNextImage = useCallback(() => {
@@ -56,7 +97,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
             const storedId = localStorage.getItem("id");
             // console.log("Stored IDss:", storedId); // should print the ID string
             if (storedId) {
-                // setUserId(storedId); 
                 setUserId(storedId.trim());
             }  
     }, []);
@@ -64,20 +104,27 @@ const CommunitySectionCmtDetails: React.FC = () => {
         const handleShowMore = () => {
             setVisibleCount((prev) => prev + 5); // Show 5 more each time
         };
-    // console.log('login',loginId)
+        //  console.log('PostId',postId);
+        //  console.log('UserId',userId)
+        //  console.log('loginId',loginId)
+    
         const handleCommentSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
             e.preventDefault();
             if (!commenttext.trim()) {
                 console.warn("Comment is empty!");
                 return;
             }
-
+            if (!userId) {
+                console.error("No valid userId found!");
+                return;
+            }
             try {
                 const response = await axios.post(
                         `${BASE_URL}/feed/comment/`,
                     {
-                        PostId: 8,
-                        UserId: userId,   
+                        PostId: postId,
+                        // UserId: userId,   
+                         UserId: userId,   
                         CommentText: commenttext,  
                     },
                     {
@@ -106,7 +153,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
         // const fetchData= async (title:String) => {
         useEffect(() => {
             if (!loginId || !slug) {
-                //console.log("Skipping API call: loginId or slug not ready");
                 return;
             }
             const fetchPostDetail = async (slug:any) => {
@@ -130,11 +176,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
                 const followingBy = response.data?.data?.following_by;
                 setFollowingBy(followingBy || []);
                 setComments(response.data.data.following_by.comments);
-                
-
-                // console.log("followingBy raw:", followingBy);
-                // console.log("isArray:", Array.isArray(followingBy));
-
                 let postDats = [];
 
                 if (Array.isArray(followingBy)) {
@@ -150,15 +191,14 @@ const CommunitySectionCmtDetails: React.FC = () => {
                     }
                 });
                 } else if (followingBy && typeof followingBy === "object") {
-                if (Array.isArray(followingBy.comments)) {
-                    postDats = followingBy.comments.map(c => c?.postDto).filter(Boolean);
-                } else if (followingBy.comments?.postDto) {
-                    postDats = [followingBy.comments.postDto];
-                } else if (followingBy.postDto) {
-                    postDats = [followingBy.postDto];
+                    if (Array.isArray(followingBy.comments)) {
+                        postDats = followingBy.comments.map(c => c?.postDto).filter(Boolean);
+                    } else if (followingBy.comments?.postDto) {
+                        postDats = [followingBy.comments.postDto];
+                    } else if (followingBy.postDto) {
+                        postDats = [followingBy.postDto];
+                    }       
                 }
-                }
-
                 // console.log("postDats", postDats);
                 setPostdata(postDats);
 
@@ -173,7 +213,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
         }, [loginId,slug]); 
 
 
-        console.log( getpostData);
+        // console.log( getpostData);
     if (CommunityLoading) {
         return (
             <div
@@ -213,15 +253,79 @@ const CommunitySectionCmtDetails: React.FC = () => {
                     <div className="row">
                         <div className="col-xl-12">
                             <div className="trail-dt-top">
-                                <h1 className="trail-dt-title">{getfollowingBy.title ?? ''}</h1>
-                                <p className="trail-dt-address text-grey mb-0">Shella Bholaganj, East Khasi Hills, MEGHALAYA, India <span className="tdt-add"> | <i className="bi bi-star-fill"></i> {getfollowingBy.rating??''} Moderate </span> <span className="tdt-separator">|</span> {getfollowingBy.date??''}<span className="t-dt-r-and-o"></span></p>
+                                <h1 className="trail-dt-title">{getfollowingBy?.title ?? ''}</h1>
+                                <p className="trail-dt-address text-grey mb-0">Shella Bholaganj, East Khasi Hills, MEGHALAYA, India <span className="tdt-add"> | <i className="bi bi-star-fill"></i> {getfollowingBy?.rating??''} Moderate </span> <span className="tdt-separator">|</span> {getfollowingBy?.date??''}<span className="t-dt-r-and-o"></span></p>
                                 
                             </div>
                         </div>
                         
                     </div>
                     <div className="row">
-                           
+                           {isOpen && (
+                                <div
+                                style={{
+                                    position: "fixed",
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    background: "rgba(0,0,0,0.5)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    zIndex: 1000,
+                                }}
+                                onClick={() => setIsOpen(false)}
+                                >
+                                <div
+                                    style={{
+                                    background: "white",
+                                    padding: "25px",
+                                    borderRadius: "10px",
+                                    width: "450px",
+                                    maxHeight: "80vh",
+                                    overflowY: "auto",
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                        <div>
+                                            <h3 style={{ marginTop:'34px'}}>Report an issue</h3>
+                                        <p>What would you like to report?</p>
+                                        </div>
+                                        <button className="btn-cross" onClick={() => setIsOpen(false)}>
+                                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M4 4L16 16M16 4L4 16" stroke="#05073D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                                        {options.map((opt, idx) => (
+                                            <li
+                                            key={idx}
+                                            style={{
+                                                padding: "15px",
+                                                borderBottom: "1px solid #eee",
+                                                cursor: "pointer",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: "14px",
+                                            }}
+                                            >
+                                            {/* <span className="li-style" style={{ display: "inline-flex"}}>
+                                                
+                                            </span> */}
+                                            <span>{opt.label}</span>
+                                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                                        <path d="M12 4L6 10L12 16" stroke="#05073D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                                                    </svg>
+                                            </li>
+                                        ))}
+                                    </ul>
+
+                                    </div>
+                                </div>
+                            )}
                         <div  className="col-xl-8 col-lg-7 col-md-12 col-sm-12 col-12 order-xl-first order-lg-first order-md-first order-sm-last order-last">
                             
                             <ul className="d-flex trail-dt-nav list-unstyled pt-3" role="tablist">
@@ -232,7 +336,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                 </ul>
                             <div className="trail-cover position-relative" id="overviewData">
                                 <img
-                                    src={getfollowingBy.image_near || '/assets/images/not-found.jpg'}
+                                    src={getfollowingBy?.image_near || '/assets/images/not-found.jpg'}
                                     alt="Com" className="w-100 br-20 coverImage" 
                                     onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                                         const target = e.currentTarget;
@@ -298,8 +402,8 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                 <div className="tuf-right-content d-flex align-items-center">
                                    
                                     <div className="tusc-cn-1 text-center">
-                                        <p className="mb-0">{getfollowingBy.rating}</p>
-                                        <StarRating rating={Number(getfollowingBy.rating)}/>
+                                        <p className="mb-0">{getfollowingBy?.rating}</p>
+                                        <StarRating rating={Number(getfollowingBy?.rating)}/>
                                         {/* <div className="rating">
                                             <i className="bi bi-star-fill"></i>
                                             <i className="bi bi-star-fill"></i>
@@ -372,9 +476,10 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                             fillRule="evenodd"
                                             clipRule="evenodd"
                                             d="M2.32083 3.55228C1.54093 4.54475 1.06838 5.90073 1.06838 7.31638C1.06838 10.4899 3.18627 13.1538 5.42249 15.071C6.52965 16.0202 7.63942 16.7633 8.47356 17.2694C8.89001 17.5221 9.23633 17.7148 9.47719 17.8437C9.52521 17.8694 9.56902 17.8926 9.60833 17.9131C9.64866 17.8909 9.6937 17.8658 9.74322 17.8379C9.98467 17.7017 10.3316 17.499 10.7488 17.2351C11.5842 16.7066 12.6957 15.9365 13.8047 14.9685C16.049 13.0096 18.1624 10.3462 18.1624 7.31638C18.1624 5.90094 17.6899 4.54496 16.91 3.55244C16.1327 2.56318 15.0713 1.95607 13.8722 1.95607C12.2147 1.95607 10.9292 3.03556 10.0949 4.73481L9.61539 5.71147L9.1359 4.73481C8.30155 3.03545 7.01597 1.95607 5.35855 1.95607C4.15962 1.95607 3.09813 2.56307 2.32083 3.55228ZM9.61539 18.5159C9.38365 18.9972 9.38328 18.997 9.38328 18.997L9.38088 18.9959L9.37479 18.9929L9.35294 18.9822C9.33413 18.9729 9.307 18.9594 9.27206 18.9417C9.20214 18.9063 9.10102 18.8541 8.97313 18.7857C8.71741 18.6489 8.35422 18.4467 7.91934 18.1828C7.05075 17.6558 5.89022 16.8793 4.72708 15.8821C2.4227 13.9064 0 10.9706 0 7.31638C0 5.67359 0.545529 4.08235 1.48078 2.89218C2.41859 1.69872 3.76928 0.887695 5.35855 0.887695C7.23013 0.887695 8.65337 1.9365 9.61539 3.41643C10.5774 1.93657 12.0006 0.887695 13.8722 0.887695C15.4616 0.887695 16.8123 1.69886 17.7501 2.89234C18.6853 4.08262 19.2308 5.67386 19.2308 7.31638C19.2308 10.8327 16.8036 13.7691 14.5073 15.7734C13.3459 16.787 12.1872 17.5893 11.3199 18.138C10.8857 18.4126 10.5231 18.6246 10.268 18.7685C10.1404 18.8404 10.0395 18.8954 9.96987 18.9328C9.9351 18.9515 9.90807 18.9657 9.88937 18.9755L9.86773 18.9868L9.8617 18.9899L9.85994 18.9908L9.85935 18.9911C9.85935 18.9911 9.85897 18.9913 9.61539 18.5159ZM9.61539 18.5159L9.85935 18.9911L9.62281 19.1123L9.38328 18.997L9.61539 18.5159Z"
-                                            fill="#7D7D7D"
+                                            fill={getfollowingBy?.do_like===true  ? "#FC673C" : "#7D7D7D"}
                                             />
-                                        </svg>{getfollowingBy.like_count?? 0} like
+                                            
+                                        </svg>{getfollowingBy?.like_count?? 0}  {getfollowingBy?.do_like===true ? "Liked" : "Like"}  
                                         
                                     </button>
                                     <button className="comment-btn">
@@ -384,7 +489,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                 fill="#7D7D7D"
                                             />
                                         </svg>
-                                            {getfollowingBy.comment_count?? 0} Comment
+                                            {getfollowingBy?.comment_count?? 0} Comment
                                     </button>
                                     <button className="share-btn">
                                         <svg width="21" height="22" viewBox="0 0 21 22" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -393,7 +498,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                 fill="#7D7D7D"
                                             />
                                         </svg>
-                                        {getfollowingBy.share_count?? 0}  Share
+                                        {getfollowingBy?.share_count?? 0}  Share
                                     </button>
 
                                 </div>
@@ -432,7 +537,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                             <i className="bi bi-three-dots"></i>
                                                         </a>
                                                         <ul className="dropdown-menu dropdown-sm dropdown-rounded custom-dropdown">
-                                                            <li><a className="dropdown-item" href="#">Report an issue</a></li>
+                                                            <li><a className="dropdown-item"  onClick={() => setIsOpen(true)} >Report an issue</a></li>
                                                             <li><a className="dropdown-item" href="#">Block</a></li>
                                                             {/* <li><a className="dropdown-item" href="#">Action 2</a></li> */}
                                                         </ul>
