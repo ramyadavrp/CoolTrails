@@ -56,12 +56,13 @@ const Weathers: React.FC<WeathersProps> = ({ getweatherDays }) => {
                                     <h3 className="mb-0 me-3">{ weatherData.avgTemp || "29°" }</h3>
                                     {/* <img src="assets/images/icons/sun.svg" alt="" /> */}
                                     <img
-                                    src={weatherData.icon || '/assets/images/not-found.jpg'}
-                                    alt="Weather" 
+                                    src={weatherData.icon || ''}
+                                    // src={weatherData.icon || '/assets/images/not-found.jpg'}
+                                    //alt="Weather" 
                                     onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                                         const target = e.currentTarget;
                                         target.onerror = null; // prevent infinite loop
-                                        target.src = '/assets/images/not-found.jpg'; // fallback image
+                                        //target.src = '/assets/images/not-found.jpg'; // fallback image
                                     }}
                                     />
                                 </div>
