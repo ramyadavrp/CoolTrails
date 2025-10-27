@@ -196,14 +196,14 @@ const ProfileEditSection: React.FC = () => {
                                                 {imgmessage && <div style={{color:'#FC673C' , fontSize: "11px",textAlign:'center'}}>{imgmessage}</div>}
                                             <input type="file" ref={fileInputRef} onChange={handleFileChange} />
                                         </div>
-                                        <button className="delete-btn" onClick={handleDeleteImage}>
+                                        {/* <button className="delete-btn" onClick={handleDeleteImage}>
                                             <svg width="25" height="25" viewBox="0 0 25 25" fill="none" xmlns="http://www.w3.org/2000/svg">
                                             <path d="M5.55063 9.23418C4.70573 8.10763 5.50954 6.5 6.91772 6.5H18.0823C19.4905 6.5 20.2943 8.10763 19.4494 9.23418V9.23418C18.8331 10.0558 18.5 11.0552 18.5 12.0823V18.5C18.5 20.7091 16.7091 22.5 14.5 22.5H10.5C8.29086 22.5 6.5 20.7091 6.5 18.5V12.0823C6.5 11.0552 6.16688 10.0558 5.55063 9.23418V9.23418Z" stroke="#717171" strokeWidth="1.5"/>
                                             <path d="M14.5 17.5L14.5 11.5" stroke="#717171" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                                             <path d="M10.5 17.5L10.5 11.5" stroke="#717171" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                                             <path d="M16.5 6.5L15.9558 4.86754C15.6836 4.05086 14.9193 3.5 14.0585 3.5H10.9415C10.0807 3.5 9.31638 4.05086 9.04415 4.86754L8.5 6.5" stroke="#717171" strokeWidth="1.5" strokeLinecap="round"/>
                                             </svg>
-                                        </button>
+                                        </button> */}
                                     </div>
                                 </div>
                             </div>

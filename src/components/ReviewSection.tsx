@@ -39,7 +39,7 @@ const ReviewSection: React.FC = () => {
             setUserId(storedId.trim());
         }  
     }, []);
-    // console.log("user ID:", userId); 
+    // console.log("user ID:", userId); userId
 
     const handleFollow = useCallback(
         async (id: string) => {
@@ -119,7 +119,7 @@ const ReviewSection: React.FC = () => {
         const fetchtopExplorers = async ()=>{
             try{ 
                 const response = await axios.get(`${BASE_URL}/trail/FellowExplorers/10`);
-                // console.log(response.data.data);
+                //console.log(response.data.data);
                 setExplorers(response.data.data);
             }catch(err){
                 console.error('API Error:', err);
@@ -243,6 +243,7 @@ const ReviewSection: React.FC = () => {
                         <div className="position-relative">
                             {/* Attach the ref to the slider container */}
                             <div className="follow-fellow-slider" id="followSl-1" ref={followSl1Ref}>
+                                {/* // console.log("user ID:", userId); userId */}
                                 {explorers.map((explorer:any,index:number) => (
                                     <div key={`${explorer.userId}-${index}`}> {/* Add unique key here */}
                                         <div className="follow-fellow-single d-flex br-20 align-items-center position-relative">
@@ -262,14 +263,20 @@ const ReviewSection: React.FC = () => {
                                             <div className="ff-content">
                                                 <h3 className="ff-title">{explorer.fullName}</h3>
                                                 <p>{explorer.address} Member since&nbsp;{explorer.registeredOn} </p>
-                                                
-                                                <a href="#"
-                                               onClick={(e) => {
-                                                e.preventDefault();
-                                                handleFollow(explorer.id);
-                                            }}
-
-                                                className="btn-style-1 stretched-link">{getFollow[explorer.id] ? "Following" : "Follow"}</a>
+                                                {explorer.id === userId ? (
+                                                    <span className="btn-style-1 stretched-link">You</span> // optional text
+                                                    ) : (
+                                                    <a
+                                                        href="#"
+                                                        onClick={(e) => {
+                                                        e.preventDefault();
+                                                        handleFollow(explorer.id);
+                                                        }}
+                                                        className="btn-style-1 stretched-link"
+                                                    >
+                                                        {getFollow[explorer.id] ? "Following" : "Follow"}
+                                                    </a>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -302,15 +309,22 @@ const ReviewSection: React.FC = () => {
                                             <div className="ff-content">
                                                 <h3 className="ff-title">{explorer.fullName}</h3>
                                                 <p>{explorer.address} Member since&nbsp;{explorer.registeredOn} </p>
-                                                 <a href="#" 
-                                                 onClick={(e) => {
-                                                    e.preventDefault();
-                                                    handleFollow(explorer.id);
-                                                }}
+                                                {
+                                                    explorer.id === userId ? (
+                                                        <span className="btn-style-1 stretched-link">You</span>
+                                                    ):(
+                                                    <a href="#" 
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        handleFollow(explorer.id);
+                                                    }}
 
-                                                 className="btn-style-1 stretched-link">
-                                                     {getFollow[explorer.id] ? "Following" : "Follow"}
-                                                 </a>
+                                                    className="btn-style-1 stretched-link">
+                                                        {getFollow[explorer.id] ? "Following" : "Follow"}
+                                                    </a>
+                                                    )
+                                                }
+                                                
 
                                             </div>
                                         </div>
