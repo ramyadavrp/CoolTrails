@@ -475,20 +475,20 @@ const AffiliateDetailTrail: React.FC = () => {
     </svg>
     );
 
-    const IconEmail = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-        <rect x="3" y="5" width="18" height="14" rx="2" stroke="#05073D" strokeWidth="1.8" />
-        <path d="M4 7l8 6 8-6" stroke="#05073D" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-    );
+    // const IconEmail = () => (
+    // <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    //     <rect x="3" y="5" width="18" height="14" rx="2" stroke="#05073D" strokeWidth="1.8" />
+    //     <path d="M4 7l8 6 8-6" stroke="#05073D" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    // </svg>
+    // );
 
-    const IconEmbed = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-        <path d="M8 9L4 12l4 3" stroke="#05073D" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M16 9l4 3-4 3" stroke="#05073D" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M10 18l4-12" stroke="#05073D" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-    );
+    // const IconEmbed = () => (
+    // <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    //     <path d="M8 9L4 12l4 3" stroke="#05073D" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    //     <path d="M16 9l4 3-4 3" stroke="#05073D" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    //     <path d="M10 18l4-12" stroke="#05073D" strokeWidth="1.8" strokeLinecap="round" />
+    // </svg>
+    // );
 
     const IconQR = () => (
     <svg width="25" height="25" viewBox="0 0 24 24" fill="none">
@@ -518,20 +518,20 @@ const AffiliateDetailTrail: React.FC = () => {
             setShowTextModal(true);
             },
         },
-        {
-            label: "Email",
-            icon: <IconEmail />,
-            action: () => {
-            window.open(`mailto:?subject=Check this out&body=${encodeURIComponent(shareUrl)}`);
-            },
-        },
-        {
-            label: "Embed",
-            icon: <IconEmbed />,
-            action: () => {
-            alert(`<iframe src="${shareUrl}" width="600" height="400"></iframe>`);
-            },
-        },
+        // {
+        //     label: "Email",
+        //     icon: <IconEmail />,
+        //     action: () => {
+        //     window.open(`mailto:?subject=Check this out&body=${encodeURIComponent(shareUrl)}`);
+        //     },
+        // },
+        // {
+        //     label: "Embed",
+        //     icon: <IconEmbed />,
+        //     action: () => {
+        //     alert(`<iframe src="${shareUrl}" width="600" height="400"></iframe>`);
+        //     },
+        // },
         { label: "QR Code", icon: IconQR, action: () => setShowQR(true) },
     ];
     
@@ -739,9 +739,14 @@ const AffiliateDetailTrail: React.FC = () => {
                                         <span>Reviews</span>
                                     </p>
                                 </div>
-                                <div className="tusc-cn-3">
-                                    <a  href="#reviews" className="btn-style-1">Show all Reviews</a>
-                                </div>
+                                {
+                                    showReviews.lenght > 0 &&(
+                                        <div className="tusc-cn-3">
+                                            <a  href="#reviews" className="btn-style-1">Show all Reviews</a>
+                                        </div>
+                                    )
+                                }
+                                
                             </div>
                         </div>
                         <div className="trail-stats d-flex flex-wrap">
@@ -884,7 +889,7 @@ const AffiliateDetailTrail: React.FC = () => {
                                         <circle cx="12.125" cy="14.625" r="1.875" stroke="#05073D" strokeWidth="1.125" />
                                     </svg>
                                 </button>
-                                <button className="btn-rounded-white rounded-circle" type="button" title="Bookmark">
+                                {/* <button className="btn-rounded-white rounded-circle" type="button" title="Bookmark">
                                     <svg width="12" height="15" viewBox="0 0 12 15" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path
                                             d="M10.0601 0.25H1.93993C1.63227 0.25 1.33722 0.372216 1.11967 0.589763C0.902124 0.807309 0.779907 1.10237 0.779907 1.41002V14.1703C0.779959 14.2738 0.80771 14.3754 0.860281 14.4646C0.912852 14.5537 0.988327 14.6272 1.07887 14.6774C1.16942 14.7275 1.27174 14.7525 1.37522 14.7498C1.47869 14.7471 1.57955 14.7167 1.66732 14.6618L6.00001 11.9539L10.3334 14.6618C10.4212 14.7165 10.522 14.7467 10.6253 14.7494C10.7287 14.752 10.8309 14.7269 10.9213 14.6768C11.0118 14.6267 11.0871 14.5533 11.1397 14.4642C11.1922 14.3752 11.22 14.2737 11.2201 14.1703V1.41002C11.2201 1.10237 11.0979 0.807309 10.8804 0.589763C10.6628 0.372216 10.3678 0.25 10.0601 0.25ZM10.0601 13.1241L6.30669 10.7787C6.21451 10.721 6.10799 10.6905 5.99929 10.6905C5.89058 10.6905 5.78406 10.721 5.69188 10.7787L1.93993 13.1241V1.41002H10.0601V13.1241Z"
@@ -903,7 +908,7 @@ const AffiliateDetailTrail: React.FC = () => {
                                             fill="#05073D"
                                         />
                                     </svg>
-                                </button>
+                                </button> */}
                             </div>
 
                           
@@ -1385,12 +1390,16 @@ const AffiliateDetailTrail: React.FC = () => {
                     </div>
                     <div className="row">
                         <div className="col-12 mb-4 text-center">
-                            <button
-                                className="btn-style-1"
-                                onClick={() => setShowReviews(!showReviews)}
-                            >
-                                {showReviews ? "Hide Reviews" : "Check All Reviews"}
-                            </button>
+                            {
+                                showReviews.length > 0 && (
+                                    <button
+                                    className="btn-style-1"
+                                    onClick={() => setShowReviews(!showReviews)}
+                                >
+                                    {showReviews ? "Hide Reviews" : "Check All Reviews"}
+                                </button>
+                                )
+                            }
                             {/* <a href="" className="btn-style-1">Check All Reviews</a> */}
                         </div>
                     </div>
@@ -1429,7 +1438,7 @@ const AffiliateDetailTrail: React.FC = () => {
                                                                 target.src = '/assets/images/not-found.jpg'; // fallback image
                                                             }}
                                                         />
-                                                        <a href="#!" className="bookmark-btn" title="Save"><i className="bi bi-bookmark"></i></a>
+                                                        {/* <a href="#!" className="bookmark-btn" title="Save"><i className="bi bi-bookmark"></i></a> */}
                                                     </div>
                                                     <div className="lfc-content">
                                                         <h3 className="lfc-title">{trail.title}</h3>

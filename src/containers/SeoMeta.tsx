@@ -31,7 +31,7 @@ const SeoMeta: React.FC = () => {
             const response = await axios.get(`${BASE_URL}/SeoMetaTags/home`);
             setSeo(response.data);
             
-             console.log(response.data);
+            //  console.log(response.data);
             
             }catch(err){
                 console.error('API Error:', err);

@@ -424,9 +424,9 @@ function ExploreTrailSection() {
                                                                     target.src = '/assets/images/not-found.jpg';
                                                                 }}
                                                             />
-                                                            <a href="#!" className="bookmark-btn" role="button" title="Save">
+                                                            {/* <a href="#!" className="bookmark-btn" role="button" title="Save">
                                                                 <i className="bi bi-bookmark"></i>
-                                                            </a>
+                                                            </a> */}
                                                         </div>
                                                         <div className="lfc-content">
                                                             <h3 className="lfc-title">{trail.title}</h3>
