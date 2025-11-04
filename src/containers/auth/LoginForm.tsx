@@ -37,13 +37,18 @@ const LoginForm = () => {
       });
 
       const data = response.data;
-      // console.log('login',data);
+      console.log('login',data);
       if (data.status === "success") {
         
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("email", email); 
-        localStorage.setItem("id", data.user.id); 
-        localStorage.setItem("login", data.user.loginid); 
+        // localStorage.setItem("token", data.token);
+        // localStorage.setItem("email", email); 
+        // localStorage.setItem("id", data.user.id); 
+        // localStorage.setItem("login", data.user.loginid); 
+
+        sessionStorage.setItem("token", data.token);
+        sessionStorage.setItem("email", email);
+        sessionStorage.setItem("id", data.user.id);
+        sessionStorage.setItem("login", data.user.loginid);
         navigate('/profile');
       } else {
         setError(data.message || "Login failed");

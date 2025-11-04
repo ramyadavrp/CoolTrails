@@ -1,6 +1,7 @@
 // src/routes/AppRoute.tsx
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-
+import { BrowserRouter as Router, Routes, Route} from 'react-router-dom';
+// import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import About from '../containers/About';
 import Contact from '../containers/Contact';
 import NotFound from '../containers/NotFound';
@@ -32,6 +33,7 @@ import CompleteTrailPage from '../containers/CompleteTrailPage';
 import AddPost from '../containers/AddPost';
 
 const AppRoute = () => {
+  
   return (
     <Router>
       <Routes>
@@ -61,8 +63,8 @@ const AppRoute = () => {
         {/* <Route path="/trail-5-page" element={<Trail5Page />} />
         <Route path="/gift" element={<GiftPage />} />
         <Route path="/community" element={<CommunityPage />} /> 
-        <Route path="/page-9" element={<Page9 />} />
-        <Route path="/create-map" element={<CreateMap />} /> */}
+        <Route path="/page-9" element={<Page9 />} />*/}
+        <Route path="/create-map" element={<CreateMap />} /> 
 
         <Route element={<PrivateRoute />}>
           <Route path="/profile" element={<ProfilePage />} />

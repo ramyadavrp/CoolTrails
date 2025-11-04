@@ -4462,7 +4462,14 @@ input[type="radio"]:checked::after {
         border-radius: 50px;
         text-align: center;
         display: inline-block;
-        background: #;
         background: #FC673C;
         border: none;
     }
+     /* 23/10/25 Ali */
+    .bookmarked-icon {
+        color: #FC673C !important;
+        transition: color 0.2s ease;
+    }
+    
+
+    

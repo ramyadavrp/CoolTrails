@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from "react-router-dom";
+
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { SyncLoader } from "react-spinners";
@@ -16,9 +18,22 @@ interface TrailDetail {
   title: string;
 }
 const LocalFavorites: React.FC = () => {
+  const navigate = useNavigate();
   const [topLocatTrails, setTopLocatTrails] = useState([]);
+  const [getBookmark, setBookmark] = useState([]);
   const [loadingLocatTrails, setLoadingLocatTrails] = useState(true);
   const [errorLocatTrails, setErrorLocatTrails] = useState('');
+  const [userId, setUserId] = useState<string>("");
+  const [bookmarkedTrails, setBookmarkedTrails] = useState<number[]>([]);
+  
+    useEffect(() => {
+              // const storedId = localStorage.getItem("id");
+              const storedId = sessionStorage.getItem("id");
+              console.log("Stored ID:", storedId); // should print the ID string
+              if (storedId) {
+                  setUserId(storedId.trim());
+              }  
+      }, []);
   // genrate slug
     const generateSlug = (title: string) => {
         return title
@@ -26,11 +41,41 @@ const LocalFavorites: React.FC = () => {
             .replace(/[^a-z0-9]+/g, '-')  // Replace non-alphanumeric with hyphens
             .replace(/(^-|-$)+/g, '');    // Trim hyphens from start/end
     };
-  // Effect to fetch data
-  useEffect(() => {
+    
+  // Bookmark
+  const handleBookmark = async (trailId: any) => {
+        const token = sessionStorage.getItem("token"); 
+        const userId = sessionStorage.getItem("id");
+        // Check login before making API call
+        if (!token || !userId) {
+          navigate("/login", { replace: true });
+          return;
+        }
+        try {
+            const response = await axios.post(`${BASE_URL}/trail/bookmark`, {
+            TrailId: trailId,
+            UserId: userId,
+            });
+            if (response.data.status === "success") {
+            // Toggle bookmark state locally
+            setBookmarkedTrails((prev) =>
+                prev.includes(trailId)
+                ? prev.filter((id) => id !== trailId) // remove if already bookmarked
+                : [...prev, trailId] // add if not bookmarked
+            );
+            } else {
+            alert("Error bookmarking trail.");
+            }
+        } catch (error) {
+            console.error("Error submitting report:", error);
+            alert("Failed to submit report");
+        }
+    };
+ 
+    useEffect(() => {
       const fetchTopLocalTrail = async() =>{
         try{
-          const response = await axios.get(`${BASE_URL}/home/toplocaltrail/3`);
+          const response = await axios.get(`${BASE_URL}/home/toplocaltrail/10`);
           setTopLocatTrails(response.data.data);
           //console.log(response.data.data);
         }catch(err){
@@ -41,8 +86,8 @@ const LocalFavorites: React.FC = () => {
         }
       }  
         fetchTopLocalTrail();
-    }, []); // Empty dependency array means this runs once on mount
-    //console.log(topLocatTrails);
+    }, []);
+  // console.log('sss',topLocatTrails);
   // Effect to initialize Owl Carousel
   useEffect(() => {
     // Initialize Owl Carousel only after data is loaded and component has rendered
@@ -138,7 +183,7 @@ if (topLocatTrails.length === 0) return <p>No local favorites found.</p>;
                 <div className="local-favorite-slider owl-carousel owl-theme br-20 overflow-hidden" id="localFavorite">
                   {topLocatTrails.map((locatTrail: any, index: number) => (
                     <div key={index} className="slider-item-single">
-                      <Link to={`/${locatTrail.urltitle || generateSlug(locatTrail.title || '')}`}>
+                      {/* <Link to={`/${locatTrail.urltitle || generateSlug(locatTrail.title || '')}`}> */}
                       <div className="local-favorite-single">
                         <div className="lfc-thumb position-relative">
                           {/* Fix image source path - add leading slash for public assets */}
@@ -152,12 +197,23 @@ if (topLocatTrails.length === 0) return <p>No local favorites found.</p>;
                                   target.src = '/assets/images/not-found.jpg'; // fallback image
                               }}
                           />
-                          <a href="#!" className="bookmark-btn" title="Save">
-                            <i className="bi bi-bookmark"></i>
+                          <a href="#!" className="bookmark-btn" title="Save"
+                          onClick={(e) => {
+                              e.preventDefault();
+                              handleBookmark(locatTrail.trailid);//locatTrail.trailId
+                          }}
+                          > <i
+                                className={`bi ${
+                                bookmarkedTrails.includes(locatTrail.trailid)
+                                    ? "bi-bookmark-fill bookmarked-icon" 
+                                    : "bi-bookmark" 
+                                }`}
+                            ></i>
+                            {/* <i className="bi bi-bookmark"></i> */}
                           </a>
                         </div>
                         <div className="lfc-content">
-                          <h3 className="lfc-title">{locatTrail.title}</h3>
+                          <h3 className="lfc-title">{locatTrail.title} {locatTrail.id}</h3>
                           <p className="lfc-location mb-1">{locatTrail.address}</p>
                           <p className="lfc-tags">
                             <i className="bi bi-star-fill"></i> 4.6 · Moderate · {locatTrail.distance} · Est. {locatTrail.time_duration || 'N/A'}
@@ -176,7 +232,7 @@ if (topLocatTrails.length === 0) return <p>No local favorites found.</p>;
                           {/* <a href="#!" className="btn-style-1 w-100"></a> */}
                         </div>
                       </div>
-                      </Link>
+                      {/* </Link> */}
                     </div>
                   ))}
                 </div>

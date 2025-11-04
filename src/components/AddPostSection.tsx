@@ -23,6 +23,7 @@ interface ProfileData {
     StateId: string;
     CityId: string;
     favorite_activities: FavoriteActivity[];
+    showStateCity:boolean;
 }
 interface Categorylist{
     id:string,
@@ -44,6 +45,16 @@ interface ImagePreview {
   file: File;
   preview: string;
 }
+
+interface Activity {
+    explore_image: string,
+    explore_title: string,
+    explore_address: string,
+    explore_rating: any,
+    explore_distance: any,
+    explore_time_duration: number,
+    date: number
+}
 const AddPostSection: React.FC = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [file, setFileName] = useState<File|null>(null);
@@ -60,6 +71,8 @@ const AddPostSection: React.FC = () => {
     const[getStateList,setStateList] = useState<StateList[]>([]);
     const[getCityList,setCityList] = useState<CityList[]>([]);
     const [images, setImages] = useState<ImagePreview[]>([]);
+    const [getActivity, setActivity] = useState<Activity[]>([]);
+    
     const [profileData, setProfileData] = useState<ProfileData>({
         postTitle: "",
         UserId: "",
@@ -68,7 +81,8 @@ const AddPostSection: React.FC = () => {
         CountryId: "",
         StateId: "",
         CityId: "",
-        favorite_activities: [{"title":"Trails"}]
+        favorite_activities: [],
+        showStateCity: true,
     });
 
     
@@ -80,58 +94,66 @@ const AddPostSection: React.FC = () => {
                 setUserId(storedId.trim());
             }  
         }, []);
-
-    // const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    //     const selectedFile = e.target.files?.[0];
-    //     if (selectedFile) {
-    //         setFileName(selectedFile);
-    //         setImgMessage('Image uploaded successfully!');
-    //         // Preview image
-    //         const reader = new FileReader();
-    //         reader.onloadend = () => setPreview(reader.result as string);
-    //         reader.readAsDataURL(selectedFile);
-    //     }
-    // };
     
     //Multiple image upload
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (!files) return;
-        const fileArray = Array.from(files);
-        console.log(fileArray);
-        const newImages: ImagePreview[] = [];
 
+        const fileArray = Array.from(files);
+            console.log(fileArray);
         fileArray.forEach((file) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
             setImages((prev) => [...prev, { file, preview: reader.result as string }]);
-        };
-        reader.readAsDataURL(file);
+            };
+            reader.readAsDataURL(file);
         });
 
         setImgMessage("Image(s) uploaded successfully!");
-        e.target.value = ""; // reset input to allow re-selecting same files
+        e.target.value = ""; // reset input to allow same file re-upload
     };
+    
     const handleRemoveImage = (index: number) => {
         setImages((prev) => prev.filter((_, i) => i !== index));
     };
 
-    const handleDeleteImage =() =>{
-        setPreview(null);
-        setImgMessage('Removed Image.');
-    }
     const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-    ) => {
-        const { name, value } = e.target;
-    //    console.log('add',profileData.CountryId);
-        setProfileData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+        ) => {
+            const { name, value } = e.target;
+           console.log('add',profileData);
+        //     console.log('add',value);
+        setProfileData((prev) => {
+            let updatedData = { ...prev, [name]: value };
+
+            // When Country changes → reset State and City
+            if (name === "CountryId") {
+            updatedData.StateId = "";
+            updatedData.CityId = "";
+            // Check if country is India (adjust value as per your data)
+            updatedData.showStateCity = value === "kUmC3E3SjKUnOrfnRDZcGg==" || value === "India";
+            }
+
+            // When State changes → reset City
+            if (name === "StateId") {
+            updatedData.CityId = "";
+            }
+
+            return updatedData;
+        });
     };
 
+    const handleActivityToggle = (activity: string) => {
+        setProfileData((prev) => {
+            const exists = prev.favorite_activities.some((a) => a.title === activity);
+            const updatedActivities = exists
+            ? prev.favorite_activities.filter((a) => a.title !== activity)
+            : [...prev.favorite_activities, { title: activity }];
 
+            return { ...prev, favorite_activities: updatedActivities };
+        });
+    };
     const handleProfileUpdate = async () => {
         if (!userId) {
             setMessage('User ID not loaded yet!');
@@ -146,18 +168,38 @@ const AddPostSection: React.FC = () => {
         formData.append("CountryId", profileData.CountryId);
         formData.append("StateId", profileData.StateId);
         formData.append("CityId", profileData.CityId);
-        if (file) formData.append("MediaFiles", file);
+        formData.append("UserFavorite", JSON.stringify(profileData.favorite_activities));
+        // if (file) formData.append("MediaFiles", file);
+         // Add all selected images
+        if (images.length > 0) {
+            images.forEach((imgObj, index) => {
+            formData.append("MediaFiles", imgObj.file);
+            });
+        }
+        
 
+        console.log(formData);
         try {
             const response = await axios.post(`${BASE_URL}/feed/create`, formData, {
                 headers: {
                     "Content-Type": "multipart/form-data"
                 }
             });
-
+            console.log('add feed',response.data);
             if (response.data.status === "success") {
                 setMessage('Feed added successfully!');
-                
+                // Reset form fields completely
+                setProfileData({
+                    postTitle: "",
+                    UserId: userId,
+                    Content: "",
+                    CategoryId: "",
+                    CountryId: "",
+                    StateId: "",
+                    CityId: "",
+                    favorite_activities: [],
+                    showStateCity: true,
+                });
             } else {
                 //alert(response.data.message || "Unexpected response from server");
             }
@@ -174,13 +216,31 @@ const AddPostSection: React.FC = () => {
             //alert("Failed to update feed. Check console for details.");
         }
     };
+
+    useEffect(() => {
+        const fetchActivity = async () => {
+            try {
+                const response = await axios.get(`${BASE_URL}/home/topcategory/10`);
+                setActivity(response.data.data);
+                 console.log('topcategory',response.data.data);
+            } catch (error) {
+                console.error('API Error:', error);
+                // setErrorLocatTrails('Unable to fetch top local trails');
+            } finally {
+                // setloadingExplore(false);
+            }
+        }
+        fetchActivity();
+    }, []);
+   
+
     useEffect(() => {
         const categoryList= async ()=>{
             try{
                 //setLoadingFeed(true); // show loader every time fetch starts
                 setErrorsFeed("");
                 const response = await axios.get(`${BASE_URL}/common/categorylist`);
-                console.log(response.data.data);
+                //  console.log(response.data.data);
                 setCategoryList(response.data.data);
             }catch(err){
                 console.error('API Error:', err);
@@ -198,7 +258,7 @@ const AddPostSection: React.FC = () => {
                 //setLoadingFeed(true); // show loader every time fetch starts
                 setErrorsFeed("");
                 const response = await axios.get(`${BASE_URL}/common/countrylist`);
-                console.log(response.data.data);
+                // console.log(response.data.data);
                 setCountryList(response.data.data);
             }catch(err){
                 console.error('API Error:', err);
@@ -218,7 +278,7 @@ const AddPostSection: React.FC = () => {
                 //setLoadingFeed(true); // show loader every time fetch starts
                 setErrorsFeed("");
                 const response = await axios.get(`${BASE_URL}/common/statelistbycountry/${profileData.CountryId}`);
-                console.log('state',response.data.data);
+                // console.log('state',response.data.data);
                 setStateList(response.data.data);
                 // setPrak(response.data.data.parks);
             }catch(err){
@@ -232,7 +292,7 @@ const AddPostSection: React.FC = () => {
     }, [profileData.CountryId]);
 
     useEffect(() => {
-        //console.log('StateId',profileData.StateId);
+        console.log('StateId',profileData.StateId);
         if (!profileData.StateId) return;
         const cityList= async ()=>{
             try{
@@ -241,6 +301,7 @@ const AddPostSection: React.FC = () => {
                 const response = await axios.get(`${BASE_URL}/common/citylistbystate/${profileData.StateId}`);
                 console.log('state',response.data.data);
                 setCityList(response.data.data);
+                 console.log('CITY',response.data.data);
                 // setPrak(response.data.data.parks);
             }catch(err){
                 console.error('API Error:', err);
@@ -262,6 +323,15 @@ const AddPostSection: React.FC = () => {
             return () => clearTimeout(timer);
         }
     }, [message]);
+    useEffect(() => {
+        if (imgMessage) {
+            const timer = setTimeout(() => {
+            setImgMessage(null); 
+            }, 3000); 
+
+            return () => clearTimeout(timer);
+        }
+    }, [imgMessage]);
 
     useEffect(() => {
         // Initialize Masonry after the component mounts
@@ -317,7 +387,7 @@ const AddPostSection: React.FC = () => {
                         <div className="bg-almost-white br-20 profile-card-2">
                             <>
                             <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginTop: "10px" }}>
-                               {/* {images.slice(0, 4).map((img, index) => (
+                                {images.slice(0, 4).map((img, index) => (
                                 <div key={index} style={{ position: "relative" }}>
                                     <img
                                     src={img.preview}
@@ -343,26 +413,29 @@ const AddPostSection: React.FC = () => {
                                     &times;
                                     </button>
                                 </div>
-                                ))} */}
+                                ))} 
                                 
                                 <div className="upload-btn-wrapper" style={{display: "flex",alignItems: "center", gap: "100px"}}>
-                                    <label htmlFor="thumbnail" style={{ minWidth: "150px" }}>Thumbnail Image</label>
+                                    
+                                    {/* <label htmlFor="thumbnail" style={{ minWidth: "150px" }}>Thumbnail Image</label> */}
                                     <input type="file"  multiple ref={fileInputRef} onChange={handleFileChange} /> 
                                 </div>
-                                           
-                                            {/* <button type="button" className="btn"  onClick={() => fileInputRef.current?.click()} >
+                                <div>
+                                     {imgMessage && <div style={{color:'#FC673C' , fontSize: "11px",textAlign:'center'}}>{imgMessage}</div>}
+                                </div>
+                                        {/* <div>    
+                                            <button type="button" className="btn"  onClick={() => fileInputRef.current?.click()} >
                                                 <svg width="25" height="23" viewBox="0 0 25 23" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17 8.5L19 8.5C21.2091 8.5 23 10.2909 23 12.5L23 17.5C23 19.7091 21.2091 21.5 19 21.5L7 21.5C4.79086 21.5 3 19.7091 3 17.5L3 12.5C3 10.2909 4.79086 8.5 7 8.5L9 8.5" stroke="#05073D" strokeWidth="1.5" strokeLinecap="round"/><path d="M16 5.5L13.7071 3.20711C13.3166 2.81658 12.6834 2.81658 12.2929 3.20711L10 5.5" stroke="#05073D" strokeWidth="1.5" strokeLinecap="round"/><path d="M13 3.5L13 15.5" stroke="#05073D" strokeWidth="1.5" strokeLinecap="round"/></svg>
                                                 Upload photo</button>
                                                
                                             <input type="file"  multiple ref={fileInputRef} onChange={handleFileChange} />
                                             {imgMessage && <div style={{color:'#FC673C' , fontSize: "11px",textAlign:'center'}}>{imgMessage}</div>}
-                                           
                                         </div> */}
-                                    {/* {images.length > 4 && (
+                                    {images.length > 4 && (
                                         <div
                                         style={{
-                                            width: "100px",
-                                            height: "100px",
+                                            // width: "100px",
+                                            // height: "100px",
                                             display: "flex",
                                             alignItems: "center",
                                             justifyContent: "center",
@@ -370,11 +443,13 @@ const AddPostSection: React.FC = () => {
                                             background: "#eee",
                                             fontWeight: "bold",
                                             fontSize: "16px",
+                                            color:"#FC673C",
+                                            padding:"5px",
                                         }}
                                         >
                                         +{images.length - 4} more
                                         </div>
-                                    )} */}
+                                    )}
                             </div>
                             </>
                             {/* <div className="profile-info-edit d-flex align-items-center">
@@ -435,7 +510,7 @@ const AddPostSection: React.FC = () => {
                                         onChange={handleInputChange}
                                          />
                                     <label htmlFor="postTitle">Title</label>
-                                    {errors.Title && <div className="invalid-feedback">{errors.Title}</div>}
+                                    {errors.Title && <div  style={{color:'#FC673C'}} className="invalid-feedback">{errors.Title}</div>}
                                 </div>
                                 <div className="form-floating mb-3">
                                     
@@ -449,7 +524,7 @@ const AddPostSection: React.FC = () => {
                                         onChange={handleInputChange}
                                     />
                                     <label htmlFor="description">Description</label>
-                                    {errors.Content && <div className="invalid-feedback">{errors.Content}</div>}
+                                    {errors.Content && <div style={{color:'#FC673C'}} className="invalid-feedback">{errors.Content}</div>}
                                 </div>
                                 {/* <div className="form-floating mb-3">
                                     <input type="text" className="form-control" name="phone_no" id="phone" placeholder=""
@@ -484,40 +559,47 @@ const AddPostSection: React.FC = () => {
                         <div className="bg-almost-white br-20 profile-card-2 fav-acivities-card">
                             <h2 className="profile-card-title text-midnight-navy">Favorite activities</h2>
                             <div className="bg-almost-white d-flex flex-wrap fav-activity-list position-relative">
-                                <div className="fav-activity-single active">
-                                    <img src="assets/images/icons/check-white.svg" alt="" /> 
-                                    Hiking</div>
-                                <div className="fav-activity-single active">
-                                    <img src="assets/images/icons/check-white.svg" alt="" />
-                                    Hiking</div>
-                                <div className="fav-activity-single">
-                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking</div>
-                                <div className="fav-activity-single">
-                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking</div>
-                                <div className="fav-activity-single">
-                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking</div>
-                                <div className="fav-activity-single">
-                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking</div>
-                                <div className="fav-activity-single">
-                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking</div>
-                                <div className="fav-activity-single">
-                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking</div>
-                                <div className="fav-activity-single">
-                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking</div>
-                                <div className="fav-activity-single">
-                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking</div>
-                                <div className="fav-activity-single">
-                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking</div>
-                                <div className="fav-activity-single">
-                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking</div>
-                                <div className="fav-activity-single"><img src="assets/images/icons/check-white.svg" alt="" /> Hiking</div>
-                                <div className="fav-activity-single"><img src="assets/images/icons/check-white.svg" alt="" /> Hiking</div> 
-                                <div className="fav-activity-input"><input type="text" placeholder="Type here" /></div>
-                                <div className="fav-activity-add-btn"> <button><svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 2.08331V7.91665" stroke="#05073D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M2.08301 5H7.91634" stroke="#05073D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/> </svg>  Add More</button></div>
+                                {getActivity.map((act: any, index: number) => {
+                                const isSelected = profileData.favorite_activities.some(
+                                    (a) => a.title === act.title
+                                );
+
+                                return (
                                 
+                                    <div
+                                    key={index}
+                                    className={`fav-activity-single ${isSelected ? "active" : ""}`}
+                                    onClick={() => handleActivityToggle(act.title)}
+                                    style={{
+                                        cursor: "pointer",
+                                        backgroundColor: isSelected ? "#05073D" : "#f8f9fa",
+                                        color: isSelected ? "#fff" : "#333",
+                                        padding: "8px 12px",
+                                        borderRadius: "60px",
+                                        margin: "5px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        transition: "all 0.2s ease",
+                                    }}
+                                    >
+                                        {/* <img src="assets/images/icons/check-white.svg" alt="" /> */}
+                                    <img
+                                        src="assets/images/icons/check-white.svg"
+                                        alt=""
+                                        style={{
+                                        width: "16px",
+                                        height: "16px",
+                                        marginRight: "6px",
+                                        visibility: isSelected ? "visible" : "hidden",
+                                        }}
+                                    />
+                                    {act.title}
+                                    </div>
+                                );
+                                })}
                             </div>
-                            
                         </div>
+
                         <div className="my-4">
                             <button className="btn-style-1" onClick={handleProfileUpdate}>Add Post</button>
                             <button className="btn-style-0">Cancel</button>
@@ -533,8 +615,8 @@ const AddPostSection: React.FC = () => {
                                             <select className="form-select" name="CategoryId" id="category" 
                                                  value={profileData.CategoryId}
                                                 onChange={handleInputChange} 
-                                            >
-                                                {
+                                            >   <option>All Category</option>
+                                                {   
                                                     getCategoryList.map((cat:any, index:number)=>(
                                                         <option key={index} value={cat.id}>{cat.name}</option>
                                                     ))
@@ -546,55 +628,102 @@ const AddPostSection: React.FC = () => {
                                     </div>
                                     <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
                                         <div className="form-floating mb-3">
-                                            <select className="form-select" name="CountryId" id="CountryId"
+                                            <select
+                                                name="CountryId"
+                                                className="form-control"
                                                 value={profileData.CountryId}
                                                 onChange={handleInputChange}
-                                            >   
+                                                >
+                                                <option value="">Select Country</option>
+                                                {getCountryList.map((c) => (
+                                                    <option key={c.id} value={c.id}>
+                                                    {c.name} 
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            {/* <select className="form-select" name="CountryId" id="CountryId"
+                                                value={profileData.CountryId}
+                                                onChange={handleInputChange}
+                                            >   <option>All Country</option>
                                                 {
                                                     getCountryList.map((country:any, index:number)=>(
                                                         <option key={index} value={country.id}>{country.name}</option>
                                                     ))
                                                 }
-                                                {/* <option value="1">India</option>
-                                                <option value="2">Dubai</option> */}
-                                            </select>
+                                                
+                                            </select> */}
                                             <label htmlFor="CountryId">Country</label>
                                         </div>
                                     </div>
-                                    <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
-                                        <div className="form-floating mb-3">
-                                            <select className="form-select" name="StateId" id="StateId"
-                                            value={profileData.StateId}
-                                                onChange={handleInputChange}
-                                            >
-                                                {
-                                                    getStateList.map((state:any, index:number)=>(
-                                                        <option key={index} value={state.id}>{state.name}</option>
-                                                    ))
-                                                }
-                                                {/* <option value="1">State1</option>
-                                                <option value="2">State2</option> */}
-                                            </select>
-                                            <label htmlFor="StateId">State</label>
-                                        </div>
-                                    </div>
-                                    <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
-                                        <div className="form-floating mb-3">
-                                            <select className="form-select" name="CityId" id="CityId"
-                                            value={profileData.CityId}
-                                                onChange={handleInputChange}
-                                            >
-                                                 {
-                                                    getCityList.map((city:any, index:number)=>(
-                                                        <option key={index} value={city.id}>{city.name}</option>
-                                                    ))
-                                                }
-                                                {/* <option value="1">city1</option>
-                                                <option value="2">city2</option> */}
-                                            </select>
-                                            <label htmlFor="CityId">City</label>
-                                        </div>
-                                    </div>
+                                    
+                                    {
+                                        profileData.showStateCity  &&(
+                                            <>
+                                                <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
+                                                    <div className="form-floating mb-3">
+                                                        <select
+                                                            name="StateId"
+                                                            className="form-control"
+                                                            value={profileData.StateId}
+                                                            onChange={handleInputChange}
+                                                            disabled={!profileData.CountryId}
+                                                            >
+                                                            <option value="">Select State</option>
+                                                            {getStateList.map((s) => (
+                                                                <option key={s.id} value={s.id}>
+                                                                {s.name}
+                                                                </option>
+                                                            ))}
+                                                            </select>
+                                                        {/* <select className="form-select" name="StateId" id="StateId"
+                                                        value={profileData.StateId}
+                                                            onChange={handleInputChange}
+                                                        >
+                                                            {
+                                                                getStateList.map((state:any, index:number)=>(
+                                                                    <option key={index} value={state.id}>{state.name}</option>
+                                                                ))
+                                                            }
+                                                            
+                                                        </select> */}
+                                                        <label htmlFor="StateId">State</label>
+                                                    </div>
+                                                </div>
+                                                <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
+                                                    <div className="form-floating mb-3">
+                                                        <select
+                                                            name="CityId"
+                                                            className="form-control"
+                                                            value={profileData.CityId}
+                                                            onChange={handleInputChange}
+                                                            disabled={!profileData.StateId}
+                                                            >
+                                                            <option value="">Select City</option>
+                                                            {getCityList.map((c) => (
+                                                                <option key={c.id} value={c.id}>
+                                                                {c.name} 
+                                                                </option>
+                                                            ))}
+                                                            </select>
+                                                        {/* <select className="form-select" name="CityId" id="CityId"
+                                                        value={profileData.CityId}
+                                                            onChange={handleInputChange}
+                                                        >
+                                                            {
+                                                                getCityList.map((city:any, index:number)=>(
+                                                                    <option key={index} value={city.id}>{city.name}</option>
+                                                                ))
+                                                            }
+                                                            
+                                                        </select> */}
+                                                        <label htmlFor="CityId">City</label>
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )
+                                    }
+                                    
+                                   
                                     {/* <div className="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-12">
                                         <div className="form-floating mb-3"> 
                                                 <input type="text" className="form-control" placeholder="" name="birthday_date" id="birthdate"  

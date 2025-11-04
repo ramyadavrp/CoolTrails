@@ -1,32 +1,77 @@
-import React from "react";
+import React, { useEffect, useState} from 'react';
 import { Link, useLocation } from "react-router-dom";
+import axios from 'axios';
+
+const BASE_URL = import.meta.env.VITE_API_URL;
+interface Profile {
+  fullName: string;
+  address: string;
+  registeredOn: string;
+  totalFollowers: number;
+  totalFollowing: number;
+}
 
 const ProfileLeftSection: React.FC = () => {
     const location = useLocation();
+    const [userId, setUserId] = useState<string>("");
+    const [profile, setProfile] = useState<Profile | null>(null);
 
+    
     // Function to determine if a link is active
     const isActive = (path: string) => {
         return location.pathname === path ? 'active' : '';
     };
-
+    useEffect(() => {
+            const storedId = localStorage.getItem("id");
+            // console.log("Stored ID:", storedId); // should print the ID string
+            if (storedId) {
+                // setUserId(storedId); 
+                setUserId(storedId.trim());
+            }  
+    }, []);
+    
+    // Show the profile
+    useEffect(() => {
+            if (!userId) return; // wait until userId is available
+    
+            const loadProfile = async () => {
+                try {
+                const response = await axios.post(`${BASE_URL}/user/profile`, {
+                    UserId: userId,
+                });
+    
+                console.log("Profile Data:", response.data);
+    
+                if (response.data.status === "success") {
+                    const data = response.data.data;
+                    setProfile(data);
+                }
+                } catch (error) {
+                console.error("Error loading profile:", error);
+                alert("Failed to load profile");
+                }
+            };
+    
+            loadProfile();
+    }, [userId]);
     return(
         <div className="col-xl-3 col-lg-5 col-md-6 col-sm-12 col-12">
             <aside className="profile-sidebar sticky-top"> 
                 <div className="profile-sidebar-top  bg-almost-white">
                     <div className="sidebar-profile">
                         <div className="profile-img"><img src="assets/images/profile/profile-md.png" alt="" /></div>
-                        <h4 className="profile-username text-midnight-navy">Amit Singh</h4>
-                        <h5 className="profile-address text-midnight-navy">Dubai, United Arab Emirates</h5>
-                        <p className="membership-info text-grey">Member since May 2025</p>
+                        <h4 className="profile-username text-midnight-navy">{profile?.fullName ?? ''}</h4>
+                        <h5 className="profile-address text-midnight-navy">{profile?.address ?? ''}</h5>
+                        <p className="membership-info text-grey">Member since {profile?.registeredOn ?? ''}</p>
                         {/* <button className="btn-style-1">Follow</button> */}
                     </div> 
                         <div className="followings d-flex justify-content-between position-relative">
                         <div className="follower">
-                            <h6 className="fl-count text-midnight-navy mb-0">10</h6>
+                            <h6 className="fl-count text-midnight-navy mb-0">{profile?.totalFollowers ?? ''}</h6>
                             <p className="text-grey mb-0">Followers</p>
                         </div>
                         <div className="following">
-                                <h6 className="fl-count text-midnight-navy mb-0">10</h6>
+                                <h6 className="fl-count text-midnight-navy mb-0">{profile?.totalFollowing ?? ''}</h6>
                             <p className="text-grey mb-0">Following</p>
                         </div>
                     </div>
@@ -41,11 +86,11 @@ const ProfileLeftSection: React.FC = () => {
                 </div>  
                     <div className="profile-sidebar-menu  bg-almost-white">
                         <ul className="list-unstyled profile-menu">
-                            <li className={isActive('/profile')}><Link to={'/profile'} >Feed</Link></li>
+                            <li className={isActive('/community')}><Link to={'/community'} >Feed</Link></li>
                             <li className={isActive('/profile-photo')}><Link to={'/profile-photo'}>Photos</Link></li>
-                            <li><a href="">Reviews</a></li>
-                            <li><a href="">Activities</a></li>
-                            <li><a href="">Completed</a></li>
+                            {/* <li><a href="">Reviews</a></li>
+                            <li><a href="">Activities</a></li> */}
+                            {/* <li><a href="">Completed</a></li> */}
                         </ul>
                     </div>      
                         <Link to={'/edit-profile'} className="abs-edit-profile" title="Edit Profile">

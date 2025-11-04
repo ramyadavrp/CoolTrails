@@ -95,7 +95,7 @@ function ExploreTrailSection() {
             });
             
             setTrails(response.data.data);
-            // console.log('Server response:', response.data.data);
+            console.log('Server response:', response.data.data);
         } catch (err) {
             console.error('Failed your location:', err);
         } finally {
@@ -138,7 +138,7 @@ function ExploreTrailSection() {
             try {
                 const response = await axios.get(`${BASE_URL}/home/topcategory/10`);
                 setActivity(response.data.data);
-                //console.log(response.data.data);
+                // console.log('topcategory',response.data.data);
             } catch (error) {
                 console.error('API Error:', error);
                 // setErrorLocatTrails('Unable to fetch top local trails');

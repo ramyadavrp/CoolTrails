@@ -7,12 +7,14 @@ const NavTop: React.FC = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
+        // const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');// 03-11-25
         setIsLoggedIn(!!token);
     }, []);
 
     const handleLogout = () => {
-        localStorage.removeItem('token');
+        // localStorage.removeItem('token');
+        sessionStorage.removeItem('token');
         setIsLoggedIn(false);
         navigate('/');
     };
@@ -85,14 +87,20 @@ const NavTop: React.FC = () => {
                                 </a>
                                 <div className="dropdown-menu">
                                 <ul className="list-unstyled">
-                                    <li><a className="dropdown-item" href="#"><img src="/assets/images/icons/bookmark.svg"
-                                                alt="" /> Saved</a></li>
-                                    <li><a className="dropdown-item" href="#"><img src="/assets/images/icons/map.svg" alt="" />
-                                            My
-                                            Maps</a></li>
-                                    <li><a className="dropdown-item" href="#"><img src="/assets/images/icons/lists.svg"
-                                                alt="" />
-                                            Show all lists</a></li>
+                                    {/* <li><a className="dropdown-item" href="#"><img src="/assets/images/icons/bookmark.svg"
+                                                alt="" /> Saved</a></li> */}
+                                    <li>
+                                        <Link to={'/create-map'} className="dropdown-item">
+                                        <img src="/assets/images/icons/map.svg" alt="" />
+                                            Custome routes & Maps
+                                        </Link>
+                                    </li>
+                                    <li>
+                                        <Link to={'/profile-feed'} className="dropdown-item">
+                                            <img src="/assets/images/icons/lists.svg" alt="" />
+                                            Show all lists
+                                        </Link>
+                                    </li>
                                 </ul>
                                 </div>
                                 
