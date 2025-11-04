@@ -1,11 +1,39 @@
 // src/components/AffiliateTrail.tsx
-import React, { useState } from 'react';
+import React, { useState ,useEffect} from 'react';
 import { Link as ScrollLink } from 'react-scroll';
+import { SquareLoader } from "react-spinners"; 
 
 const AffiliateTrail: React.FC = () => {
     const [activeTab, setActiveTab] = useState('');
+    const [loadingAffiliate,setloadingAffiliate] = useState(true);
+    
 
-  return (
+    useEffect(()=>{
+        const timer = setTimeout(()=>
+            setloadingAffiliate(false),5000);
+        return()=>clearTimeout(timer);
+    },[]);
+    if (loadingAffiliate) {
+        return (
+            <div
+                style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                width: "100vw",
+                height: "100vh",
+                background: "#FFF5E9",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 9999,
+                }}
+            >
+                <SquareLoader color="#FC673C" size={80} speedMultiplier={1.5} />
+            </div>
+        );
+    }
+    return (
         <main className="mainContent">
             <section className="home-hero-section affiliate-hero-section">
                 <div className="container-fluid bg-image" style={{backgroundImage: "url('assets/images/bg/affiliate-bg.jpg')"}}>

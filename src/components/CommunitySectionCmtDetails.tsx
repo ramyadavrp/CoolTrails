@@ -55,12 +55,19 @@ type ShareOption = {
 //   icon: JSX.Element | (() => JSX.Element);
    action: (cmt: any) => void
 };
+interface Review {
+  userName: string;
+  title: string;
+  descriptions: string;
+}
 
 const CommunitySectionCmtDetails: React.FC = () => {
     const { slug } = useParams();
     const location = useLocation();
     const statePostId = location.state?.postId;
+    // console.log('gettt',statePostId);
     const [postId, setPostId] = useState(statePostId || localStorage.getItem("postId"));
+    // console.log('postIdss',postId);
     const [activeTab, setActiveTab] = useState('');
     const [CommunityLoading,setCommunityLoading] = useState(true);
     const [getprofileCommunity, setProfileCommunity ]= useState<any[]>([]);
@@ -70,10 +77,12 @@ const CommunitySectionCmtDetails: React.FC = () => {
     const [commenttext, setInputTextValue] = useState('');
     const [isExpanded, setIsExpanded] = useState(false);
     const [visibleCount, setVisibleCount] = useState(5);
+    const [reviewVisibleCount, setReviewVisibleCount] = useState(4);
     // const pageTitle = slugToTitle(title);
     const [getImages, setImages] = useState([]);   
     const [currentIndex, setCurrentIndex] = useState(0); // image arrow
     const [loginId, setLoginId] = useState("");
+    const [loginIdBased, setLoginIdBased] = useState("");
     const [userId, setUserId] = useState<string>("");
     // comment popup
     const [isOpen, setIsOpen] = useState(false);
@@ -97,13 +106,15 @@ const CommunitySectionCmtDetails: React.FC = () => {
     const [rating, setRating] = useState(0);
     const [hover, setHover] = useState(0);
     const [review, setReview] = useState("");
-
+    const [reviewDetails, setReviewdetails] = useState<Review[]>([]);
+    const [getImagesArray, setImagesArray] = useState([]);    
+    
      
     // Review Show
     const [showReviews, setShowReviews] = useState(true);
     // map state
     const mapContainer = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
+    const mapRef = useRef<mapboxgl.Map | null>(null);
     // const mapContainer = useRef<HTMLDivElement | null>(null);
     const walkerMarkerRef = useRef<mapboxgl.Marker | null>(null);
     const animationRef = useRef<number | null>(null);
@@ -117,94 +128,143 @@ const CommunitySectionCmtDetails: React.FC = () => {
     const shareUrl = window.location.href;
     useEffect(() => {
         // Check if token exists in localStorage
-        const token = localStorage.getItem("token");
+        // const token = localStorage.getItem("token");
+        const token = sessionStorage.getItem("token");
         setIsLoggedIn(!!token);
     }, []);
+    useEffect(() => {
+        const storeLocal = localStorage.getItem("login");
+        // console.log('logggg',storeLocal)
+        if (storeLocal) {
+            setLoginIdBased(storeLocal);
+            // setUserID(loginIdBased);
+        }
+    }, []);
+    useEffect(() => {
+    if (statePostId) localStorage.setItem("postId", statePostId);
+        setPostId(statePostId);
+    }, [statePostId])
+    // console.log('ss',statePostId)
     // Add rating
-    const handleSubmitReview = async()=>{
-        // console.log('ratting',rating );
+    const handleSubmitReview = async () => {
+        // alert(postId);
+        // console.log('ratting',rating ); 
         // console.log('review',review );
         // console.log('userId',userId );
+        // console.log('postIdaaasss',statePostId );
         try {
+            if (userId && postId) {
             const response = await axios.post(`${BASE_URL}/feed/addrating`, {
-                FeedId: 4,
+                FeedId: postId,
                 UserId: userId,
+                // UserId: "e08ee354-20e2-4af6-a37f-c30127cf322d",
                 Rating: rating,
-                Review: review
+                Review: review,
             });
-            // console.log('rating',response.data);
-            if(response.data.status=== "success"){
-                setMessage('Rating add successfully!.');
-            }else{
-                setMessage('Error submitting report.');
+
+            if (response.data.status === "success") {
+                setMessage("Review added successfully!");
+            } else {
+                setMessage("Error submitting report.");
             }
-            } catch (error) {
+            } else {
+            alert("Missing user or post ID");
+            }
+        } catch (error) {
             console.error("Error submitting report:", error);
             alert("Failed to submit report");
-            }
-    }
+        }
+    };
+
+
+    
+    //  List review
+    useEffect(() => {
+            if (!userId) return; // wait until userId is available
+    
+            const loadReviewPost = async () => {
+                try {
+                const response = await axios.post(`${BASE_URL}/feed/user/Review/${userId}`, {
+                    LoginId: loginIdBased,
+                    // LoginId: '1112VIRENDRA',
+                });
+    
+                // console.log("REvi Data:", response.data);
+    
+                if (response.data.status === "success") {
+                    const data = response.data.data;
+                    setReviewdetails(data); //reviewDetails
+                }
+                } catch (error) {
+                console.error("Error loading profile:", error);
+                alert("Failed to load profile");
+                }
+            };
+    
+            loadReviewPost();
+    }, [userId]);
     // Start map creation
     // Initialize map
     useEffect(() => {
-        //    alert('1st');
-        if (!mapContainer.current) return;  
-        // if (!mapContainer.current || mapRef.current) return;
-        const map = new mapboxgl.Map({
-            container: mapContainer.current,
-            style: "mapbox://styles/mapbox/streets-v12",
-            center: [78.0421, 27.1751],
-            zoom: 16,
-            pitch: 0,  
-            bearing: 0,
-            antialias: true,
-        });
-        mapRef.current = map; 
-        
-        const geocoder = new MapboxGeocoder({
-            accessToken: mapboxgl.accessToken,
-            mapboxgl: mapboxgl,
-            marker: false,
-            placeholder: "Search location",
-        });
-        console.log(geocoder);
-        map.addControl(geocoder);
-        // alert('2end');
-        map.on("load", () => {
-            map.addSource("route", {
-                type: "geojson",
-                data: {
-                    type: "Feature",
-                    properties: {},
-                    geometry: { type: "LineString", coordinates: [] as [number, number][] },
-                },
+       const timeoutId = setTimeout(() => {
+            if (!mapContainer.current) return;  
+            // if (!mapContainer.current || mapRef.current) return;
+            const map = new mapboxgl.Map({
+                container: mapContainer.current,
+                style: "mapbox://styles/mapbox/streets-v12",
+                center: [78.0421, 27.1751],
+                zoom: 16,
+                pitch: 0,  
+                bearing: 0,
+                antialias: true,
             });
-
-            map.addLayer({
-                id: "route-layer",
-                type: "line",
-                source: "route",
-                layout: { "line-join": "round", "line-cap": "round" },
-                paint: { "line-color": "#3b9ddd", "line-width": 5 },
+            mapRef.current = map; 
+            
+            const geocoder = new MapboxGeocoder({
+                accessToken: mapboxgl.accessToken,
+                mapboxgl: mapboxgl,
+                marker: false,
+                placeholder: "Search location",
             });
+            map.addControl(geocoder);
+            map.on("load", () => {
+                map.addSource("route", {
+                    type: "geojson",
+                    data: {
+                        type: "Feature",
+                        properties: {},
+                        geometry: { type: "LineString", coordinates: [] as [number, number][] },
+                    },
+                });
 
-            // Walker marker
-            const el = document.createElement("div");
-            el.style.width = "30px";
-            el.style.height = "30px";
-            el.style.backgroundImage = "url('https://img.icons8.com/color/48/person-male--v1.png')";
-            el.style.backgroundSize = "cover";
-            el.style.borderRadius = "50%";
-            el.style.border = "2px solid white";
+                map.addLayer({
+                    id: "route-layer",
+                    type: "line",
+                    source: "route",
+                    layout: { "line-join": "round", "line-cap": "round" },
+                    paint: { "line-color": "#3b9ddd", "line-width": 5 },
+                });
 
-            walkerMarkerRef.current = new mapboxgl.Marker(el).setLngLat([0, 0]).addTo(map);
-            loadMap();
-        });
+                // Walker marker
+                const el = document.createElement("div");
+                el.style.width = "30px";
+                el.style.height = "30px";
+                el.style.backgroundImage = "url('https://img.icons8.com/color/48/person-male--v1.png')";
+                el.style.backgroundSize = "cover";
+                el.style.borderRadius = "50%";
+                el.style.border = "2px solid white";
 
+                walkerMarkerRef.current = new mapboxgl.Marker(el).setLngLat([0, 0]).addTo(map);
+                loadMap();
+            });
+        }, 500); // <-- delay (in ms)
         return () => {
-            map.remove();
+            // map.remove(); 
+            clearTimeout(timeoutId);
+            if (mapRef.current) mapRef.current.remove();
             if (animationRef.current) cancelAnimationFrame(animationRef.current);
         };
-    }, []);
+    }, [mapRef.current]); 
 
     // Map click handler
     useEffect(() => {
@@ -522,14 +582,16 @@ const CommunitySectionCmtDetails: React.FC = () => {
             setLoginId(storeLocal);
         }
     }, []);
-    useEffect(() => {
-    if (statePostId) localStorage.setItem("postId", statePostId);
-    }, [statePostId])
-    //console.log('ss',statePostId)
+    // useEffect(() => {
+    // if (statePostId) localStorage.setItem("postId", statePostId);
+    //     setPostId(statePostId);
+    // }, [statePostId])
+    // console.log('ss',statePostId)
+
     // image arraw move
     const handleNextImage = useCallback(() => {
-        setCurrentIndex(i => (i + 1) % getImages.length);
-    }, [getImages.length]);
+        setCurrentIndex(i => (i + 1) % getImagesArray.length);
+    }, [getImagesArray.length]);
 
     useEffect(() => {
             const storedId = localStorage.getItem("id");
@@ -618,6 +680,12 @@ const CommunitySectionCmtDetails: React.FC = () => {
         const handleShowMore = () => {
             setVisibleCount((prev) => prev + 5); // Show 5 more each time
         };
+        
+        // Show review 
+        const handleShowReviewMore = () => {
+            setReviewVisibleCount((prev) => prev + 2); // Show 2 more each time
+        };
+        
         //  console.log('PostId',postId);
         //  console.log('UserId',userId)
         //  console.log('loginId',loginId)
@@ -685,12 +753,15 @@ const CommunitySectionCmtDetails: React.FC = () => {
                     },
                     }
                 );
-                // console.log('community/1',response.data);
+     
+                console.log('community/1',response.data);
                 setProfileCommunity(response.data?.data?.profile_Community || []);
                 const followingBy = response.data?.data?.following_by;
+                const images = response.data?.data?.following_by.images || [];
+                // console.log('images from API:', images);
+                setImagesArray(images);
                 setFollowingBy(followingBy || []);
                 setComments(response.data.data.following_by.comments);
-                // console.log('comment',response.data.data.following_by.comments);
                 let postDats = [];
 
                 if (Array.isArray(followingBy)) {
@@ -761,6 +832,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
     
     const shouldTruncate = cleanDescription.length > limit;
     // console.log('ldd',shouldTruncate)
+
     return (
         <main className="mainContent">
             <section className="section-trail-detail">
@@ -769,7 +841,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                         <div className="col-xl-12">
                             <div className="trail-dt-top">
                                 <h1 className="trail-dt-title">{getfollowingBy?.title ?? ''}</h1>
-                                <p className="trail-dt-address text-grey mb-0">{getfollowingBy?.address ?? 'N/A'}<span className="tdt-add"> | <i className="bi bi-star-fill"></i> {getfollowingBy?.rating??''} Moderate </span> <span className="tdt-separator">|</span> {getfollowingBy?.date??''}<span className="t-dt-r-and-o"></span></p>
+                                <p className="trail-dt-address text-grey mb-0">{getfollowingBy?.address ?? 'N/A'}<span className="tdt-add"> | <i className="bi bi-star-fill"></i> {getfollowingBy?.rating ? (Math.round(getfollowingBy.rating * 100) / 100).toFixed(2) : "0.00" } Moderate </span> <span className="tdt-separator">|</span> {getfollowingBy?.date??''}<span className="t-dt-r-and-o"></span></p>
                                 
                             </div>
                         </div>
@@ -1034,7 +1106,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                 key={idx}
                                                 style={{
                                                     padding: "15px",
-                                                    borderBottom: "1px solid #eee",
+                                                    // borderBottom: "1px solid #eee",
                                                     cursor: "pointer",
                                                     display: "flex",
                                                     alignItems: "center",
@@ -1062,42 +1134,81 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                     
                                 </ul>
                             <div className="trail-cover position-relative" id="overviewData">
-                                <img
-                                    src={getfollowingBy?.image_near || '/assets/images/not-found.jpg'}
-                                    alt="Com" className="w-100 br-20 coverImage" 
+                                                       
+                                {/* <img 
+                                    src={
+                                        trailDetail.imageUrls?.[0]
+                                        ? `${BASE_URL}/uploads/${trailDetail.imageUrls[0]}`
+                                        : '/assets/images/not-found.jpg'
+                                    }
+                                    alt="Near Trail" className="w-100 br-20 coverImage" 
                                     onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                                         const target = e.currentTarget;
                                         target.onerror = null; // prevent infinite loop
                                         target.src = '/assets/images/not-found.jpg'; // fallback image
                                     }}
-                                />
-                                {/* <img src="/assets/images/trails/trail-1.jpg" alt="" className="w-100 br-20 coverImage"/> */}
-                                <div
-                                    className="cover-overlay h-100 w-100 d-flex justify-content-between align-items-end br-20">
-                                    <a href="/assets/images/trails/trail-1.jpg" className="btn-style-4"
-                                        data-fancybox="MoreImages">
-                                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"
-                                            xmlns="http://www.w3.org/2000/svg" className="me-2">
-                                            <rect x="1.5" y="1.5" width="15" height="15" rx="3.75" stroke="#05073D"
-                                                strokeWidth="1.125" />
+                                /> */}
+                                {
+                                    getImagesArray.length > 0 ? (
+                                        getImagesArray.map((image: any, index: number) => {
+                                        return (
+                                            <a
+                                            key={index}
+                                            href={image}
+                                            data-fancybox="MoreImages"
+                                            style={{ display: index === currentIndex ? 'block' : 'none' }}
+                                            >
+                                                    
+                                            <img
+                                                src={image || '/assets/images/not-found.jpg'}
+                                                alt={`Trail ${index + 1}`}
+                                                className="w-100 br-20 coverImage"
+                                                onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                                const target = e.currentTarget;
+                                                target.onerror = null;
+                                                target.src = '/assets/images/not-found.jpg';
+                                                }}
+                                            />
+                                            </a>
+                                        );
+                                    }) 
+                                    ):(
+                                        <img
+                                            src='/assets/images/not-found.jpg'
+                                            alt=""
+                                            className="w-100 br-20 coverImage"
+                                            onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                            const target = e.currentTarget;
+                                            target.onerror = null;
+                                            target.src = '/assets/images/not-found.jpg';
+                                            }}
+                                        />
+                                    )
+                                        
+                                }
+                                <div className="cover-overlay h-100 w-100 d-flex justify-content-between align-items-end br-20">
+                                        <a
+                                            href={
+                                                getImagesArray.length > 0
+                                                ? getImagesArray[0] 
+                                                : "/assets/images/not-found.jpg"
+                                            }
+                                            className="btn-style-4"
+                                            // data-fancybox="MoreImages"
+                                            data-fancybox-trigger="MoreImages"
+                                        >
+                                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" className="me-2">
+                                            <rect x="1.5" y="1.5" width="15" height="15" rx="3.75" stroke="#05073D" strokeWidth="1.125" />
                                             <path
                                                 d="M1.875 13.125L3.5694 11.9147C4.10641 11.5311 4.84202 11.592 5.30866 12.0587L6.1136 12.8636C6.46508 13.2151 7.03492 13.2151 7.3864 12.8636L11.1283 9.12175C11.622 8.62803 12.4107 8.59225 12.9471 9.03924L16.5 12"
-                                                stroke="#05073D" strokeWidth="1.125" strokeLinecap="round" />
-                                            <circle cx="1.5" cy="1.5" r="1.5" transform="matrix(-1 0 0 1 7.5 4.5)"
-                                                stroke="#05073D" strokeWidth="1.125" />
+                                                stroke="#05073D"
+                                                strokeWidth="1.125"
+                                                strokeLinecap="round"
+                                            />
+                                            <circle cx="1.5" cy="1.5" r="1.5" transform="matrix(-1 0 0 1 7.5 4.5)" stroke="#05073D" strokeWidth="1.125" />
                                         </svg>
-                                        150+ Photos</a>
-                                    <a href="/assets/images/trails/trail-1-gallery-1.jpg" data-fancybox="MoreImages"></a>
-                                    <a href="/assets/images/trails/trail-1-gallery-2.jpg" data-fancybox="MoreImages"></a>
-                                    <a href="/assets/images/trails/trail-1-gallery-3.jpg" data-fancybox="MoreImages"></a>
-                                    {/* <a href=""
-                                        className="arrow-btn d-flex align-items-center justify-content-center rounded-circle">
-                                        <svg  width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <path
-                                                d="M10.6188 15L16.4788 9.23744C17.1737 8.55402 17.1737 7.44598 16.4788 6.76256L10.6188 0.999999M15.9575 8L1 8"
-                                                stroke="#C6C6D1" strokeWidth="1.5" strokeLinecap="round" />
-                                        </svg>
-                                    </a> */}
+                                        {getImagesArray.length} + Photos
+                                    </a>
                                     <a href="#"
                                         onClick={(e) => {
                                             e.preventDefault();
@@ -1106,14 +1217,19 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                         className="arrow-btn d-flex align-items-center justify-content-center rounded-circle"
                                         
                                         >
-                                        <svg  width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <path
-                                                d="M10.6188 15L16.4788 9.23744C17.1737 8.55402 17.1737 7.44598 16.4788 6.76256L10.6188 0.999999M15.9575 8L1 8"
-                                                stroke="#C6C6D1" strokeWidth="1.5" strokeLinecap="round" />
+                                        <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M10.6188 15L16.4788 9.23744C17.1737 8.55402 17.1737 7.44598 16.4788 6.76256L10.6188 0.999999M15.9575 8L1 8" stroke="#C6C6D1" strokeWidth="1.5" strokeLinecap="round" />
                                         </svg>
                                     </a>
-                                </div> 
+    
+                                    {/* <a href="" className="arrow-btn d-flex align-items-center justify-content-center rounded-circle">
+                                        <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M10.6188 15L16.4788 9.23744C17.1737 8.55402 17.1737 7.44598 16.4788 6.76256L10.6188 0.999999M15.9575 8L1 8" stroke="#C6C6D1" strokeWidth="1.5" strokeLinecap="round" />
+                                        </svg>
+                                    </a> */}
+                                </div>
                             </div>
+
                             <div   className="trail-user-favorite-card br-20 bg-almost-white d-flex justify-content-between flex-wrap">
 
                                 <div className="tuf-left-content d-flex align-items-center">
@@ -1128,7 +1244,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                 <div className="tuf-right-content d-flex align-items-center">
                                    
                                     <div className="tusc-cn-1 text-center">
-                                        <p className="mb-0">{getfollowingBy?.rating}</p>
+                                        <p className="mb-0">{getfollowingBy?.rating ? (Math.round(getfollowingBy.rating * 100) / 100).toFixed(2) : "0.00" } </p>
                                         <StarRating rating={Number(getfollowingBy?.rating)}/>
                                         {/* <div className="rating">
                                             <i className="bi bi-star-fill"></i>
@@ -1435,22 +1551,22 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                     </svg>
                                 </a> */}
                             </div>
-                                <div className="trail-sidebar-widget bg-almost-white br-20">
-                                <h3 className="text-midnight-navy">What this place offers</h3>
-                                <ul className="trail-side-nav list-unstyled mt-0">
-                                    <li><a href=""><img src="/assets/images/icons/scamble.svg" alt=""/> Scramble </a></li>
-                                    <li><a href=""><img src="/assets/images/icons/off-trail.svg" alt=""/> Off-trail
-                                            (bushwhack) </a></li>
-                                    <li><a href=""><img src="/assets/images/icons/lakes.svg" alt=""/> Lakes </a></li>
-                                    <li><a href=""><img src="/assets/images/icons/views.svg" alt=""/> Views </a></li>
-                                    <li><a href=""><img src="/assets/images/icons/hiking.svg" alt=""/> Hiking </a></li>
-                                    <li><a href=""><img src="/assets/images/icons/walking.svg" alt=""/> Walking </a></li>
-                                </ul> 
-                                {/* <div className="d-flex flex-wrap align-items-center">
-                                    <a href="" className="btn-style-3">Get Directions</a>
-                                    <a href="" className="btn-style-1">Hit the Trail</a>
+                                {/* <div className="trail-sidebar-widget bg-almost-white br-20">
+                                    <h3 className="text-midnight-navy">What this place offers</h3>
+                                    <ul className="trail-side-nav list-unstyled mt-0">
+                                        <li><a href=""><img src="/assets/images/icons/scamble.svg" alt=""/> Scramble </a></li>
+                                        <li><a href=""><img src="/assets/images/icons/off-trail.svg" alt=""/> Off-trail
+                                                (bushwhack) </a></li>
+                                        <li><a href=""><img src="/assets/images/icons/lakes.svg" alt=""/> Lakes </a></li>
+                                        <li><a href=""><img src="/assets/images/icons/views.svg" alt=""/> Views </a></li>
+                                        <li><a href=""><img src="/assets/images/icons/hiking.svg" alt=""/> Hiking </a></li>
+                                        <li><a href=""><img src="/assets/images/icons/walking.svg" alt=""/> Walking </a></li>
+                                    </ul> 
+                                    <div className="d-flex flex-wrap align-items-center">
+                                        <a href="" className="btn-style-3">Get Directions</a>
+                                        <a href="" className="btn-style-1">Hit the Trail</a>
+                                    </div>
                                 </div> */}
-                            </div>
                         </div> 
                         
                     </div>
@@ -1524,7 +1640,8 @@ const CommunitySectionCmtDetails: React.FC = () => {
                             onClick={ () =>{
                                 handleSubmitReview(),
                                 setIsReviewOpen(false)
-                            }}>
+                            }}
+                             disabled={!review.trim()}>
                                 Submit
                             </button>
                             </div>
@@ -1538,13 +1655,14 @@ const CommunitySectionCmtDetails: React.FC = () => {
                             <div className="col-12">
                                 <div className="section-title" style={{display:'flex'}}>
                                     <h2 className="title">Reviews</h2>
-                                     {isLoggedIn ? (
+                                    
+                                     {isLoggedIn &&(
                                     <a style={{marginLeft:'10px',padding: '13px 10px'}} href="#" className="btn-sm btn-style-12"  onClick={(e) => {
                                             e.preventDefault();
                                             setIsReviewOpen(true);
                                         }}  
                                     >Add review</a> 
-                                ):(null )}
+                                )}
                                 </div>
                             </div>
 
@@ -1553,202 +1671,65 @@ const CommunitySectionCmtDetails: React.FC = () => {
                             showReviews &&(
                             <div className="row review-row g-3">
                                 {message && <div style={{color:'#FC673C' , textAlign:'left',margin:'0px'}}>{message}</div>}
-                                <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
-                                    <div className="testimonial-single position-relative">
-                                        <div className="testimonial-head d-flex w-100 align-items-center position-relative">
-                                            <div className="test-image">
-                                                <img src="/assets/images/other/testimonial-1.png" alt="" className="img-fluid"/>
-                                            </div>
-                                            <div className="test-head">
-                                                <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">Emily R. –
-                                                    Denver, CO</h3>
-                                                <div className="rating">
-                                                    <i className="bi bi-star-fill"></i>
-                                                    <i className="bi bi-star-fill"></i>
-                                                    <i className="bi bi-star-fill"></i>
-                                                    <i className="bi bi-star-fill"></i>
-                                                    <i className="bi bi-star-fill"></i>
+                                {reviewDetails.length > 0 ? (
+                                    <>
+                                        {reviewDetails.slice(0, reviewVisibleCount).map((rev:any,index:number) => (
+                                        // reviewDetails.map((rev:any,index:number)=>(
+                                            <div key={index} className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
+                                                <div className="testimonial-single position-relative">
+                                                    <div className="testimonial-head d-flex w-100 align-items-center position-relative">
+                                                        <div className="test-image">
+                                                            <img
+                                                                src={rev.userImage || '/assets/images/other/testimonial-1.png'}
+                                                                alt="Top Trail" className="img-fluid" 
+                                                                onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                                                    const target = e.currentTarget;
+                                                                    target.onerror = null; // prevent infinite loop
+                                                                    target.src = '/assets/images/other/testimonial-1.png'; // fallback image
+                                                                }}
+                                                            />
+                                                            {/* <img src="/assets/images/other/testimonial-1.png" alt="" className="img-fluid"/> */}
+                                                        </div>
+                                                        <div className="test-head">
+                                                            <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">{rev.userWithAddress ?? ''} </h3>
+                                                                <StarRating rating={Number(rev?.rating)}/>
+                                                            {/* <div className="rating">
+                                                                <i className="bi bi-star-fill"></i>
+                                                                <i className="bi bi-star-fill"></i>
+                                                                <i className="bi bi-star-fill"></i>
+                                                                <i className="bi bi-star-fill"></i>
+                                                                <i className="bi bi-star-fill"></i>
+                                                            </div> */}
+                                                            <p className="mb-0">{rev.ratingOn ?? ''} <span className="d-inline-block mx-1">•</span>
+                                                            {rev.category ?? 'N/A'} </p>
+                                                        </div>
+                                                        {/* <div className="right-abs">
+                                                            <i className="bi bi-three-dots"></i>
+                                                        </div> */}
+                                                    </div>
+                                                    <div className="testimonial-body">
+                                                        <p className="text-midnight-navy">{rev.decription ?? 'N/A'}</p>
+                                                    </div>
                                                 </div>
-                                                <p className="mb-0">Apr 1, 2025 <span className="d-inline-block mx-1">•</span>
-                                                    Hiking</p>
                                             </div>
-                                            {/* <div className="right-abs">
-                                                <i className="bi bi-three-dots"></i>
-                                            </div> */}
-                                        </div>
-                                        <div className="testimonial-body">
-                                            <p className="text-midnight-navy">CoolTrails helped me discover hidden gems right in
-                                                my backyard. The trail difficulty ratings were spot on, and the user tips
-                                                saved me big time!</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
-                                    <div className="testimonial-single position-relative">
-                                        <div className="testimonial-head d-flex w-100 align-items-center position-relative">
-                                            <div className="test-image">
-                                                <img src="/assets/images/other/testimonial-1.png" alt="" className="img-fluid"/>
-                                            </div>
-                                            <div className="test-head">
-                                                <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">Emily R. –
-                                                    Denver, CO</h3>
-                                                <div className="rating">
-                                                    <i className="bi bi-star-fill"></i>
-                                                    <i className="bi bi-star-fill"></i>
-                                                    <i className="bi bi-star-fill"></i>
-                                                    <i className="bi bi-star-fill"></i>
-                                                    <i className="bi bi-star-fill"></i>
+                                        ))}
+                                        {reviewVisibleCount < reviewDetails.length && (
+                                            <div className="row">
+                                                <div className="col-12 text-end">
+                                                    <button
+                                                    style={{textDecoration:'none', marginBottom:'10px',float:'left'}}
+                                                    className="btn btn-link text-orange fw-bold ms-1"
+                                                    onClick={handleShowReviewMore}
+                                                    >
+                                                    Show more... 
+                                                    </button>
                                                 </div>
-                                                <p className="mb-0">Apr 1, 2025 <span className="d-inline-block mx-1">•</span>
-                                                    Hiking</p>
-                                            </div>
-                                            {/* <div className="right-abs">
-                                                <i className="bi bi-three-dots"></i>
-                                            </div> */}
-                                        </div>
-                                        <div className="testimonial-body">
-                                            <p className="text-midnight-navy">CoolTrails helped me discover hidden gems right in
-                                                my backyard. The trail difficulty ratings were spot on, and the user tips
-                                                saved me big time!</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
-                                    <div className="testimonial-single position-relative">
-                                        <div className="testimonial-head d-flex w-100 align-items-center position-relative">
-                                            <div className="test-image">
-                                                <img src="/assets/images/other/testimonial-1.png" alt="" className="img-fluid"/>
-                                            </div>
-                                            <div className="test-head">
-                                                <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">Emily R. –
-                                                    Denver, CO</h3>
-                                                <div className="rating">
-                                                    <i className="bi bi-star-fill"></i>
-                                                    <i className="bi bi-star-fill"></i>
-                                                    <i className="bi bi-star-fill"></i>
-                                                    <i className="bi bi-star-fill"></i>
-                                                    <i className="bi bi-star-fill"></i>
-                                                </div>
-                                                <p className="mb-0">Apr 1, 2025 <span className="d-inline-block mx-1">•</span>
-                                                    Hiking</p>
-                                            </div>
-                                            {/* <div className="right-abs">
-                                                <i className="bi bi-three-dots"></i>
-                                            </div> */}
-                                        </div>
-                                        <div className="testimonial-body">
-                                            <p className="text-midnight-navy">CoolTrails helped me discover hidden gems right in
-                                                my backyard. The trail difficulty ratings were spot on, and the user tips
-                                                saved me big time!</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
-                                    <div className="testimonial-single position-relative">
-                                        <div className="testimonial-head d-flex w-100 align-items-center position-relative">
-                                            <div className="test-image">
-                                                <img src="/assets/images/other/testimonial-1.png" alt="" className="img-fluid"/>
-                                            </div>
-                                            <div className="test-head">
-                                                <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">Emily R. –
-                                                    Denver, CO</h3>
-                                                <div className="rating">
-                                                    <i className="bi bi-star-fill"></i>
-                                                    <i className="bi bi-star-fill"></i>
-                                                    <i className="bi bi-star-fill"></i>
-                                                    <i className="bi bi-star-fill"></i>
-                                                    <i className="bi bi-star-fill"></i>
-                                                </div>
-                                                <p className="mb-0">Apr 1, 2025 <span className="d-inline-block mx-1">•</span>
-                                                    Hiking</p>
-                                            </div> 
-                                            {/* <div className="right-abs">
-                                                <i className="bi bi-three-dots"></i>
-                                            </div> */}
-                                        </div>
-                                        <div className="testimonial-body">
-                                            <p className="text-midnight-navy">CoolTrails helped me discover hidden gems right in
-                                                my backyard. The trail difficulty ratings were spot on, and the user tips
-                                                saved me big time!</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            {/* <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
-                                <div className="testimonial-single position-relative">
-                                    <div className="testimonial-head d-flex w-100 align-items-center position-relative">
-                                        <div className="test-image">
-                                            <img src="/assets/images/other/testimonial-1.png" alt="" className="img-fluid"/>
-                                        </div>
-                                        <div className="test-head">
-                                            <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">Emily R. –
-                                                Denver, CO</h3>
-                                            <div className="rating">
-                                                <i className="bi bi-star-fill"></i>
-                                                <i className="bi bi-star-fill"></i>
-                                                <i className="bi bi-star-fill"></i>
-                                                <i className="bi bi-star-fill"></i>
-                                                <i className="bi bi-star-fill"></i>
-                                            </div>
-                                            <p className="mb-0">Apr 1, 2025 <span className="d-inline-block mx-1">•</span>
-                                                Hiking</p>
-                                        </div>
-                                        <div className="right-abs">
-                                            <i className="bi bi-three-dots"></i>
-                                        </div>
-                                    </div>
-                                    <div className="testimonial-body">
-                                        <p className="text-midnight-navy">CoolTrails helped me discover hidden gems right in
-                                            my backyard. The trail difficulty ratings were spot on, and the user tips
-                                            saved me big time!</p>
-                                        <div className="review-gallery">
-                                            <div className="d-flex">
-                                                <a href="/assets/images/review-images/r-1.png"
-                                                    data-fancybox="reviewImages"><img
-                                                        src="/assets/images/review-images/r-1.png" alt=""/></a>
-                                                <a href="/assets/images/review-images/r-2.png"
-                                                    data-fancybox="reviewImages"><img
-                                                        src="/assets/images/review-images/r-2.png" alt=""/></a>
-                                                <a href="/assets/images/review-images/r-3.png"
-                                                    data-fancybox="reviewImages"><img
-                                                        src="/assets/images/review-images/r-3.png" alt=""/></a>
-                                                <a href="/assets/images/review-images/r-4.png"
-                                                    data-fancybox="reviewImagess"><img
-                                                        src="/assets/images/review-images/r-4.png" alt=""/></a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
-                                <div className="testimonial-single position-relative">
-                                    <div className="testimonial-head d-flex w-100 align-items-center position-relative">
-                                        <div className="test-image">
-                                            <img src="/assets/images/other/testimonial-1.png" alt="" className="img-fluid"/>
-                                        </div>
-                                        <div className="test-head">
-                                            <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">Emily R. –
-                                                Denver, CO</h3>
-                                            <div className="rating">
-                                                <i className="bi bi-star-fill"></i>
-                                                <i className="bi bi-star-fill"></i>
-                                                <i className="bi bi-star-fill"></i>
-                                                <i className="bi bi-star-fill"></i>
-                                                <i className="bi bi-star-fill"></i>
-                                            </div>
-                                            <p className="mb-0">Apr 1, 2025 <span className="d-inline-block mx-1">•</span>
-                                                Hiking</p>
-                                        </div>
-                                        <div className="right-abs">
-                                            <i className="bi bi-three-dots"></i>
-                                        </div>
-                                    </div>
-                                    <div className="testimonial-body">
-                                        <p className="text-midnight-navy">CoolTrails helped me discover hidden gems right in
-                                            my backyard. The trail difficulty ratings were spot on, and the user tips
-                                            saved me big time!</p>
-                                    </div>
-                                </div>
-                            </div> */}
+                                            </div>   
+                                        )}
+                                    </>
+                                ):(
+                                    <p>Not Found Review </p>
+                                )}
                         </div>
                             )
                         }

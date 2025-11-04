@@ -30,6 +30,15 @@ interface ProfileData {
     new_password: string;
     favorite_activities: FavoriteActivity[];
 }
+interface ALLActivity {
+    explore_image: string,
+    explore_title: string,
+    explore_address: string,
+    explore_rating: any,
+    explore_distance: any,
+    explore_time_duration: number,
+    date: number
+}
 const ProfileEditSection: React.FC = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [file, setFileName] = useState<File|null>(null);
@@ -38,8 +47,10 @@ const ProfileEditSection: React.FC = () => {
     const [imgmessage, setImgMessage] = useState<string | null>(null);
     const [uploading, setUploading] = useState<boolean>(false);
     const [userId, setUserId] = useState<string>("");
+    const [getAllActivity, setAllActivity] = useState<ALLActivity[]>([]);
+    // input field check
+    const [errors, setErrors] = useState<{ [key: string]: string }>({});
     
-
     const [profileData, setProfileData] = useState<ProfileData>({
         first_name: "",
         last_name: "",
@@ -65,6 +76,22 @@ const ProfileEditSection: React.FC = () => {
                 setUserId(storedId.trim());
             }  
         }, []);
+    useEffect(() => {
+        const fetchActivity = async () => {
+            try {
+                const response = await axios.get(`${BASE_URL}/home/topcategory/10`);
+                setAllActivity(response.data.data);
+                    // console.log('topcategory',response.data.data);
+            } catch (error) {
+                console.error('API Error:', error);
+                // setErrorLocatTrails('Unable to fetch top local trails');
+            } finally {
+                // setloadingExplore(false);
+            }
+        }
+        fetchActivity();
+    }, []);
+
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -120,7 +147,22 @@ const ProfileEditSection: React.FC = () => {
     const handleProfileUpdate = async () => {
         const payload = getPayload();
         // console.log("Payload being sent:", JSON.stringify(payload, null, 2));
+        const newErrors: { [key: string]: string } = {};
+        // Required field validation
+        if (!payload.first_name) newErrors.first_name = "Name is required";
+        if (!payload.email) newErrors.email = "Email is required";
+        if (!payload.phone_no) newErrors.phone_no = "Phone number is required";
 
+        // Email format validation
+        if (payload.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) {
+            newErrors.email = "Please enter a valid email address";
+        }
+
+        // Stop submission if errors exist
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
+        }
         try {
             const response = await axios.post(`${BASE_URL}/user/profileupdate`, payload, {
             headers: { "Content-Type": "application/json" }
@@ -134,8 +176,16 @@ const ProfileEditSection: React.FC = () => {
             alert(response.data.message || "Unexpected response from server.");
             }
         } catch (error: any) {
+            if (error.response?.data?.errors) {
+            // Flatten array of messages into single string per field
+            const formattedErrors: { [key: string]: string } = {};
+            for (const key in error.response.data.errors) {
+                formattedErrors[key] = error.response.data.errors[key].join(", ");
+            }
+            setErrors(formattedErrors);
+            }
             console.error("Update failed:", error.response?.data || error);
-            alert("Failed to update profile. Check console for details.");
+            //alert("Failed to update feed. Check console for details.");
         }
     };
          useEffect(() => {
@@ -224,25 +274,28 @@ const ProfileEditSection: React.FC = () => {
                             <h2 className="profile-card-title text-midnight-navy">Personal information</h2>
                             <div className="profile-inner-form">
                                 <div className="form-floating mb-3">
-                                    <input type="email" className="form-control" name="email" id="emailIn" placeholder=""
+                                    <input type="email" className={`form-control ${errors.email  ? "is-invalid" : ""}`}  name="email" id="emailIn" placeholder=""
                                         value={profileData.email}
                                         onChange={handleInputChange}
                                          />
                                     <label htmlFor="emailIn">Email address</label>
+                                     {errors.email && <div style={{color:'#FC673C'}} className="invalid-feedback">{errors.email}</div>}
                                 </div>
                                 <div className="form-floating mb-3">
-                                    <input type="text" className="form-control" name="first_name" id="first_name" placeholder=""
+                                    <input type="text" className={`form-control ${errors.first_name  ? "is-invalid" : ""}`} name="first_name" id="first_name" placeholder=""
                                         value={profileData.first_name}
                                         onChange={handleInputChange}
                                          />
                                     <label htmlFor="fullName">Full Name</label>
+                                     {errors.first_name && <div style={{color:'#FC673C'}} className="invalid-feedback">{errors.first_name}</div>}
                                 </div>
                                 <div className="form-floating mb-3">
-                                    <input type="text" className="form-control" name="phone_no" id="phone" placeholder=""
+                                    <input type="text" className={`form-control ${errors.phone_no  ? "is-invalid" : ""}`} name="phone_no" id="phone" placeholder=""
                                          value={profileData.phone_no}
                                         onChange={handleInputChange}
                                          />
                                     <label htmlFor="phone">Phone Number</label>
+                                     {errors.phone_no && <div style={{color:'#FC673C'}} className="invalid-feedback">{errors.phone_no}</div>}
                                 </div> 
                                 <div className="mb-3">
                                     <div className="input-group flex-nowrap custom-form-group">
@@ -265,14 +318,20 @@ const ProfileEditSection: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-                    </div> 
+                    </div>  
                     <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12 grid-item"> 
                         <div className="bg-almost-white br-20 profile-card-2 fav-acivities-card">
                             <h2 className="profile-card-title text-midnight-navy">Favorite activities</h2>
                             <div className="bg-almost-white d-flex flex-wrap fav-activity-list position-relative">
-                                <div className="fav-activity-single active">
-                                    <img src="assets/images/icons/check-white.svg" alt="" /> 
-                                    Hiking</div>
+                                {/* {
+                                    getAllActivity.map((act:any,index:number)=>(
+                                        <div key={index} className="fav-activity-single active">
+                                            <img src="assets/images/icons/check-white.svg" alt="" /> 
+                                            {act.title} 
+                                        </div>
+                                    ))
+                                } */}
+                                
                                 <div className="fav-activity-single active">
                                     <img src="assets/images/icons/check-white.svg" alt="" />
                                     Hiking</div>
@@ -298,9 +357,9 @@ const ProfileEditSection: React.FC = () => {
                                     <img src="assets/images/icons/check-white.svg" alt="" /> Hiking</div>
                                 <div className="fav-activity-single"><img src="assets/images/icons/check-white.svg" alt="" /> Hiking</div>
                                 <div className="fav-activity-single"><img src="assets/images/icons/check-white.svg" alt="" /> Hiking</div> 
-                                <div className="fav-activity-input"><input type="text" placeholder="Type here" /></div>
+                                {/* <div className="fav-activity-input"><input type="text" placeholder="Type here" /></div>
                                 <div className="fav-activity-add-btn"> <button><svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 2.08331V7.91665" stroke="#05073D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M2.08301 5H7.91634" stroke="#05073D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/> </svg>  Add More</button></div>
-                                
+                                 */}
                             </div>
                         </div>
                     </div>

@@ -71,23 +71,23 @@ const Footer: React.FC = () => {
                             </div>
                             <div className="collapse show" id="footer-nav-1">
                                 <ul className="list-unstyled footer-nav">
-                                    <li><a href="#!">Countries</a></li>
-                                    <li><a href="#!">Regions</a></li>
+                                    {/* <li><a href="#!">Countries</a></li>
+                                    <li><a href="#!">Regions</a></li> */}
                                     <li>
                                         {/* <Link to={'/profile'} className="dropdown-item"> 
                                              Cities
                                         </Link> */}
-                                        <a href="#!">Cities</a>
+                                        {/* <a href="#!">Cities</a> */}
                                     </li>
                                     <li>
                                         <Link to={'/national-park-guide'} className="dropdown-item"> 
                                              Parks
                                         </Link>
                                     </li>
-                                    <li><a href="#!">Trails</a></li>
+                                    {/* <li><a href="#!">Trails</a></li>
                                     <li><a href="#!">Points of Interest</a></li>
                                     <li><a href="#!">Trail </a></li>
-                                    <li><a href="#!">Trail Features</a></li>
+                                    <li><a href="#!">Trail Features</a></li> */}
                                 </ul>
                             </div>
                         </div>
@@ -107,10 +107,15 @@ const Footer: React.FC = () => {
                             </div>
                             <div className="collapse show" id="footer-nav-2">
                                 <ul className="list-unstyled footer-nav">
-                                    <li><a href="#!">My Maps </a></li>
-                                    <li><a href="#!">Create Map</a></li>
-                                    <li><a href="#!">Print Maps </a></li>
-                                    <li><a href="#!">Route Converter</a></li>
+                                    {/* <li><a href="#!">My Maps </a></li> */}
+                                    <li>
+                                        <Link to={'/create-map'} className="dropdown-item"> 
+                                             Create Map
+                                        </Link>
+                                        {/* <a href="#!">Create Map</a> */}
+                                    </li>
+                                    {/* <li><a href="#!">Print Maps </a></li>
+                                    <li><a href="#!">Route Converter</a></li> */}
                                 </ul>
                             </div>
                         </div>
@@ -130,10 +135,10 @@ const Footer: React.FC = () => {
                             </div>
                             <div className="collapse show" id="footer-nav-3">
                                 <ul className="list-unstyled footer-nav">
-                                    <li><a href="#!">About</a></li>
+                                    {/* <li><a href="#!">About</a></li>
                                     <li><a href="#!">Jobs</a></li>
                                     <li><a href="#!">Press</a></li>
-                                    <li><a href="#!">Ambassadors</a></li>
+                                    <li><a href="#!">Ambassadors</a></li> */}
                                     <li><Link to={'/affiliates'}>Affiliates</Link></li>
                                     {/* <li><a href="#!">Affiliates</a></li> */}
                                 </ul>
@@ -155,9 +160,9 @@ const Footer: React.FC = () => {
                             </div>
                             <div className="collapse show" id="footer-nav-4">
                                 <ul className="list-unstyled footer-nav">
-                                    <li><a href="#!">Support</a></li>
+                                    {/* <li><a href="#!">Support</a></li> */}
                                     <li><Link to={'/gift-membership'} >Gift membership</Link></li>
-                                    <li><a href="#!">Gears</a></li>
+                                    {/* <li><a href="#!">Gears</a></li> */}
                                 </ul>
                             </div>
                         </div>

@@ -3,6 +3,7 @@ import ProfileLeftSection from './ProfileLeftSection';
 import axios from 'axios';
 import { useLocation, useParams } from 'react-router-dom';
 import { SquareLoader } from "react-spinners"; 
+import { Link } from 'react-router-dom';
 
 
 const BASE_URL = import.meta.env.VITE_API_URL;
@@ -11,14 +12,37 @@ interface FeedProfile {
     mediaType:string,
     mediaUrl:string
 }
+interface Profile {
+  fullName: string;
+  address: string;
+  registeredOn: string;
+  totalFollowers: number;
+  totalFollowing: number;
+}
 const ProfilePhotoSection: React.FC = () => {
     const location = useLocation();
     const stateUserId = location.state?.userId;
-    const [userId, setUserId] = useState(stateUserId || localStorage.getItem("userId"));
+    // const [userId, setUserId] = useState(stateUserId || localStorage.getItem("userId"));
+    const [userId, setUserId] = useState<string>("");
     const [loginId, setLoginId] = useState("");
     const [feedPhotoLoading,setFeedLoading] = useState(true);
     const [getfeedProfie, setFeedProfile ]= useState<FeedProfile[]>([]);
+    const [profile,setProfile] = useState<Profile | null>(null);
+    
+    
     //console.log(userId);
+    // Function to determine if a link is active
+    const isActive = (path: string) => {
+        return location.pathname === path ? 'active' : '';
+    };
+    useEffect(() => {
+            const storedId = localStorage.getItem("id");
+            // console.log("Stored ID:", storedId); // should print the ID string
+            if (storedId) {
+                // setUserId(storedId); 
+                setUserId(storedId.trim());
+            }  
+    }, []);
     useEffect(() => {
             const storeLocal = localStorage.getItem("login");
             //  console.log(storeLocal)
@@ -27,7 +51,30 @@ const ProfilePhotoSection: React.FC = () => {
                 // setUserID(userId);
             }
     }, []);
-
+// Show the profile
+    useEffect(() => {
+            if (!userId) return; // wait until userId is available
+    
+            const loadProfile = async () => {
+                try {
+                const response = await axios.post(`${BASE_URL}/user/profile`, {
+                    UserId: userId,
+                });
+    
+                // console.log("Profile Data:", response.data);
+    
+                if (response.data.status === "success") {
+                    const data = response.data.data;
+                    setProfile(data);
+                }
+                } catch (error) {
+                console.error("Error loading profile:", error);
+                alert("Failed to load profile");
+                }
+            };
+    
+            loadProfile();
+    }, [userId]);
     useEffect(() => {
     if (!loginId || !userId) return; // wait until both are set
 
@@ -46,7 +93,7 @@ const ProfilePhotoSection: React.FC = () => {
                 }
             );
 
-            //console.log('Images response:', response.data);
+            console.log('Images response:', response.data);
             setFeedProfile(response.data.data);
         } catch (error: any) {
             console.error(
@@ -112,18 +159,18 @@ const ProfilePhotoSection: React.FC = () => {
                                 <div className="profile-sidebar-top bg-almost-white">
                                     <div className="sidebar-profile">
                                         <div className="profile-img"><img src="assets/images/profile/profile-md.png" alt="" /></div>
-                                        <h4 className="profile-username text-midnight-navy">Amit Singh</h4>
-                                        <h5 className="profile-address text-midnight-navy">Dubai, United Arab Emirates</h5>
-                                        <p className="membership-info text-grey">Member since May 2025</p>
-                                        <button className="btn-style-1">Follow</button>
+                                        <h4 className="profile-username text-midnight-navy">{profile?.fullName ?? ''}</h4>
+                                        <h5 className="profile-address text-midnight-navy">{profile?.address ?? ''}</h5>
+                                        <p className="membership-info text-grey">Member since {profile?.registeredOn ?? ''}</p>
+                                        {/* <button className="btn-style-1">Follow</button> */}
                                     </div>
                                     <div className="followings d-flex justify-content-between position-relative">
                                         <div className="follower">
-                                            <h6 className="fl-count text-midnight-navy mb-0">10</h6>
+                                            <h6 className="fl-count text-midnight-navy mb-0">{profile?.totalFollowers ?? ''}</h6>
                                             <p className="text-grey mb-0">Followers</p>
                                         </div>
                                         <div className="following">
-                                            <h6 className="fl-count text-midnight-navy mb-0">10</h6>
+                                            <h6 className="fl-count text-midnight-navy mb-0">{profile?.totalFollowing ?? ''}</h6>
                                             <p className="text-grey mb-0">Following</p>
                                         </div>
                                     </div>
@@ -150,21 +197,21 @@ const ProfilePhotoSection: React.FC = () => {
                                 </div>
                                 <div className="profile-sidebar-menu bg-almost-white">
                                     <ul className="list-unstyled profile-menu">
-                                        <li><a href="profile-feed.html">Feed</a></li>
-                                        <li className="active"><a href="profile-photos.html">Photos</a></li>
-                                        <li><a href="">Reviews</a></li>
+                                        <li className={isActive('/community')}><Link to={'/community'} >Feed</Link></li>
+                                        <li className={isActive('/profile-photo')}><Link to={'/profile-photo'}>Photos</Link></li>
+                                        {/* <li><a href="">Reviews</a></li>
                                         <li><a href="">Activities</a></li>
-                                        <li><a href="">Completed</a></li>
+                                        <li><a href="">Completed</a></li> */}
                                     </ul>
                                 </div>
-                                <a href="edit-profile.html" className="abs-edit-profile" title="Edit Profile">
+                                {/* <a href="edit-profile.html" className="abs-edit-profile" title="Edit Profile">
                                     <svg width="19" height="18" viewBox="0 0 19 18" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path
                                             d="M10.5137 0.80598C11.5867 -0.268666 13.3274 -0.269589 14.4014 0.804027L16.8936 3.29621C17.958 4.36095 17.9687 6.08414 16.918 7.16243L7.68555 16.6361C6.98003 17.3599 6.01137 17.7679 5.00098 17.7679H2.25C1.05069 17.7678 0.0774547 16.8306 0.00488281 15.6595L0.00292969 15.4232L0.120117 12.6146C0.159615 11.6756 0.550055 10.7843 1.21387 10.1195L10.5137 0.80598ZM17.5146 16.1947C17.9286 16.1947 18.2646 16.5304 18.2646 16.9447C18.2646 17.359 17.9287 17.6947 17.5146 17.6947H11.3936L11.3164 17.6907C10.9386 17.6521 10.6436 17.333 10.6436 16.9447C10.6436 16.5564 10.9386 16.2372 11.3164 16.1986L11.3936 16.1947H17.5146ZM2.27441 11.181C1.87636 11.5798 1.64186 12.1138 1.61816 12.6771L1.50098 15.4857V15.5657C1.52555 15.9556 1.84974 16.2676 2.24902 16.2679H5.00195C5.60809 16.2678 6.18906 16.0225 6.6123 15.5882L13.1436 8.88508L8.85059 4.59309L2.27441 11.181ZM13.3418 1.86555C12.8536 1.37755 12.062 1.37805 11.5742 1.86653L9.91113 3.53157L14.1914 7.81184L15.8447 6.11555C16.3222 5.62547 16.3176 4.84171 15.834 4.35774L13.3418 1.86555Z"
                                             fill="#7D7D7D"
                                         />
                                     </svg>
-                                </a>
+                                </a> */}
                             </aside>
                         </div>
                         <div className="col-xl-9 col-lg-7 col-md-7 col-sm-12 col-12">
@@ -176,7 +223,8 @@ const ProfilePhotoSection: React.FC = () => {
                                                 <div  key={index} className="col-xl-6 col-lg-6 col-md-6 col-sm-6 col-12">
                                                     <div className="profile-photo-single">
                                                         
-                                                        <a href="assets/images/profile/photos/photo-0.jpg" data-fancybox="gallery">
+                                                        {/* <a href="assets/images/profile/photos/photo-0.jpg" data-fancybox="gallery"> */}
+                                                        <a href={feedprofile.mediaUrl} data-fancybox="gallery">
                                                         <img
                                                             src={feedprofile.mediaUrl || '/assets/images/not-found.jpg'}
                                                             alt="Com" className="w-100" 

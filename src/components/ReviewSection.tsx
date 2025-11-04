@@ -28,66 +28,117 @@ const ReviewSection: React.FC = () => {
     const [userId, setUserId] = useState<string>("");
     const [getFollow, setFollow] = useState<{ [key: number]: boolean }>({});
     useEffect(() => {
-        const token = localStorage.getItem("token");
+        const token = sessionStorage.getItem("token");
         setIsLoggedIn(!!token);
         // console.log(isLoggedIn);
     }, []);
     useEffect(() => {
-        const storedId = localStorage.getItem("id");
+        const storedId = sessionStorage.getItem("id");
         // console.log("Stored ID:", storedId); // should print the ID string
         if (storedId) {
             setUserId(storedId.trim());
         }  
     }, []);
-    // console.log("user ID:", userId); userId
-
-    const handleFollow = useCallback(
-        async (id: string) => {
-            // e.preventDefault();
-            try {
-
-            if (!isLoggedIn) {
-                // not logged in → go to login page
-                navigate("/login");
-                return;
+    useEffect(() => {
+        const fetchtopExplorers = async ()=>{
+            try{ 
+                const response = await axios.get(`${BASE_URL}/trail/FellowExplorers/10`);
+                console.log('followList',response.data.data);
+                setExplorers(response.data.data);
+            }catch(err){
+                console.error('API Error:', err);
+                setErrorExplorers('Unable to fetch adventure');
+            } finally{
+                setLoadingExplorers(false);
             }
-           
-            const response = await axios.post(`${BASE_URL}/user/follow`, {
-                FollowerId: id,
-                UserId: userId,
-            });
-            if (response.data.status === "success") {
-                setFollow((prev) => ({
+        };
+        fetchtopExplorers();  
+    }, []);
+    // console.log("user ID:", userId); userId
+    const handleFollow = useCallback(
+            async (id: string) => {
+                try {
+                const response = await axios.post(`${BASE_URL}/user/follow`, {
+                    FollowerId: userId,//9c4eede4-8850-4f89-aaf0-4e417d40b942
+                    UserId: id, //a2dc38a2-f4fa-4a6f-8eb3-4400932bc62c
+    
+                });
+                console.log(response.data);
+                if (response.data.status === "success") {
+                    const doFollow = response.data.do_follow 
+                                    ?? response.data.data?.do_follow 
+                                    ?? response.data.follow;
+    
+                    console.log("doFollow:", doFollow);
+                    setFollow((prev) => ({
                         ...prev,
-                        [id]: true,
+                        [id]: doFollow === true || doFollow === "true",
                     }));
-                    // console.log(getFollow);
-            //     const doFollow = response.data.do_follow 
-            //                     ?? response.data.data?.do_follow 
-            //                     ?? response.data.follow;
+                  
+                console.log(response.data);
+                // if (response.data.status === "success") {
+                //     // Update getCommunity directly
+                //      console.log(response.data.do_follow);
+                //     setFollow((prev) => ({
+                //     ...prev,
+                //     [id]: response.data.do_follow === true || response.data.do_follow === "true",
+                // }));
+    
+                    
+                }
+                } catch (error) {
+                console.error(error);
+                }
+            },[userId] // dependencies
+        );
 
-            //     //console.log("doFollow:", doFollow);
-            //     setFollow((prev) => ({
-            //         ...prev,
-            //         [id]: doFollow === true || doFollow === "true",
-            // }));
+    // const handleFollow = useCallback(
+    //     async (id: string) => {
+    //         // e.preventDefault();
+    //         try {
 
-            // console.log(response.data);
-            // if (response.data.status === "success") {
-            //     // Update getCommunity directly
-            //      console.log(response.data.do_follow);
-            //     setFollow((prev) => ({
-            //     ...prev,
-            //     [id]: response.data.do_follow === true || response.data.do_follow === "true",
-            // }));
+    //         if (!isLoggedIn) {
+    //             // not logged in → go to login page
+    //             navigate("/login");
+    //             return;
+    //         }
+           
+    //         const response = await axios.post(`${BASE_URL}/user/follow`, {
+    //             FollowerId: userId,
+    //             UserId: id,
+    //         });
+    //         if (response.data.status === "success") {
+    //             setFollow((prev) => ({
+    //                     ...prev,
+    //                     [id]: true,
+    //                 }));
+    //                 // console.log(getFollow);
+    //             const doFollow = response.data.do_follow 
+    //                             ?? response.data.data?.do_follow 
+    //                             ?? response.data.follow;
+
+    //             //console.log("doFollow:", doFollow);
+    //             setFollow((prev) => ({
+    //                 ...prev,
+    //                 [id]: doFollow === true || doFollow === "true",
+    //         }));
+
+    //         console.log(response.data);
+    //         if (response.data.status === "success") {
+    //             // Update getCommunity directly
+    //              console.log(response.data.do_follow);
+    //             setFollow((prev) => ({
+    //             ...prev,
+    //             [id]: response.data.do_follow === true || response.data.do_follow === "true",
+    //         }));
 
                 
-            }
-            } catch (error) {
-            console.error(error);
-            }
-        },[userId] // dependencies
-    );
+    //         }
+    //         } catch (error) {
+    //         console.error(error);
+    //         }
+    //     },[userId] // dependencies
+    // );
 
     // const handleFollow = (e: React.MouseEvent<HTMLButtonElement>) => {
     //     e.preventDefault();
@@ -115,21 +166,7 @@ const ReviewSection: React.FC = () => {
     //     // axios.post("/api/follow", { profileId });
     // };
     // Effect to fetch data
-    useEffect(() => {
-        const fetchtopExplorers = async ()=>{
-            try{ 
-                const response = await axios.get(`${BASE_URL}/trail/FellowExplorers/10`);
-                //console.log(response.data.data);
-                setExplorers(response.data.data);
-            }catch(err){
-                console.error('API Error:', err);
-                setErrorExplorers('Unable to fetch adventure');
-            } finally{
-                setLoadingExplorers(false);
-            }
-        };
-        fetchtopExplorers();  
-    }, []);
+    
      //console.log(explorers);
 
     // Create refs for your slider elements
