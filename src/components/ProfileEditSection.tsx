@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom';
 import axios from 'axios'; // Import axios
 import { useNavigate } from 'react-router-dom'; // Import useNavigate for redirection
 import { Trash2, Upload } from "lucide-react";
+import  {useAutoClearMessage} from '../utils/useAutoClearMessage';
+import {getAuth} from '../utils/storage';
 
 declare const Masonry: any;
 const BASE_URL = import.meta.env.VITE_API_URL;
@@ -26,7 +28,7 @@ interface ProfileData {
     birthday_month: string;
     birthday_date: string;
     birthday_year: string;
-    language: string;
+    language: string; 
     new_password: string;
     favorite_activities: FavoriteActivity[];
 }
@@ -39,6 +41,16 @@ interface ALLActivity {
     explore_time_duration: number,
     date: number
 }
+
+interface Profile {
+  fullName: string;
+  address: string;
+  picturePath: string;
+  registeredOn: string;
+  totalFollowers: number;
+  totalFollowing: number;
+}
+
 const ProfileEditSection: React.FC = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [file, setFileName] = useState<File|null>(null);
@@ -50,32 +62,68 @@ const ProfileEditSection: React.FC = () => {
     const [getAllActivity, setAllActivity] = useState<ALLActivity[]>([]);
     // input field check
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
+    const [profile, setProfile] = useState<Profile | null>(null);
     
+    // Use hook for each Clear  message after success
+    useAutoClearMessage(message, setMessage, 3000);
+    useAutoClearMessage(imgmessage, setImgMessage, 3000);
+
     const [profileData, setProfileData] = useState<ProfileData>({
         first_name: "",
         last_name: "",
         email: "",
         phone_no: "",
-        about_me: "test",
-        favorite_activities: [{"title":"Trails"}],
+        about_me: "",
+        favorite_activities: [],
         member_location: "",
-        units: "no",
-        activity_time_preference: "no",
-        height: "5",
-        weight: "5",
+        units: "",
+        activity_time_preference: "",
+        height: "",
+        weight: "",
         birthday_month: "",
         birthday_date: "",   
         birthday_year: "",
-        language: "Hindi",
+        language: "",
         new_password: ""
     });
+    // Get id by helper
     useEffect(() => {
-            const storedId = localStorage.getItem("id");
-            if (storedId) {
-                // setUserId(storedId); 
-                setUserId(storedId.trim());
-            }  
-        }, []);
+        const { userId } = getAuth();
+    if (userId) setUserId(userId);
+    }, []);
+
+    
+    // Show the profile
+    useEffect(() => {
+            if (!userId) return; // wait until userId is available
+    
+            const loadProfile = async () => {
+                try {
+                const response = await axios.post(`${BASE_URL}/user/profile`, {
+                    UserId: userId,
+                });
+    
+                // console.log("Profile Dataqqq:", response.data);
+    
+                if (response.data.status === "success") {
+                    const data = response.data.data;
+                    setProfile(data);
+                    // setProfileData({
+                    //     first_name: data.first_name || "",
+                    //     email: data.email || "",
+                    //     phone: data.phone_no || "",
+                    //     adress: data.member_location || "",
+                    // });
+                }
+                } catch (error) {
+                console.error("Error loading profile:", error);
+                alert("Failed to load profile");
+                }
+            };
+    
+            loadProfile();
+    }, [userId]);
+
     useEffect(() => {
         const fetchActivity = async () => {
             try {
@@ -111,15 +159,28 @@ const ProfileEditSection: React.FC = () => {
             console.log("Uploaded:", res.data);
             if (res.data.status === "success") {
                 // If backend returns image URL, use it
-                if (res.data.data?.profile_photo_url) {
-                    setPreview(res.data.data.profile_photo_url);
-                }
+                 const newImageUrl =
+                res.data.data?.profile_photo_url ||
+                res.data.data?.profile_url ||
+                null;
+
+            if (newImageUrl) {
+                setPreview(newImageUrl);
+                // Also update profile state so <img src={profile?.picturePath}> updates
+                setProfile((prev) => ({
+                ...prev!,
+                picturePath: newImageUrl,
+                }));
+            }
+                // if (res.data.data?.profile_photo_url) {
+                //     setPreview(res.data.data.profile_photo_url); 
+                // }
 
                 setImgMessage("Image uploaded successfully!");
             } else {
                 setImgMessage(res.data.message || "Upload failed");
             }
-            setTimeout(() => setImgMessage(""), 2000);
+            // setTimeout(() => setImgMessage(""), 2000);
         } catch (err) {
             console.error("Upload error:", err);
         }
@@ -132,6 +193,7 @@ const ProfileEditSection: React.FC = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
     ) => {
         const { name, value } = e.target;
+        // console.log('ddssd',value);
         setProfileData(prev => ({
             ...prev,
             [name]: value
@@ -144,6 +206,18 @@ const ProfileEditSection: React.FC = () => {
         ? profileData.favorite_activities.map(a => ({ title: a.title }))
         : [{ title: "Trails" }],
     });
+
+    const handleActivityToggle = (activity: string) => {
+        setProfileData((prev) => {
+            const exists = prev.favorite_activities.some((a) => a.title === activity);
+            const updatedActivities = exists
+            ? prev.favorite_activities.filter((a) => a.title !== activity)
+            : [...prev.favorite_activities, { title: activity }];
+
+            return { ...prev, favorite_activities: updatedActivities };
+        });
+    };
+
     const handleProfileUpdate = async () => {
         const payload = getPayload();
         // console.log("Payload being sent:", JSON.stringify(payload, null, 2));
@@ -188,15 +262,15 @@ const ProfileEditSection: React.FC = () => {
             //alert("Failed to update feed. Check console for details.");
         }
     };
-         useEffect(() => {
-            if (message) {
-                const timer = setTimeout(() => {
-                setMessage(null); 
-                }, 3000); 
+        // useEffect(() => {
+        //     if (message) {
+        //         const timer = setTimeout(() => {
+        //         setMessage(null); 
+        //         }, 3000); 
 
-                return () => clearTimeout(timer);
-            }
-        }, [message]);
+        //         return () => clearTimeout(timer);
+        //     }
+        // }, [message]);
         useEffect(() => {
             // Initialize Masonry after the component mounts
             const grid = document.querySelector('.edit-profile-row');
@@ -206,7 +280,8 @@ const ProfileEditSection: React.FC = () => {
                 percentPosition: true
             });
             }
-        }, []);
+        }, [profile, getAllActivity]);
+        
 
   return (
     <main className="mainContent">
@@ -225,17 +300,27 @@ const ProfileEditSection: React.FC = () => {
                         <div className="bg-almost-white br-20 profile-card-2">
                             <div className="profile-info-edit d-flex align-items-center">
                                 <div className="profile-img">
-                                    <img
+                                    {/* <img
                                         src={preview || 'assets/images/profile/profile-md.png'}
                                         alt="Profile"
                                         width={100}
+                                    /> */}
+                                    <img
+                                        src={preview || profile?.picturePath || "/assets/images/not-found.jpg"}
+                                        alt="Profile"
+                                        onError={(e) => {
+                                            const target = e.currentTarget;
+                                            target.onerror = null;
+                                            target.src = "/assets/images/not-found.jpg";
+                                        }}
                                     />
+
                                     {/* <img src="assets/images/profile/profile-md.png" alt="Amit Singh" /> */}
-                                    </div>
+                                </div>
                                 <div className="profile-info-edit-cn d-flex">
                                     <div className="pfe-title">
-                                        <h3 className="pfe-name text-midnight-navy mb-0">Amit Singh</h3>
-                                        <p className="pfe-location text-midnight-navy mb-0">Dubai, United Arab Emirates</p>
+                                        <h3 className="pfe-name text-midnight-navy mb-0">{profile?.fullName ?? ''}</h3>
+                                        <p className="pfe-location text-midnight-navy mb-0">{profile?.address ?? ''}</p>
                                     </div>
                                     <div className="pfe-uplo d-flex align-items-center">
                                         <div className="upload-btn-wrapper">
@@ -323,43 +408,80 @@ const ProfileEditSection: React.FC = () => {
                         <div className="bg-almost-white br-20 profile-card-2 fav-acivities-card">
                             <h2 className="profile-card-title text-midnight-navy">Favorite activities</h2>
                             <div className="bg-almost-white d-flex flex-wrap fav-activity-list position-relative">
-                                {/* {
-                                    getAllActivity.map((act:any,index:number)=>(
-                                        <div key={index} className="fav-activity-single active">
-                                            <img src="assets/images/icons/check-white.svg" alt="" /> 
-                                            {act.title} 
-                                        </div>
-                                    ))
-                                } */}
+                               
+                                {
+                                    getAllActivity.map((act: any, index: number) => {
+                                    const isSelected = profileData.favorite_activities.some(
+                                        (a) => a.title === act.title
+                                    );
+
+                                        return (
+                                        
+                                            <div key={index} className={`fav-activity-single ${isSelected ? "active" : ""}`}
+                                                onClick={() => handleActivityToggle(act.title)}
+                                                style={{
+                                                    cursor: "pointer",
+                                                    backgroundColor: isSelected ? "#05073D" : "#f8f9fa",
+                                                    color: isSelected ? "#fff" : "#333", padding: "8px 12px",
+                                                    borderRadius: "60px", margin: "5px",display: "flex",alignItems: "center", transition: "all 0.2s ease",
+                                                }}
+                                                >
+                                                    {/* <img src="assets/images/icons/check-white.svg" alt="" /> */}
+                                                <img  src="assets/images/icons/check-white.svg" alt=""
+                                                    style={{ 
+                                                        width: "16px", height: "16px", marginRight: "6px",visibility: isSelected ? "visible" : "hidden",
+                                                    }}
+                                                />
+                                                {act.title}
+                                            </div>
+                                        );
+                                    })
+                                }
                                 
-                                <div className="fav-activity-single active">
-                                    <img src="assets/images/icons/check-white.svg" alt="" />
-                                    Hiking</div>
+                                {/* <div className="fav-activity-single active">
+                                    <img src="assets/images/icons/check-white.svg" alt="" />Hiking
+                                </div>
                                 <div className="fav-activity-single">
-                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking</div>
+                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking
+                                </div>
                                 <div className="fav-activity-single">
-                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking</div>
+                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking
+                                </div>
                                 <div className="fav-activity-single">
-                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking</div>
+                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking
+                                </div>
                                 <div className="fav-activity-single">
-                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking</div>
+                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking
+                                </div>
                                 <div className="fav-activity-single">
-                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking</div>
+                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking
+                                </div>
                                 <div className="fav-activity-single">
-                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking</div>
+                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking
+                                </div>
                                 <div className="fav-activity-single">
-                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking</div>
+                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking
+                                </div>
                                 <div className="fav-activity-single">
-                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking</div>
+                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking
+                                </div>
                                 <div className="fav-activity-single">
-                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking</div>
+                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking
+                                </div>
                                 <div className="fav-activity-single">
-                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking</div>
-                                <div className="fav-activity-single"><img src="assets/images/icons/check-white.svg" alt="" /> Hiking</div>
-                                <div className="fav-activity-single"><img src="assets/images/icons/check-white.svg" alt="" /> Hiking</div> 
-                                {/* <div className="fav-activity-input"><input type="text" placeholder="Type here" /></div>
-                                <div className="fav-activity-add-btn"> <button><svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 2.08331V7.91665" stroke="#05073D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M2.08301 5H7.91634" stroke="#05073D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/> </svg>  Add More</button></div>
-                                 */}
+                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking
+                                </div>
+                                <div className="fav-activity-single">
+                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking
+                                </div>
+                                <div className="fav-activity-single">
+                                    <img src="assets/images/icons/check-white.svg" alt="" /> Hiking
+                                </div> 
+                                <div className="fav-activity-input"><input type="text" placeholder="Type here" /></div>
+                                <div className="fav-activity-add-btn">
+                                     <button><svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 2.08331V7.91665" stroke="#05073D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M2.08301 5H7.91634" stroke="#05073D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/> </svg>  Add More</button>
+                                </div> */}
+                                
                             </div>
                         </div>
                     </div>
@@ -479,9 +601,12 @@ const ProfileEditSection: React.FC = () => {
                                     
                                     <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12">
                                         <div className="form-floating mb-3">
-                                            <select className="form-select" name="language" id="mktLang">
-                                                <option >English[US]</option>
-                                                <option value="">Hindi</option>
+                                            <select className="form-select" name="language" id="mktLang"
+                                            value={profileData.language}
+                                                onChange={handleInputChange}
+                                            >
+                                                <option value="English">English[US]</option>
+                                                <option value="Hindi">Hindi</option>
                                             </select>
                                             <label htmlFor="mktLang">Marketing Language</label>
                                         </div>

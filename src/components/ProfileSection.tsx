@@ -34,7 +34,8 @@ const ProfileSection: React.FC = () => {
         setVisibleCount((prev) => prev + 5); // Show 5 more each time
     };
      useEffect(() => {
-            const storedId = localStorage.getItem("id");
+            const storedId = sessionStorage.getItem("id");
+            // const storedId = localStorage.getItem("id");
             // console.log("Stored ID:", storedId); // should print the ID string
             if (storedId) {
                 // setUserId(storedId); 
@@ -58,9 +59,16 @@ const ProfileSection: React.FC = () => {
                 const response = await axios.post(`${BASE_URL}/feed/user/${userId}`, {
                     LoginId: loginId,
                     // LoginId: '1112VIRENDRA',
-                });
+                },
+                {
+                    headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${sessionStorage.getItem("token")}`
+                    }
+                }
+            );
     
-                console.log("Post Data:", response.data);
+                console.log("Postssss Data:", response.data);
     
                 if (response.data.status === "success") {
                     const data = response.data.data;
@@ -152,7 +160,10 @@ const ProfileSection: React.FC = () => {
                                     <div className="single-feed position-relative" key={index}>
                                         <div className="feed-head d-flex justify-content-between">
                                             <div className="feed-user-info d-flex align-items-center">
-                                                <a href="">
+                                                {/* <a href=""> */}
+                                                <Link to={`/explore/recording/${post.slug}`} className="d-block"
+                                                state={{ postId: post.id }}  
+                                                >
                                                     <img
                                                     src={post.user_logo || '/assets/images/not-found.jpg'}
                                                     alt="Com" className="profile-sm rounded-circle"  
@@ -162,9 +173,11 @@ const ProfileSection: React.FC = () => {
                                                         target.src = '/assets/images/not-found.jpg'; // fallback image
                                                     }}
                                                 />
+                                                </Link>
                                                     {/* <img src="assets/images/profile/profile-sm.png" alt="" className="profile-sm rounded-circle" /> */}
-                                                </a> 
-                                                <a href="" className="fui">
+                                                {/* </a>  */}
+                                                <Link to={`/explore/recording/${post.slug}`} className="fui" state={{ postId: post.id }} >
+                                                {/* <a href="" className="fui"> */}
                                                     <span className="mb-0 fui-date d-block">{post.userName}</span>
                                                     <span className="mb-0 fui-date d-block">
                                                         {new Date(post.createdOn).toLocaleDateString("en-GB", {
@@ -172,7 +185,8 @@ const ProfileSection: React.FC = () => {
                                                             month: "short",
                                                         })}
                                                     </span>
-                                                </a>
+                                                </Link>
+                                                {/* </a> */}
                                             </div>
                                             {/* <div className="user-feed-options dropdown dropdown-no-arrow"> 
                                                 <a className="dropdown-toggle text-midnight-navy" href="#!" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -186,7 +200,8 @@ const ProfileSection: React.FC = () => {
                                             </div> */}
                                         </div>
                                         <div className="feed-image">
-                                            <a href="" className="d-block">
+                                            {/* <a href="" className="d-block"> */}
+                                            <Link to={`/explore/recording/${post.slug}`} className="d-block" state={{ postId: post.id }} >
                                                 <img
                                                     src={post.post_image || '/assets/images/not-found.jpg'}
                                                     alt="Com" className="w-100 br-20"  
@@ -196,11 +211,14 @@ const ProfileSection: React.FC = () => {
                                                         target.src = '/assets/images/not-found.jpg'; // fallback image
                                                     }}
                                                 />
+                                            </Link>
                                                 {/* <img src="assets/images/profile/feed/feed-img-1.png" alt="" className="w-100 br-20" /> */}
-                                            </a>
+                                            {/* </a> */}
                                         </div>
                                         <div className="feed-info">
-                                            <h6 className="feed-title text-midnight-navy">{post.title}</h6>
+                                            <Link to={`/explore/recording/${post.slug}`} state={{ postId: post.id }} >
+                                                <h6 className="feed-title text-midnight-navy">{post.title}</h6>
+                                            </Link>
                                             <div className="rating">
                                                 <img src="assets/images/icons/Star.svg" alt="" />
                                                 <img src="assets/images/icons/Star.svg" alt="" />

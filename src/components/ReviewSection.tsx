@@ -7,6 +7,7 @@ import { Link ,useNavigate} from 'react-router-dom';
 import 'owl.carousel/dist/assets/owl.carousel.min.css';
 import 'owl.carousel/dist/assets/owl.theme.default.min.css';
 import { SyncLoader } from "react-spinners";
+import {getAuth} from '../utils/storage';
 const BASE_URL = import.meta.env.VITE_API_URL;
 
 // Declare jQuery globally for TypeScript
@@ -26,23 +27,25 @@ const ReviewSection: React.FC = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const navigate = useNavigate();
     const [userId, setUserId] = useState<string>("");
+      const [token, setToken] = useState<string>("");
+    
     const [getFollow, setFollow] = useState<{ [key: number]: boolean }>({});
+    // Get id by helper
+      useEffect(() => {
+        const { userId, token } = getAuth();
+        if (userId) setUserId(userId);
+        if (token) setToken(token);
+      }, []);
+      
     useEffect(() => {
-        const token = sessionStorage.getItem("token");
+        // const token = sessionStorage.getItem("token");
         setIsLoggedIn(!!token);
-        // console.log(isLoggedIn);
-    }, []);
-    useEffect(() => {
-        const storedId = sessionStorage.getItem("id");
-        // console.log("Stored ID:", storedId); // should print the ID string
-        if (storedId) {
-            setUserId(storedId.trim());
-        }  
     }, []);
     useEffect(() => {
         const fetchtopExplorers = async ()=>{
             try{ 
-                const response = await axios.get(`${BASE_URL}/trail/FellowExplorers/10`);
+                // https://api.cooltrails.purchaseitnow.shop/API/trail/FellowExplorers/2/7196612b-89fa-450f-92bf-74320a090b98
+                const response = await axios.get(`${BASE_URL}/trail/FellowExplorers/10/${userId}`);
                 console.log('followList',response.data.data);
                 setExplorers(response.data.data);
             }catch(err){
@@ -58,24 +61,30 @@ const ReviewSection: React.FC = () => {
     const handleFollow = useCallback(
             async (id: string) => {
                 try {
-                const response = await axios.post(`${BASE_URL}/user/follow`, {
-                    FollowerId: userId,//9c4eede4-8850-4f89-aaf0-4e417d40b942
-                    UserId: id, //a2dc38a2-f4fa-4a6f-8eb3-4400932bc62c
-    
-                });
-                console.log(response.data);
+                    const response = await axios.post(`${BASE_URL}/user/follow`, {
+                        FollowerId: userId,//9c4eede4-8850-4f89-aaf0-4e417d40b942
+                        UserId: id, //a2dc38a2-f4fa-4a6f-8eb3-4400932bc62c
+        
+                    },
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,   // send token
+                        },
+                    }
+                );
+                // console.log('follow',response.data);
                 if (response.data.status === "success") {
                     const doFollow = response.data.do_follow 
                                     ?? response.data.data?.do_follow 
                                     ?? response.data.follow;
     
-                    console.log("doFollow:", doFollow);
+                    // console.log("doFollow:", doFollow);
                     setFollow((prev) => ({
                         ...prev,
                         [id]: doFollow === true || doFollow === "true",
                     }));
                   
-                console.log(response.data);
+                // console.log(response.data);
                 // if (response.data.status === "success") {
                 //     // Update getCommunity directly
                 //      console.log(response.data.do_follow);

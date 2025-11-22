@@ -11,6 +11,7 @@ import 'owl.carousel/dist/assets/owl.theme.default.min.css';
 import axios from 'axios';
 import { SyncLoader } from "react-spinners";
 import { encodeId, generateSlug } from '../utils/helpers';
+import {getAuth} from '../utils/storage';
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 const SearchDiscover: React.FC = () => {
@@ -28,45 +29,84 @@ const SearchDiscover: React.FC = () => {
     const [longitude, setLongitude] = useState<number | null>(null);
     const [userId, setUserId] = useState<string>("");
     const [bookmarkedTrails, setBookmarkedTrails] = useState<number[]>([]);
-
+    const [token, setToken] = useState<string>("");
     
-      
-    useEffect(() => {
-            // const storedId = localStorage.getItem("id");
-            const storedId = sessionStorage.getItem("id");
-            if (storedId) {
-                setUserId(storedId.trim());
-            }  
-    },[]);
+    // Get id by helper
+      useEffect(() => {
+        const { userId, token } = getAuth();
+        if (userId) setUserId(userId);
+        if (token) setToken(token);
+      }, []);
     // Bookmark
-    const handleBookmark = async (trailId: any) => {
-        const token = sessionStorage.getItem("token"); 
-        const userId = sessionStorage.getItem("id");
-        // Check login before making API call
+    // const handleBookmark = async (trailId: any) => {
+    //     const token = sessionStorage.getItem("token"); 
+    //     const userId = sessionStorage.getItem("id");
+    //     // Check login before making API call
+    //     if (!token || !userId) {
+    //       navigate("/login", { replace: true });
+    //       return;
+    //     }
+    //     try {
+    //         const response = await axios.post(`${BASE_URL}/trail/bookmark`, {
+    //         TrailId: trailId,
+    //         UserId: userId,
+    //         });
+    //         if (response.data.status === "success") {
+    //         // Toggle bookmark state locally
+    //         setBookmarkedTrails((prev) =>
+    //             prev.includes(trailId)
+    //             ? prev.filter((id) => id !== trailId) // remove if already bookmarked
+    //             : [...prev, trailId] // add if not bookmarked
+    //         );
+    //         } else {
+    //         alert("Error bookmarking trail.");
+    //         }
+    //     } catch (error) {
+    //         console.error("Error submitting report:", error);
+    //         alert("Failed to submit report");
+    //     }
+    // };
+
+    const handleBookmark = async (trailId: number) => {
         if (!token || !userId) {
-          navigate("/login", { replace: true });
-          return;
+            navigate("/login", { replace: true });
+            return;
         }
+
+        // Check current bookmark status
+        const isAlreadyBookmarked = bookmarkedTrails.includes(trailId);
+        // console.log(isAlreadyBookmarked);
         try {
+            // Send true for new bookmark, false for remove
             const response = await axios.post(`${BASE_URL}/trail/bookmark`, {
             TrailId: trailId,
             UserId: userId,
-            });
+            do_bookmark: !isAlreadyBookmarked
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,   // send token
+              },
+            }
+        );
+            console.log('bookmark',response.data);
             if (response.data.status === "success") {
-            // Toggle bookmark state locally
+            // Update local state
             setBookmarkedTrails((prev) =>
-                prev.includes(trailId)
-                ? prev.filter((id) => id !== trailId) // remove if already bookmarked
-                : [...prev, trailId] // add if not bookmarked
+                isAlreadyBookmarked
+                ? prev.filter((id) => id !== trailId)
+                : [...prev, trailId]
             );
             } else {
+            console.error("Bookmark error:", response.data);
             alert("Error bookmarking trail.");
             }
         } catch (error) {
-            console.error("Error submitting report:", error);
-            alert("Failed to submit report");
+            console.error("Error submitting bookmark:", error);
+            alert("Failed to submit bookmark");
         }
-    };
+        };
+
 
     
     // const fetchNearbyname = async() =>{
@@ -105,6 +145,7 @@ const SearchDiscover: React.FC = () => {
                 // lon: 78.0420843000696,
                 maxDistance: maxDistance
             });
+            // console.log('near by',response.data.data);
             setNearbytrails(response.data.data);
             //console.log('Server response:', response.data.data);
         }catch(err){
