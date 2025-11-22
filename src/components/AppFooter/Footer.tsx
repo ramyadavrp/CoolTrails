@@ -191,7 +191,7 @@ const Footer: React.FC = () => {
                                 {
                                     getMedia.length > 0 &&(
                                         getMedia.map((media:any,index:number)=>(
-                                            <li key={media}>
+                                            <li key={index}>
                                                 <a href={media.url ?? ''} title={media.name ?? ''} className="social-media-btn d-flex align-items-center justify-content-center" target="_blank">
                                                 <img src={media.icon || '/assets/images/not-found.jpg'} alt={media.name ?? '' } />
                                                 </a>

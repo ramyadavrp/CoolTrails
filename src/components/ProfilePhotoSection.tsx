@@ -15,6 +15,7 @@ interface FeedProfile {
 interface Profile {
   fullName: string;
   address: string;
+  picturePath: string;
   registeredOn: string;
   totalFollowers: number;
   totalFollowing: number;
@@ -28,6 +29,7 @@ const ProfilePhotoSection: React.FC = () => {
     const [feedPhotoLoading,setFeedLoading] = useState(true);
     const [getfeedProfie, setFeedProfile ]= useState<FeedProfile[]>([]);
     const [profile,setProfile] = useState<Profile | null>(null);
+    const [postVisibleCount, setPostVisibleCount] = useState(6);
     
     
     //console.log(userId);
@@ -36,7 +38,8 @@ const ProfilePhotoSection: React.FC = () => {
         return location.pathname === path ? 'active' : '';
     };
     useEffect(() => {
-            const storedId = localStorage.getItem("id");
+            const storedId = sessionStorage.getItem("id");
+            // const storedId = localStorage.getItem("id");
             // console.log("Stored ID:", storedId); // should print the ID string
             if (storedId) {
                 // setUserId(storedId); 
@@ -44,6 +47,7 @@ const ProfilePhotoSection: React.FC = () => {
             }  
     }, []);
     useEffect(() => {
+            // const storeLocal = sessionStorage.getItem("login");
             const storeLocal = localStorage.getItem("login");
             //  console.log(storeLocal)
             if (storeLocal) {
@@ -75,6 +79,12 @@ const ProfilePhotoSection: React.FC = () => {
     
             loadProfile();
     }, [userId]);
+
+     // Show Post more 
+    const handleShowPostMore = () => {
+        setPostVisibleCount((prev) => prev + 4); // Show 2 more each time
+    };
+
     useEffect(() => {
     if (!loginId || !userId) return; // wait until both are set
 
@@ -93,7 +103,7 @@ const ProfilePhotoSection: React.FC = () => {
                 }
             );
 
-            console.log('Images response:', response.data);
+            // console.log('Images response:', response.data);
             setFeedProfile(response.data.data);
         } catch (error: any) {
             console.error(
@@ -158,7 +168,18 @@ const ProfilePhotoSection: React.FC = () => {
                             <aside className="profile-sidebar sticky-top">
                                 <div className="profile-sidebar-top bg-almost-white">
                                     <div className="sidebar-profile">
-                                        <div className="profile-img"><img src="assets/images/profile/profile-md.png" alt="" /></div>
+                                        <div className="profile-img">
+                                            <img
+                                                src={profile?.picturePath || '/assets/images/not-found.jpg'}
+                                                alt="locat not"  
+                                                onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                                    const target = e.currentTarget;
+                                                    target.onerror = null; // prevent infinite loop
+                                                    target.src = '/assets/images/not-found.jpg'; // fallback image
+                                                }}
+                                            />
+                                            {/* <img src="assets/images/profile/profile-md.png" alt="" /> */}
+                                        </div>
                                         <h4 className="profile-username text-midnight-navy">{profile?.fullName ?? ''}</h4>
                                         <h5 className="profile-address text-midnight-navy">{profile?.address ?? ''}</h5>
                                         <p className="membership-info text-grey">Member since {profile?.registeredOn ?? ''}</p>
@@ -174,7 +195,7 @@ const ProfilePhotoSection: React.FC = () => {
                                             <p className="text-grey mb-0">Following</p>
                                         </div>
                                     </div>
-                                    <div className="bookmark-buttons d-flex position-relative">
+                                    {/* <div className="bookmark-buttons d-flex position-relative">
                                         <a href="" className="bookmark-btn" role="button">
                                             <svg width="12" height="15" viewBox="0 0 12 15" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                 <path
@@ -193,7 +214,7 @@ const ProfilePhotoSection: React.FC = () => {
                                             </svg>
                                             Saved
                                         </a>
-                                    </div>
+                                    </div> */}
                                 </div>
                                 <div className="profile-sidebar-menu bg-almost-white">
                                     <ul className="list-unstyled profile-menu">
@@ -219,26 +240,43 @@ const ProfilePhotoSection: React.FC = () => {
                                 <div className="row profile-photo-row">
                                     {
                                         getfeedProfie.length >0 ?(
-                                            getfeedProfie.map((feedprofile:any, index:number)=>(
-                                                <div  key={index} className="col-xl-6 col-lg-6 col-md-6 col-sm-6 col-12">
-                                                    <div className="profile-photo-single">
-                                                        
-                                                        {/* <a href="assets/images/profile/photos/photo-0.jpg" data-fancybox="gallery"> */}
-                                                        <a href={feedprofile.mediaUrl} data-fancybox="gallery">
-                                                        <img
-                                                            src={feedprofile.mediaUrl || '/assets/images/not-found.jpg'}
-                                                            alt="Com" className="w-100" 
-                                                            onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                                                                const target = e.currentTarget;
-                                                                target.onerror = null; // prevent infinite loop
-                                                                target.src = '/assets/images/not-found.jpg'; // fallback image
-                                                            }}
-                                                        />
-                                                        {/* <img src="assets/images/profile/photos/photo-0.jpg" alt="" className="w-100" /> */}
-                                                        </a>
+                                            <>
+                                                {
+                                                    getfeedProfie.slice(0, postVisibleCount).map((feedprofile:any,index:number) => (
+                                                // getfeedProfie.map((feedprofile:any, index:number)=>(
+                                                    <div  key={index} className="col-xl-6 col-lg-6 col-md-6 col-sm-6 col-12">
+                                                        <div className="profile-photo-single">
+                                                            
+                                                            {/* <a href="assets/images/profile/photos/photo-0.jpg" data-fancybox="gallery"> */}
+                                                            <a href={feedprofile.mediaUrl} data-fancybox="gallery">
+                                                            <img
+                                                                src={feedprofile.mediaUrl || '/assets/images/not-found.jpg'}
+                                                                alt="Com" className="w-100" 
+                                                                onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                                                    const target = e.currentTarget;
+                                                                    target.onerror = null; // prevent infinite loop
+                                                                    target.src = '/assets/images/not-found.jpg'; // fallback image
+                                                                }}
+                                                            />
+                                                            {/* <img src="assets/images/profile/photos/photo-0.jpg" alt="" className="w-100" /> */}
+                                                            </a>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            ))
+                                                ))}
+                                                {postVisibleCount < getfeedProfie.length && (
+                                                    <div className="row">
+                                                        <div className="col-12 text-end">
+                                                            <button
+                                                            style={{textDecoration:'none', marginBottom:'10px',float:'right'}}
+                                                            className="btn btn-link text-orange fw-bold ms-1"
+                                                            onClick={handleShowPostMore}
+                                                            >
+                                                            Show more... 
+                                                            </button>
+                                                        </div>
+                                                    </div>   
+                                                )}
+                                            </>
                                         ):(
                                             <p>Not available! </p>
                                         )

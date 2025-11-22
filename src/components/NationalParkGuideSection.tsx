@@ -37,7 +37,7 @@ const NationalParkGuideSection: React.FC = () => {
 
     usePageTitle("Cooltrails | National Park Guides");
     
-        
+    
     const toggleExpand = (index: number) => {
         setExpandedPosts(prev => ({
         ...prev,

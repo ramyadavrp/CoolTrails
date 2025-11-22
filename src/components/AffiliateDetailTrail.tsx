@@ -174,7 +174,7 @@ const AffiliateDetailTrail: React.FC = () => {
             });
             
             setTrailDetail(response.data.data);
-            // console.log('traildetail',response.data.data)
+            console.log('traildetail',response.data.data)
             setNearTrails(response.data.data.nearTrails);
             setWeatherDays(response.data.data.weatherDays);
             setImages(response.data.data.imageUrls);
@@ -1428,7 +1428,7 @@ const AffiliateDetailTrail: React.FC = () => {
                                              <div key={trail.id || index} className="slider-item-single">
                                                 <div className="local-favorite-single">
                                                     <div className="lfc-thumb position-relative">
-                                                        
+                                                        <Link to={`/${trail.urlTitle|| generateSlug(trail.title || '')}`}> 
                                                         <img
                                                             src={trail.imagePath || '/assets/images/not-found.jpg'}
                                                             alt="Top Trail" className="img-fluid img-fixed-size" 
@@ -1438,12 +1438,15 @@ const AffiliateDetailTrail: React.FC = () => {
                                                                 target.src = '/assets/images/not-found.jpg'; // fallback image
                                                             }}
                                                         />
+                                                        </Link>
                                                         {/* <a href="#!" className="bookmark-btn" title="Save"><i className="bi bi-bookmark"></i></a> */}
                                                     </div>
                                                     <div className="lfc-content">
-                                                        <h3 className="lfc-title">{trail.title}</h3>
-                                                        <p className="lfc-location mb-1">{trail.address}</p>
-                                                        <p className="lfc-tags"><i className="bi bi-star-fill"></i> {trail.rating}· Moderate · {trail.length} · Est. {trail.estimateTime}</p>
+                                                        <Link to={`/${trail.urlTitle|| generateSlug(trail.title || '')}`}> 
+                                                            <h3 className="lfc-title">{trail.title}</h3>
+                                                            <p className="lfc-location mb-1">{trail.address}</p>
+                                                            <p className="lfc-tags"><i className="bi bi-star-fill"></i> {trail.rating}· Moderate · {trail.length} · Est. {trail.estimateTime}</p>
+                                                        </Link>
                                                         {/* <a href="#!" className="btn-style-1 w-100">Check Details</a> */}
                                                         <Link to={`/${trail.urlTitle|| generateSlug(trail.title || '')}`} className="btn-style-1 w-100">
                                                            Check Details

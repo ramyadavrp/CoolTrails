@@ -88,7 +88,8 @@ const AddPostSection: React.FC = () => {
     
 
     useEffect(() => {
-            const storedId = localStorage.getItem("id");
+            // const storedId = localStorage.getItem("id");
+            const storedId = sessionStorage.getItem("id");
             if (storedId) {
                 // setUserId(storedId); 
                 setUserId(storedId.trim());
@@ -559,44 +560,34 @@ const AddPostSection: React.FC = () => {
                         <div className="bg-almost-white br-20 profile-card-2 fav-acivities-card">
                             <h2 className="profile-card-title text-midnight-navy">Favorite activities</h2>
                             <div className="bg-almost-white d-flex flex-wrap fav-activity-list position-relative">
-                                {getActivity.map((act: any, index: number) => {
-                                const isSelected = profileData.favorite_activities.some(
-                                    (a) => a.title === act.title
-                                );
+                                {
+                                    getActivity.map((act: any, index: number) => {
+                                    const isSelected = profileData.favorite_activities.some(
+                                        (a) => a.title === act.title
+                                    );
 
-                                return (
-                                
-                                    <div
-                                    key={index}
-                                    className={`fav-activity-single ${isSelected ? "active" : ""}`}
-                                    onClick={() => handleActivityToggle(act.title)}
-                                    style={{
-                                        cursor: "pointer",
-                                        backgroundColor: isSelected ? "#05073D" : "#f8f9fa",
-                                        color: isSelected ? "#fff" : "#333",
-                                        padding: "8px 12px",
-                                        borderRadius: "60px",
-                                        margin: "5px",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        transition: "all 0.2s ease",
-                                    }}
-                                    >
-                                        {/* <img src="assets/images/icons/check-white.svg" alt="" /> */}
-                                    <img
-                                        src="assets/images/icons/check-white.svg"
-                                        alt=""
-                                        style={{
-                                        width: "16px",
-                                        height: "16px",
-                                        marginRight: "6px",
-                                        visibility: isSelected ? "visible" : "hidden",
-                                        }}
-                                    />
-                                    {act.title}
-                                    </div>
-                                );
-                                })}
+                                        return (
+                                        
+                                            <div key={index} className={`fav-activity-single ${isSelected ? "active" : ""}`}
+                                                onClick={() => handleActivityToggle(act.title)}
+                                                style={{
+                                                    cursor: "pointer",
+                                                    backgroundColor: isSelected ? "#05073D" : "#f8f9fa",
+                                                    color: isSelected ? "#fff" : "#333", padding: "8px 12px",
+                                                    borderRadius: "60px", margin: "5px",display: "flex",alignItems: "center", transition: "all 0.2s ease",
+                                                }}
+                                                >
+                                                    {/* <img src="assets/images/icons/check-white.svg" alt="" /> */}
+                                                <img  src="assets/images/icons/check-white.svg" alt=""
+                                                    style={{ 
+                                                        width: "16px", height: "16px", marginRight: "6px",visibility: isSelected ? "visible" : "hidden",
+                                                    }}
+                                                />
+                                                {act.title}
+                                            </div>
+                                        );
+                                    })
+                                }
                             </div>
                         </div>
 

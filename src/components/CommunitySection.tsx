@@ -8,7 +8,8 @@ import 'owl.carousel/dist/assets/owl.theme.default.min.css';
 import ProfileLeftSection from './ProfileLeftSection';
 import { SquareLoader } from "react-spinners"; 
 import StarRating from './AffiliateDetails/StarRating';
-
+import  {useAutoClearMessage} from '../utils/useAutoClearMessage';
+import {getAuth} from '../utils/storage';
 // import data from '../data/community.json';
 import { decodeId,encodeId, generateSlug ,slugToTitle,usePageTitle } from '../utils/helpers';
 
@@ -44,6 +45,14 @@ interface suggestedNearby{
     share_count:number,
     description:string
 }
+interface Profile {
+  fullName: string;
+  address: string;
+  registeredOn: string;
+  picturePath: string;
+  totalFollowers: number;
+  totalFollowing: number;
+}
 const CommunitySection: React.FC = () => {
     const [CommunityLoading,setCommunityLoading] = useState(true);
     const [getCommunity, setCommunity ]= useState<Community[]>([]);
@@ -63,25 +72,42 @@ const CommunitySection: React.FC = () => {
     // const [loginId, setLoginId] = useState<string | null>(null)
     const [loginId, setLoginId] = useState("");
     const [userId, setUserId] = useState<string>("");
+    const [token, setToken] = useState<string>("");
     const [postSelectedname, setSelectedName] = useState<string>("");
     const [isOpen, setIsOpen] = useState(false);
     const [isBlock, setIsBlock] = useState(false);
     const [checkedPost, setCheckedPost] = useState<{ [postId: string]: boolean }>({});
     const [reasonValue, setReasonValue] = useState<{ [userId: string]: string }>({});
     const [message, setMessage] = useState<string | null>(null);
+    
     const [messageblock, setmessageblock] = useState<string | null>(null);
-    const [profile,setProfile] = useState<string>("");
+    const [profile, setProfile] = useState<Profile | null>(null);
+   
 
     
     usePageTitle("Cooltrails | Community");
+    // Use hook for each Clear  message after success
+    useAutoClearMessage(message, setMessage, 3000);
+    useAutoClearMessage(messageblock, setmessageblock, 3000);
+    // Get id by helper
     useEffect(() => {
-        const storedId = localStorage.getItem("id");
-        // console.log("Stored ID:", storedId); // should print the ID string
-        if (storedId) {
-            // setUserId(storedId); 
-            setUserId(storedId.trim());
-        }  
+        const { userId, token ,login} = getAuth();
+        if (userId) setUserId(userId);
+        if (login) setLoginId(login);
+        if (token) setToken(token);
     }, []);
+    // console.log('loginIdsss',loginId);
+    // console.log('token',token);
+    // console.log('userId',userId);
+    // useEffect(() => {
+    //     const storedId = sessionStorage.getItem("id");
+    //     // const storedId = localStorage.getItem("id");
+    //     // console.log("Stored ID:", storedId); // should print the ID string
+    //     if (storedId) {
+    //         // setUserId(storedId); 
+    //         setUserId(storedId.trim());
+    //     }  
+    // }, []);
     useEffect(() => {
         if (!userId) return; // wait until userId is available
 
@@ -91,7 +117,7 @@ const CommunitySection: React.FC = () => {
                 UserId: userId,
             });
 
-            // console.log("Profile Data:", response.data);
+            console.log("Profile Data:", response.data);
 
             if (response.data.status === "success") {
                 const data = response.data.data;
@@ -137,15 +163,12 @@ const CommunitySection: React.FC = () => {
             console.log('blocked',response.data);
             if(response.data.status=== "success"){
                 setmessageblock('User blocked.');
-                setTimeout(() => {
-                    setmessageblock("");
-                }, 2000);
+                // setTimeout(() => {
+                //     setmessageblock("");
+                // }, 2000);
                 setReasonValue('');
             }else{
                 setmessageblock('Failed to submit report. Please try again later..');
-                setTimeout(() => {
-                    setmessageblock("");
-                }, 2000);
             }
         } catch (error) {
             console.error("Error submitting report:", error);
@@ -203,15 +226,16 @@ const CommunitySection: React.FC = () => {
         }
     };
     // blocked user mess hide
-    useEffect(() => {
-        if (message) {
-            const timer = setTimeout(() => {
-            setMessage(null); 
-            }, 3000); 
+    // helper use
+    // useEffect(() => {
+    //     if (message) {
+    //         const timer = setTimeout(() => {
+    //         setMessage(null); 
+    //         }, 3000); 
 
-            return () => clearTimeout(timer);
-        }
-    }, [message]);
+    //         return () => clearTimeout(timer);
+    //     }
+    // }, [message]);
 
     // window.scrollTo(0,0);
     useEffect(()=>{
@@ -220,14 +244,15 @@ const CommunitySection: React.FC = () => {
         return()=>clearTimeout(timer);
     },[])
     
-    useEffect(() => {
-        const storeLocal = localStorage.getItem("login");
-        //  console.log(storeLocal)
-        if (storeLocal) {
-            setLoginId(storeLocal);
-            // setUserID(userId);
-        }
-    }, []);
+    // useEffect(() => {
+    //     const storeLocal = sessionStorage.getItem("login");
+    //     // const storeLocal = localStorage.getItem("login");
+    //     //  console.log(storeLocal)
+    //     if (storeLocal) {
+    //         setLoginId(storeLocal);
+    //         // setUserID(userId);
+    //     }
+    // }, []);
     // console.log('uu',setLoginId);
     useEffect(() => {
         if (!loginId) return;  // wait until loginId is set
@@ -313,7 +338,6 @@ const CommunitySection: React.FC = () => {
                 // console.log("API Response:", response.data);
 
                 if (response.data.status === "success") {
-                    // ✅ user just liked
                     setLikedPosts((prev) => ({
                         ...prev,
                         [id]: true,
@@ -796,7 +820,7 @@ const CommunitySection: React.FC = () => {
                                                                     <div className="feed-head d-flex justify-content-between">
                                                                         <div className="feed-user-info d-flex align-items-center">
                                                                             {/* <a href=""> */}
-                                                                            <Link to={`/explore/recording/${generateSlug(getSug.title)}`} className="d-block"
+                                                                            <Link to={`/explore/recording/${getSug.slug}`} className="d-block"
                                                                                 state={{ postId: getSug.id }}  
                                                                                 >
                                                                                 <img
@@ -812,7 +836,7 @@ const CommunitySection: React.FC = () => {
                                                                             {/* </a> */}
                                                                             </Link>
                                                                             {/* <a href="" className="fui"> */}
-                                                                            <Link to={`/explore/recording/${generateSlug(getSug.title)}`} className="fui"
+                                                                            <Link to={`/explore/recording/${getSug.slug}`} className="fui"
                                                                                 state={{ postId: getSug.id }}  
                                                                                 >
                                                                                 <span className="fui-name text-midnight-navy mb-0">{getSug.name ?? 'N/A'}{getSug.id}</span>
@@ -845,7 +869,7 @@ const CommunitySection: React.FC = () => {
                                                                     </div>
                                                                     <div className="feed-image">
                                                         
-                                                                        <Link to={`/explore/recording/${generateSlug(getSug.title)}`} className="d-block"
+                                                                        <Link to={`/explore/recording/${getSug.slug}`} className="d-block"
                                                                         state={{ postId: getSug.id }}  
                                                                         >
                                                                             <img
@@ -862,7 +886,7 @@ const CommunitySection: React.FC = () => {
                                                                         </Link>
                                                                     </div>
                                                                     <div className="feed-info">
-                                                                        <Link to={`/explore/recording/${generateSlug(getSug.title)}`}
+                                                                        <Link to={`/explore/recording/${getSug.slug}`}
                                                                         state={{ postId: getSug.id }} 
                                                                         >
                                                                             <h6 className="feed-title text-midnight-navy">{getSug.title ?? 'N/A'}</h6>
@@ -1352,42 +1376,38 @@ const CommunitySection: React.FC = () => {
                                     <div className="col-xl-3 col-lg-5 col-md-6 col-sm-12 col-12 order-xl-last order-lg-last order-md-last order-sm-first order-first">
                                         {/* <aside className="profile-sidebar sticky-top" id="profile-sidebar-community"> */}
                                         <aside className="profile-sidebar" id="profile-sidebar-community">
-                                            {
-                                                getProfileCommunity.map((pr,index)=>(
-                                                    <div key={index} className="profile-sidebar-top  bg-almost-white">
-                                                        <div className="sidebar-profile">
-                                                            <div className="profile-img">
-                                                                {/* <img src="assets/images/profile/profile-md.png" alt="" /> */}
-                                                                <img
-                                                                    src={pr.p_image || '/assets/images/not-found.jpg'}
-                                                                    alt="locat not"  
-                                                                    onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                                                                        const target = e.currentTarget;
-                                                                        target.onerror = null; // prevent infinite loop
-                                                                        target.src = '/assets/images/not-found.jpg'; // fallback image
-                                                                    }}
-                                                                />
-                                                            </div>
-
-                                                            <div className="profile-dt">
-                                                                <h4 className="profile-username text-midnight-navy">{pr.p_name ?? ''} </h4>
-                                                                <h5 className="profile-address text-midnight-navy">{pr.address ?? ''}</h5>
-                                                                <p className="membership-info text-grey">{pr.member ?? '' }</p>
-                                                            </div>
-                                                        </div>
-                                                        <div className="followings d-flex justify-content-between position-relative">
-                                                            <div className="follower">
-                                                                <h6 className="fl-count text-midnight-navy mb-0">{pr.followers ?? '' }</h6>
-                                                                <p className="text-grey mb-0">Followers</p>
-                                                            </div>
-                                                            <div className="following">
-                                                                <h6 className="fl-count text-midnight-navy mb-0">{pr.following ?? '' }</h6>
-                                                                <p className="text-grey mb-0">Following</p>
-                                                            </div>
-                                                        </div>
+                                            <div className="profile-sidebar-top  bg-almost-white">
+                                                <div className="sidebar-profile">
+                                                    <div className="profile-img">
+                                                        {/* <img src="assets/images/profile/profile-md.png" alt="" /> */}
+                                                        <img
+                                                            src={profile?.picturePath || '/assets/images/not-found.jpg'}
+                                                            alt="locat not"  
+                                                            onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                                                const target = e.currentTarget;
+                                                                target.onerror = null; // prevent infinite loop
+                                                                target.src = '/assets/images/not-found.jpg'; // fallback image
+                                                            }}
+                                                        />
                                                     </div>
-                                                ))
-                                            }
+
+                                                    <div className="profile-dt">
+                                                        <h4 className="profile-username text-midnight-navy">{profile?.fullName ?? ''}</h4>
+                                                        <h5 className="profile-address text-midnight-navy">{profile?.address ?? ''}</h5>
+                                                        <p className="membership-info text-grey">Member since {profile?.registeredOn ?? ''}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="followings d-flex justify-content-between position-relative">
+                                                    <div className="follower">
+                                                        <h6 className="fl-count text-midnight-navy mb-0">{profile?.totalFollowers ?? ''}</h6>
+                                                        <p className="text-grey mb-0">Followers</p>
+                                                    </div>
+                                                    <div className="following">
+                                                        <h6 className="fl-count text-midnight-navy mb-0">{profile?.totalFollowing ?? ''}</h6>
+                                                        <p className="text-grey mb-0">Following</p>
+                                                    </div>
+                                                </div>
+                                            </div>
                                             
                                             <div className="profile-sidebar-menu  bg-almost-white">
                                                 <ul className="list-unstyled profile-menu">

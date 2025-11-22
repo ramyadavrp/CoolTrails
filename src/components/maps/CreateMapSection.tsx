@@ -51,7 +51,25 @@ const CreateMapSection: React.FC = () => {
     const [markers, setMarkers] = useState<mapboxgl.Marker[]>([]);
     const [loopClosed, setLoopClosed] = useState(false);
      // map state close
+     const [showPrompt, setShowPrompt] = useState(false);
+const [promptValue, setPromptValue] = useState("");
+const [promptCallback, setPromptCallback] = useState<((value: string | null) => void) | null>(null);
+
+
     const shareUrl = window.location.href;
+    // Function you will call instead of prompt()
+    const openCustomPrompt = (callback: (value: string | null) => void) => {
+        setPromptCallback(() => callback);
+        setPromptValue("");
+        setShowPrompt(true);
+    };
+
+    // close popup
+    const closePrompt = (value: string | null) => {
+        setShowPrompt(false);
+        if (promptCallback) promptCallback(value);
+    };
+
     useEffect(() => {
         // Check if token exists in localStorage
         const token = sessionStorage.getItem("token");
@@ -197,37 +215,41 @@ const CreateMapSection: React.FC = () => {
                 }
             }
 
-            const title = prompt("Enter title for this point:");
-            if (!title) return;
+            // const title = prompt("Enter title for this point:");
+            openCustomPrompt(function(title) { // 22-11-25 add only one line
+                if (!title) return;
 
-            const index = points.length; // assign index for this marker
+                const index = points.length; // assign index for this marker
 
-            const marker = new mapboxgl.Marker({ draggable: true })
-                .setLngLat(coords)
-                .setPopup(new mapboxgl.Popup().setText(title))
-                .addTo(mapRef.current!);
+                const marker = new mapboxgl.Marker({ draggable: true })
+                    .setLngLat(coords)
+                    .setPopup(new mapboxgl.Popup().setText(title))
+                    .addTo(mapRef.current!);
 
-            marker.togglePopup();
+                marker.togglePopup();
 
-            // marker drag updates correct index
-            marker.on("dragend", () => {
-                const lngLat = marker.getLngLat();
+                // marker drag updates correct index
+                marker.on("dragend", () => {
+                    const lngLat = marker.getLngLat();
+                    setPoints(prev => {
+                        const updatedPoints = [...prev];
+                        updatedPoints[index] = [lngLat.lng, lngLat.lat];
+                        updateRoute(updatedPoints);
+                        return updatedPoints;
+                    });
+                });
+
+                setMarkers(prev => [...prev, marker]);
+                setTitles(prev => [...prev, title]);
                 setPoints(prev => {
-                    const updatedPoints = [...prev];
-                    updatedPoints[index] = [lngLat.lng, lngLat.lat];
-                    updateRoute(updatedPoints);
-                    return updatedPoints;
+                    const newPoints = [...prev, coords];
+                    updateRoute(newPoints);
+                    return newPoints;
                 });
             });
-
-            setMarkers(prev => [...prev, marker]);
-            setTitles(prev => [...prev, title]);
-            setPoints(prev => {
-                const newPoints = [...prev, coords];
-                updateRoute(newPoints);
-                return newPoints;
-            });
         };
+
+        // 
 
             map.on("click", handleClick);
 
@@ -243,7 +265,7 @@ const CreateMapSection: React.FC = () => {
         const json = await res.json();
         return json.routes?.[0]?.geometry.coordinates || null;
     };
-
+    
     const updateRoute = async (pts: [number, number][]) => {
         const map = mapRef.current;
         if (!map) return;
@@ -410,6 +432,49 @@ const CreateMapSection: React.FC = () => {
                     <h1>Create Map</h1>
                     <p style={{margin:'0px',color:'#FC673C'}}>Please click the over map and set point.</p>
                 </div>
+                {/* start show phpup */}
+                {showPrompt && (
+                    <div style={{position: "fixed",top: 0,left: 0, right: 0,bottom: 0, background: "rgba(0,0,0,0.5)",display: "flex", 
+                            alignItems: "center", justifyContent: "center", zIndex: 1000,}}
+                        onClick={() => closePrompt(null)}>
+                        <div
+                            style={{ background: "white",padding: "25px",borderRadius: "10px",width: "450px",maxHeight: "80vh", overflowY: "auto",}}
+                            onClick={(e) => e.stopPropagation()}>
+
+                            {/* Close Button */}
+                            <div style={{ display: "flex", justifyContent: "end" }}>
+                                <button className="btn-cross" onClick={() => closePrompt(null)}>
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M4 4L16 16M16 4L4 16" stroke="#05073D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                </button>
+                            </div>
+
+                            {/* Title */}
+                            <h4>Enter Title for This Point</h4>
+                            {/* Input */}
+                            <div className="row mt-3">
+                                <div className="col-md-12">
+                                    <input type="text" value={promptValue} onChange={(e) => setPromptValue(e.target.value)}
+                                        // autoFocus
+                                        style={{width: "100%",padding: "10px",borderRadius: "6px", border: "1px solid #ccc",}}
+                                        placeholder="Enter title"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Buttons */}
+                            <div style={{ marginTop: "20px", display: "flex", gap: "10px" }}>
+                                <button className="btn-send" onClick={() => closePrompt(promptValue)} disabled={!promptValue.trim()}>OK</button>
+                                <button className="btn-cancel" onClick={() => closePrompt(null)}
+                                 style={{ background: "#ddd",padding: "9px 11px",borderRadius: "50px",border:'none'}}>Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                {/* end popup */}
+
                 <div
                     style={{
                     // position: "absolute",

@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import StarRating from './AffiliateDetails/StarRating';
 import { useLocation, useParams } from 'react-router-dom';
 import { decodeId,encodeId, generateSlug ,slugToTitle,timeAgo} from '../utils/helpers';
+import  {useAutoClearMessage} from '../utils/useAutoClearMessage';
 const BASE_URL = import.meta.env.VITE_API_URL;
 import axios from 'axios';
 import { SquareLoader } from "react-spinners"; 
@@ -66,7 +67,11 @@ const CommunitySectionCmtDetails: React.FC = () => {
     const location = useLocation();
     const statePostId = location.state?.postId;
     // console.log('gettt',statePostId);
-    const [postId, setPostId] = useState(statePostId || localStorage.getItem("postId"));
+    // const [postId, setPostId] = useState(statePostId || localStorage.getItem("postId"));
+    const [postId, setPostId] = useState(() => {
+        // initialize from location.state or localStorage
+        return statePostId || localStorage.getItem("postId") || null;
+    });
     // console.log('postIdss',postId);
     const [activeTab, setActiveTab] = useState('');
     const [CommunityLoading,setCommunityLoading] = useState(true);
@@ -108,7 +113,8 @@ const CommunitySectionCmtDetails: React.FC = () => {
     const [review, setReview] = useState("");
     const [reviewDetails, setReviewdetails] = useState<Review[]>([]);
     const [getImagesArray, setImagesArray] = useState([]);    
-    
+    const [messageComment, setCommentMessage] = useState<string | null>(null);
+    const [messageDeleteComment, setDeleteCommentMessage] = useState<string | null>(null);
      
     // Review Show
     const [showReviews, setShowReviews] = useState(true);
@@ -125,7 +131,13 @@ const CommunitySectionCmtDetails: React.FC = () => {
     const [markers, setMarkers] = useState<mapboxgl.Marker[]>([]);
     const [loopClosed, setLoopClosed] = useState(false);
      // map state close
+    const [selectedCommentId, setSelectedCommentId] = useState(null);
     const shareUrl = window.location.href;
+
+    // Use hook for each Clear  message after success
+    useAutoClearMessage(message, setMessage, 3000);
+    useAutoClearMessage(messageComment, setCommentMessage, 3000);
+    useAutoClearMessage(messageDeleteComment, setDeleteCommentMessage, 3000);
     useEffect(() => {
         // Check if token exists in localStorage
         // const token = localStorage.getItem("token");
@@ -140,11 +152,45 @@ const CommunitySectionCmtDetails: React.FC = () => {
             // setUserID(loginIdBased);
         }
     }, []);
+
     useEffect(() => {
-    if (statePostId) localStorage.setItem("postId", statePostId);
-        setPostId(statePostId);
-    }, [statePostId])
+    if (statePostId) {
+      localStorage.setItem("postId", statePostId);
+      setPostId(statePostId);
+    }
+  }, [statePostId]);
+    // useEffect(() => {
+    // if (statePostId) localStorage.setItem("postId", statePostId);
+    //     setPostId(statePostId);
+    // }, [statePostId])
     // console.log('ss',statePostId)
+
+    const handleDeleteClick = (id:any ) => {
+        // alert(id);
+        setSelectedCommentId(id); 
+        setIsOpen(true); 
+    };
+    const handleConfirmDelete = async () =>{
+         if (!selectedCommentId) return;
+        try {
+            // console.log("Deleting comment:", selectedCommentId);
+            const response = await axios.post(`${BASE_URL}/feed/comment/delete`, {
+                commentId: selectedCommentId,
+                UserId: userId
+            });
+            setIsOpen(false);
+            setSelectedCommentId(null);
+            if (response.data.status === "success") {
+                setDeleteCommentMessage("Comment deleted successfully!");
+            } else {
+                setDeleteCommentMessage("Error submitting report.");
+            }
+            
+        } catch (error) {
+            console.error("Error submitting report:", error);
+            alert("Failed to submit report");
+        }
+    }
     // Add rating
     const handleSubmitReview = async () => {
         // alert(postId);
@@ -161,7 +207,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                 Rating: rating,
                 Review: review,
             });
-
+             console.log('addReview',response.data );
             if (response.data.status === "success") {
                 setMessage("Review added successfully!");
             } else {
@@ -667,15 +713,15 @@ const CommunitySectionCmtDetails: React.FC = () => {
             }
         };
         // blocked user mess hide
-        useEffect(() => {
-            if (message) {
-                const timer = setTimeout(() => {
-                setMessage(null); 
-                }, 3000); 
+        // useEffect(() => {
+        //     if (message) {
+        //         const timer = setTimeout(() => {
+        //         setMessage(null); 
+        //         }, 3000); 
 
-                return () => clearTimeout(timer);
-            }
-        }, [message]);
+        //         return () => clearTimeout(timer);
+        //     }
+        // }, [message]);
         // Show comment
         const handleShowMore = () => {
             setVisibleCount((prev) => prev + 5); // Show 5 more each time
@@ -716,11 +762,12 @@ const CommunitySectionCmtDetails: React.FC = () => {
                     }, 
                     }
                     );
-                    console.log("Comment posted:", response.data);
+                    // console.log("Comment posted:", response.data);
                     if (response.data.status === "success") {
-                        console.log("Comment resposn posted:", response.data);
+                        // console.log("Comment resposn posted:", response.data);
+                        setCommentMessage('Comment added.');
                         const newComment = response.data.comment_text;
-                        //setComments((prev) => [...prev, newComment]);
+                        // setComments((prev) => [...prev, newComment]);
                         // Clear input
                         setInputTextValue("");
                     } else {
@@ -730,7 +777,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                 console.error("Error posting comment:", error);
             }
         };  
-
+        console.log(slug);
     //  call api all single page data  
         // const fetchData= async (title:String) => {
         useEffect(() => {
@@ -887,7 +934,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                         </button>
                                     </div>
                                     <div style={{display:"flex", justifyContent:"center"}}>
-                                        <button className="btn-send">Delete</button>
+                                        <button className="btn-send" onClick={handleConfirmDelete}>Delete</button>
                                         {/* <button className="btn-style-3">Keep</button> */}
                                     </div>
                                     
@@ -1237,7 +1284,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                         <p className="mb-0">Users Favorite </p>
                                     </div>
                                     <div className="tusc-cn-2">
-                                        <p className="mb-0 text-midnight-navy">{getfollowingBy?.user_favorite ?? ''}</p>
+                                        <p className="mb-0 text-midnight-navy">N/A</p>
                                     </div>
                                 </div>
 
@@ -1350,7 +1397,8 @@ const CommunitySectionCmtDetails: React.FC = () => {
                             </div>
                             
                                 <div className="row">
-                                {message && <div style={{color:'#FC673C' , textAlign:'center'}}>{message}</div>}
+                                {messageComment && <div style={{color:'#FC673C' , textAlign:'center'}}>{messageComment}</div>}
+                                {messageDeleteComment && <div style={{color:'#FC673C' , textAlign:'center'}}>{messageDeleteComment}</div>}
                                 {
                                     
                                     // getComments.map((cmt:any,index:number)=>(
@@ -1388,8 +1436,14 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                             <li>
                                                                 <a className="dropdown-item" href="#"
                                                                 style={{ cursor: 'pointer' }}
-                                                                    onClick={()=>{
-                                                                        setIsOpen(true);
+                                                                    // onClick={()=>{
+                                                                      
+                                                                    //     setIsOpen(true);
+                                                                    //     setSelectedCommentId(cmt.id);
+                                                                    // }}
+                                                                    onClick={(e) => {
+                                                                        e.preventDefault();
+                                                                        handleDeleteClick(cmt.id);
                                                                     }}
                                                                 >
                                                                 Delete
@@ -1526,7 +1580,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                             <button onClick={() => window.location.reload()}>🔄 Refresh</button> */}
                                             <button className="btn-style-12" onClick={toggle3D}>3D View</button>
                                             <button  className="btn-style-12" onClick={clearMap}>Clear</button>
-                                            <button  className="btn-style-12" onClick={() => (window.location.href = "")}>Trail Details</button> 
+                                            {/* <button  className="btn-style-12" onClick={() => (window.location.href = "")}>Trail Details</button>  */}
                                             {/* <button  className="btn-style-12" onClick={() => (window.location.href = "/Trails/Details")}>Trail Details</button>  */}
                                     </div>  
                                 <div style={{ height: "100vh", width: "100%", position: "relative" }}>
@@ -1651,17 +1705,17 @@ const CommunitySectionCmtDetails: React.FC = () => {
 
                     <div className="trails-reviews-widget" id="reviews">
                         <div className="row">
-                            
                             <div className="col-12">
-                                <div className="section-title" style={{display:'flex'}}>
+                                <div className="section-title d-flex align-items-center">   
                                     <h2 className="title">Reviews</h2>
                                     
                                      {isLoggedIn &&(
-                                    <a style={{marginLeft:'10px',padding: '13px 10px'}} href="#" className="btn-sm btn-style-12"  onClick={(e) => {
+                                    <a href="#" style={{background:'#FC673C',border:'none',borderRadius:'50px',padding:'10px'}} className="btn btn-sm btn-primary ms-2"  
+                                        onClick={(e) => {
                                             e.preventDefault();
                                             setIsReviewOpen(true);
                                         }}  
-                                    >Add review</a> 
+                                    >Add Review</a> 
                                 )}
                                 </div>
                             </div>
