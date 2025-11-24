@@ -106,8 +106,8 @@ const CommunitySectionCmtDetails: React.FC = () => {
        
     // Start map creation
     // Initialize map
-        useEffect(() => {
-           
+useEffect(() => {
+    const timeoutId = setTimeout(() => {
         if (!mapContainer.current) return;
 
         const map = new mapboxgl.Map({
@@ -119,8 +119,9 @@ const CommunitySectionCmtDetails: React.FC = () => {
             bearing: 0,
             antialias: true,
         });
-        mapRef.current = map; 
-        
+
+        mapRef.current = map;
+
         const geocoder = new MapboxGeocoder({
             accessToken: mapboxgl.accessToken,
             mapboxgl: mapboxgl,
@@ -162,11 +163,15 @@ const CommunitySectionCmtDetails: React.FC = () => {
             loadMap();
         });
 
-        return () => {
-            map.remove();
-            if (animationRef.current) cancelAnimationFrame(animationRef.current);
-        };
-    }, []);
+    }, 500); // <-- delay (in ms)
+
+    return () => {
+        clearTimeout(timeoutId);
+        if (mapRef.current) mapRef.current.remove();
+        if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    };
+}, []);
+
 
     // Map click handler
     useEffect(() => {
