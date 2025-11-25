@@ -207,6 +207,7 @@ const AffiliateDetailTrail: React.FC = () => {
                 style: 'mapbox://styles/mapbox/outdoors-v12',
                 center: [firstPoint.longitude, firstPoint.latitude],
                 zoom: 13,
+                attributionControl: false // remove © Mapbox © OpenStreetMap Improve this map
             });
         }
 
