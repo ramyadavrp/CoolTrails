@@ -199,18 +199,26 @@ const AffiliateDetailTrail: React.FC = () => {
 
     useEffect(() => {
         if (!getmapPoints.length || map.current) return;
-        console.log(getmapPoints);
+        // console.log(getmapPoints);
         const firstPoint = getmapPoints[0];
+        if (mapContainer.current) {
+            map.current = new mapboxgl.Map({
+                container: mapContainer.current,
+                style: 'mapbox://styles/mapbox/outdoors-v12',
+                center: [firstPoint.longitude, firstPoint.latitude],
+                zoom: 13,
+            });
+        }
 
-        map.current = new mapboxgl.Map({
-            container: mapContainer.current,
-            style: 'mapbox://styles/mapbox/outdoors-v12',
-            center: [firstPoint.longitude, firstPoint.latitude],
-            zoom: 13,       
-        });
+        // map.current = new mapboxgl.Map({
+        //     container: mapContainer.current,
+        //     style: 'mapbox://styles/mapbox/outdoors-v12',
+        //     center: [firstPoint.longitude, firstPoint.latitude],
+        //     zoom: 13,       
+        // });
         // Zoom in zoom out (+, - button)
         // map.current.addControl(new mapboxgl.NavigationControl());
-
+        if (!map.current) return;
         map.current.on('load', async () => {
             //  setloading(true);
             const formattedPoints = getmapPoints.map(p => [p.longitude, p.latitude]);
@@ -285,6 +293,7 @@ const AffiliateDetailTrail: React.FC = () => {
     };
 
     const updateRoute = async (points) => {
+        //alert('hit');
         if (points.length < 2) return;
 
         let fullRoute = [];
@@ -1177,8 +1186,29 @@ const AffiliateDetailTrail: React.FC = () => {
                             <h3 className="text-midnight-navy">What this place offers</h3>
                              <PlaceOffers getPlaceOffer={getPlaceOffer} />
                             <div className="d-flex flex-wrap align-items-center">
-                                <a href="" className="btn-style-3">Get Directions</a>
-                                <a href="" className="btn-style-1">Hit the Trail</a>
+                                {/* <a href="" className="btn-style-3">Get Directions</a> */}
+                                <a href="" className="btn-style-3" style={{ cursor: "pointer" }}
+                                    onClick={() => {
+                                        if (!getmapPoints.length) return;
+
+                                        const start = getmapPoints[0];
+                                        const end = getmapPoints[getmapPoints.length - 1];
+
+                                        const googleUrl = `https://www.google.com/maps/dir/?api=1&origin=${start.latitude},${start.longitude}&destination=${end.latitude},${end.longitude}&travelmode=walking`;
+
+                                        window.open(googleUrl, "_blank");
+                                    }}
+                                    >Get Directions
+                                </a>
+                                <a  className="btn-style-1" style={{ cursor: "pointer" }}
+                                    onClick={async () => {
+                                    if (!getmapPoints.length) return;
+                                    const formatted = getmapPoints.map(p => [p.longitude, p.latitude]);
+                                    await updateRoute(formatted);
+                                    }} 
+                                    >Hit the Trail
+                                </a>
+                                {/* <a href="" className="btn-style-1">Hit the Trail</a> */}
                             </div>
                         </div>
                     </div>
@@ -1391,7 +1421,7 @@ const AffiliateDetailTrail: React.FC = () => {
                     <div className="row">
                         <div className="col-12 mb-4 text-center">
                             {
-                                showReviews.length > 0 && (
+                                showReviews && (
                                     <button
                                     className="btn-style-1"
                                     onClick={() => setShowReviews(!showReviews)}

@@ -3,6 +3,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import ProfileLeftSection from './ProfileLeftSection';
 import { Link, useLocation } from "react-router-dom";
 import axios from 'axios';
+import {getAuth} from '../utils/storage';
 
 //import { useLocation, useNavigate } from 'react-router-dom'; // Import useLocation and useNavigate
 import { SquareLoader } from "react-spinners"; 
@@ -24,6 +25,7 @@ const ProfileSection: React.FC = () => {
     const [loadingProfile,setloadingProfile] = useState(true);
     const [visibleCount, setVisibleCount] = useState(5);
     const [loginId, setLoginId] = useState("");
+    const [token, setToken] = useState<string>("");
     
     useEffect(()=>{
             const timer = setTimeout(()=>
@@ -33,23 +35,17 @@ const ProfileSection: React.FC = () => {
     const handleShowMore = () => {
         setVisibleCount((prev) => prev + 5); // Show 5 more each time
     };
-     useEffect(() => {
-            const storedId = sessionStorage.getItem("id");
-            // const storedId = localStorage.getItem("id");
-            // console.log("Stored ID:", storedId); // should print the ID string
-            if (storedId) {
-                // setUserId(storedId); 
-                setUserId(storedId.trim());
-            }  
-    }, []);
+     // Get id by helper
     useEffect(() => {
-                const storeLocal = localStorage.getItem("login");
-                console.log(storeLocal)
-                if (storeLocal) {
-                    setLoginId(storeLocal);
-                    // setUserID(userId);
-                }
-        }, []);
+        const { userId, token ,login} = getAuth();
+            if (userId) setUserId(userId);
+            if (token) setToken(token);
+            if (login) setLoginId(login);
+    }, []);
+    //  console.log("loginId:", loginId); 
+    //  console.log("token:", token); 
+    //  console.log("userId:", userId); 
+    
     // Show the profile
     useEffect(() => {
             if (!userId) return; // wait until userId is available
@@ -59,13 +55,13 @@ const ProfileSection: React.FC = () => {
                 const response = await axios.post(`${BASE_URL}/feed/user/${userId}`, {
                     LoginId: loginId,
                     // LoginId: '1112VIRENDRA',
-                },
-                {
-                    headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${sessionStorage.getItem("token")}`
-                    }
                 }
+                // {
+                //     headers: {
+                //     "Content-Type": "application/json",
+                //     "Authorization": `Bearer ${sessionStorage.getItem("token")}`
+                //     }
+                // }
             );
     
                 console.log("Postssss Data:", response.data);

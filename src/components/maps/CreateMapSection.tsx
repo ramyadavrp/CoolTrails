@@ -456,7 +456,7 @@ const [promptCallback, setPromptCallback] = useState<((value: string | null) => 
                             <div className="row mt-3">
                                 <div className="col-md-12">
                                     <input type="text" value={promptValue} onChange={(e) => setPromptValue(e.target.value)}
-                                        // autoFocus
+                                        autoFocus
                                         style={{width: "100%",padding: "10px",borderRadius: "6px", border: "1px solid #ccc",}}
                                         placeholder="Enter title"
                                     />
