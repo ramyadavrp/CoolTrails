@@ -55,15 +55,15 @@ const NavTop: React.FC = () => {
 
             const response = await axios.post(
                 `${BASE_URL}/user/profile`,
-                { UserId: userId },
-                {
-                    withCredentials: false,
-                    headers: {
-                        "Authorization": `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                        "Accept": "application/json"
-                    }
-                }
+                { UserId: userId }
+                // {
+                //     withCredentials: false,
+                //     headers: {
+                //         "Authorization": `Bearer ${token}`,
+                //         "Content-Type": "application/json",
+                //         "Accept": "application/json"
+                //     }
+                // }
             );
 
             console.log("API Response:", response.data);

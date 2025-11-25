@@ -53,12 +53,12 @@ const LocalFavorites: React.FC = () => {
               TrailId: trailId,
               UserId: userId,
               do_bookmark: !isAlreadyBookmarked
-            },
-            {
-              headers: {
-                AuthKey: token,   // send token
-              },
             }
+            // {
+            //   headers: {
+            //     AuthKey: token,   // send token
+            //   },
+            // }
           
           );
              console.log('bookmark',response.data);
@@ -79,18 +79,18 @@ const LocalFavorites: React.FC = () => {
     };
  
     useEffect(() => {
-      // console.log('userid',userId);
       const fetchTopLocalTrail = async () => {
+        // alert(userId);
         try {
-          const url = userId
-            ? `${BASE_URL}/home/toplocaltrail/10/${userId}`
-            : `${BASE_URL}/home/toplocaltrail/10`;
-
-          const response = await axios.get(url);
-          console.log('toplocal Listing',response.data.data);
+          const response = await axios.get(`${BASE_URL}/home/toplocaltrail/10/${userId}`);
+          // const response = await axios.get(`https://api.cooltrails.purchaseitnow.shop/api/home/toplocaltrail/10/20c8a597-25b7-414d-8b9c-c9575f40b9fc`);
+          // const response = await axios.get(
+          //   "https://api.cooltrails.purchaseitnow.shop/api/home/toplocaltrail/10/20c8a597-25b7-414d-8b9c-c9575f40b9fc"
+          // );
+          console.log("Top Local Listing:", response.data.data);
           setTopLocatTrails(response.data.data);
-        } catch (err) {
-          console.error("API Error:", err);
+        } catch (error) {
+          console.error("API Error:", error);
           setErrorLocatTrails("Unable to fetch top local trails");
         } finally {
           setLoadingLocatTrails(false);
@@ -98,7 +98,32 @@ const LocalFavorites: React.FC = () => {
       };
 
       fetchTopLocalTrail();
-    }, [userId]);
+    }, []);
+
+//    useEffect(() => {
+//   if (!userId) return;
+
+//   const fetchTopLocalTrail = async () => {
+//     try {
+//       const response = await axios.get(
+//         // `https://api.cooltrails.purchaseitnow.shop/api/home/toplocaltrail/10/${userId}`
+//         `https://api.cooltrails.purchaseitnow.shop/api/home/toplocaltrail/10/20c8a597-25b7-414d-8b9c-c9575f40b9fc`
+//       );
+
+//       console.log("toplocal Listing", response.data.data);
+//       setTopLocatTrails(response.data.data);
+//     } catch (err) {
+//       console.error("API Error:", err);
+//       setErrorLocatTrails("Unable to fetch top local trails");
+//     } finally {
+//       setLoadingLocatTrails(false);
+//     }
+//   };
+
+//   fetchTopLocalTrail();
+// }, [userId]);
+
+
 
   // console.log('sss',topLocatTrails);
   // Effect to initialize Owl Carousel
@@ -200,7 +225,7 @@ if (topLocatTrails.length === 0) return <p>No local favorites found.</p>;
                       <div className="local-favorite-single">
                         <div className="lfc-thumb position-relative">
                           {/* Fix image source path - add leading slash for public assets */}
-                          <Link to={`/${locatTrail.urltitle || generateSlug(locatTrail.title || '')}`}> 
+                          {/* <Link to={`/${locatTrail.urltitle || generateSlug(locatTrail.title || '')}`}>  */}
                           <img
                               src={locatTrail.image || '/assets/images/not-found.jpg'}
                               alt="locat Trail" className="img-fluid img-fixed-size" 
@@ -210,7 +235,7 @@ if (topLocatTrails.length === 0) return <p>No local favorites found.</p>;
                                   target.src = '/assets/images/not-found.jpg'; // fallback image
                               }}
                           />
-                          </Link>
+                          {/* </Link> */}
                           <a href="#!" className="bookmark-btn" title="Save"
                           onClick={(e) => {
                               e.preventDefault();
@@ -229,10 +254,10 @@ if (topLocatTrails.length === 0) return <p>No local favorites found.</p>;
                          
                         <div className="lfc-content">
                           <Link to={`/${locatTrail.urltitle || generateSlug(locatTrail.title || '')}`}>
-                            <h3 className="lfc-title">{locatTrail.title} {locatTrail.trailid}</h3>
-                            <p className="lfc-location mb-1">{locatTrail.address}</p>
+                            <h3 className="lfc-title">{locatTrail.title} </h3>
+                            <p className="lfc-location mb-1">{locatTrail.address} </p>
                             <p className="lfc-tags">
-                              <i className="bi bi-star-fill"></i> 4.6 · Moderate · {locatTrail.distance} · Est. {locatTrail.time_duration || 'N/A'}
+                              <i className="bi bi-star-fill"></i> 4.6 · Moderate · {locatTrail.distance} · Est. {locatTrail.time_duration || 'N/A'} {locatTrail.trailid}
                             </p>
                           </Link>
                           {/* <Link to={`/affiliate-details/${locatTrail.trailId}/${generateSlug(locatTrail.title)}`} className="btn-style-1 w-100">

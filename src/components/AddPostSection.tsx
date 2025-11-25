@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'; // Import useNavigate for redire
 import { Trash2, Upload } from "lucide-react";
 import { SquareLoader } from "react-spinners";
 import { SyncLoader } from "react-spinners";
+import {getAuth} from '../utils/storage';
 
 declare const Masonry: any;
 const BASE_URL = import.meta.env.VITE_API_URL;
@@ -85,16 +86,22 @@ const AddPostSection: React.FC = () => {
         showStateCity: true,
     });
 
-    
-
     useEffect(() => {
-            // const storedId = localStorage.getItem("id");
-            const storedId = sessionStorage.getItem("id");
-            if (storedId) {
-                // setUserId(storedId); 
-                setUserId(storedId.trim());
-            }  
-        }, []);
+        const { userId, token ,login,email} = getAuth();
+            if (userId) setUserId(userId);
+            // if (token) setToken(token);
+            // if (login) setLoginIdBased(login);
+            // if (email) setLoginId(email);
+    }, []);
+
+    // useEffect(() => {
+    //         // const storedId = localStorage.getItem("id");
+    //         const storedId = sessionStorage.getItem("id");
+    //         if (storedId) {
+    //             // setUserId(storedId); 
+    //             setUserId(storedId.trim());
+    //         }  
+    //     }, []);
     
     //Multiple image upload
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

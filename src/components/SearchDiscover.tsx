@@ -82,12 +82,12 @@ const SearchDiscover: React.FC = () => {
             TrailId: trailId,
             UserId: userId,
             do_bookmark: !isAlreadyBookmarked
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,   // send token
-              },
-            }
+            }//,
+            // {
+            //   headers: {
+            //     Authorization: `Bearer ${token}`,   // send token
+            //   },
+            // }
         );
             console.log('bookmark',response.data);
             if (response.data.status === "success") {
@@ -145,7 +145,7 @@ const SearchDiscover: React.FC = () => {
                 // lon: 78.0420843000696,
                 maxDistance: maxDistance
             });
-            // console.log('near by',response.data.data);
+            console.log('near by',response.data.data);
             setNearbytrails(response.data.data);
             //console.log('Server response:', response.data.data);
         }catch(err){

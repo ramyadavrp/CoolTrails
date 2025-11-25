@@ -10,6 +10,7 @@ import  {useAutoClearMessage} from '../utils/useAutoClearMessage';
 const BASE_URL = import.meta.env.VITE_API_URL;
 import axios from 'axios';
 import { SquareLoader } from "react-spinners"; 
+import {getAuth} from '../utils/storage';
 
 import mapboxgl from "mapbox-gl";
 // import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
@@ -89,6 +90,8 @@ const CommunitySectionCmtDetails: React.FC = () => {
     const [loginId, setLoginId] = useState("");
     const [loginIdBased, setLoginIdBased] = useState("");
     const [userId, setUserId] = useState<string>("");
+    const [token, setToken] = useState<string>("");
+    
     // comment popup
     const [isOpen, setIsOpen] = useState(false);
     const [isSpam, setSpamModal] = useState(false);
@@ -99,7 +102,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
     const [getBlockPostId, setBlockPostId] = useState<any>(null);
     const [getBlockedUserId, setBlockedUserId] = useState<any>(null);
     // const [reasonvalue, setReasonValue] = useState<any>(null); 
-    const [message, setMessage] = useState<string | null>(null);
     const [getBlocekedTextvalidation, setBlocekedTextValidation] = useState<string | null>(null);
     // Popup comment check
     const [checkedUsers, setCheckedUsers] = useState<{ [userId: string]: boolean }>({});
@@ -113,9 +115,12 @@ const CommunitySectionCmtDetails: React.FC = () => {
     const [review, setReview] = useState("");
     const [reviewDetails, setReviewdetails] = useState<Review[]>([]);
     const [getImagesArray, setImagesArray] = useState([]);    
+    // start message show state define
+    const [message, setMessage] = useState<string | null>(null);
     const [messageComment, setCommentMessage] = useState<string | null>(null);
     const [messageDeleteComment, setDeleteCommentMessage] = useState<string | null>(null);
-     
+    const [messageBlockComment, setBlockCommentMessage] = useState<string | null>(null);
+    // end message show state define
     // Review Show
     const [showReviews, setShowReviews] = useState(true);
     // map state
@@ -138,20 +143,30 @@ const CommunitySectionCmtDetails: React.FC = () => {
     useAutoClearMessage(message, setMessage, 3000);
     useAutoClearMessage(messageComment, setCommentMessage, 3000);
     useAutoClearMessage(messageDeleteComment, setDeleteCommentMessage, 3000);
+    useAutoClearMessage(messageBlockComment, setBlockCommentMessage, 3000);
+
+     // Get id by helper
+    useEffect(() => {
+        const { userId, token ,login,email} = getAuth();
+            if (userId) setUserId(userId);
+            if (token) setToken(token);
+            if (login) setLoginIdBased(login);
+            if (email) setLoginId(email);
+    }, []);
+
     useEffect(() => {
         // Check if token exists in localStorage
         // const token = localStorage.getItem("token");
         const token = sessionStorage.getItem("token");
         setIsLoggedIn(!!token);
     }, []);
-    useEffect(() => {
-        const storeLocal = localStorage.getItem("login");
-        // console.log('logggg',storeLocal)
-        if (storeLocal) {
-            setLoginIdBased(storeLocal);
-            // setUserID(loginIdBased);
-        }
-    }, []);
+    // useEffect(() => {
+    //     const storeLocal = localStorage.getItem("login");
+    //     console.log('logggg',storeLocal)
+    //     if (storeLocal) {
+    //         setLoginIdBased(storeLocal);
+    //     }
+    // }, []);
 
     useEffect(() => {
     if (statePostId) {
@@ -622,12 +637,12 @@ const CommunitySectionCmtDetails: React.FC = () => {
     
     
 
-    useEffect(() => {
-        const storeLocal = localStorage.getItem("email");
-        if (storeLocal) {
-            setLoginId(storeLocal);
-        }
-    }, []);
+    // useEffect(() => {
+    //     const storeLocal = localStorage.getItem("email");
+    //     if (storeLocal) {
+    //         setLoginId(storeLocal);
+    //     }
+    // }, []);
     // useEffect(() => {
     // if (statePostId) localStorage.setItem("postId", statePostId);
     //     setPostId(statePostId);
@@ -639,13 +654,13 @@ const CommunitySectionCmtDetails: React.FC = () => {
         setCurrentIndex(i => (i + 1) % getImagesArray.length);
     }, [getImagesArray.length]);
 
-    useEffect(() => {
-            const storedId = localStorage.getItem("id");
-            //  console.log("Stored IDss:", storedId); // should print the ID string
-            if (storedId) {
-                setUserId(storedId.trim());
-            }  
-    }, []);
+    // useEffect(() => {
+    //         const storedId = localStorage.getItem("id");
+    //         //  console.log("Stored IDss:", storedId); // should print the ID string
+    //         if (storedId) {
+    //             setUserId(storedId.trim());
+    //         }  
+    // }, []);
 
 
 
@@ -655,8 +670,8 @@ const CommunitySectionCmtDetails: React.FC = () => {
     
     const handleBlocked = (blockId:any ,BlockPostId: any, BlockedUserId: any,checked: boolean) => {
         // console.log('checkid',checked);
-        
         setCheckblock(checked);
+        //  console.log('getCheckblocsssssk',getCheckblock);
         setBlocked(blockId); 
         setBlockPostId(BlockPostId);
         setBlockedUserId(BlockedUserId);
@@ -667,6 +682,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
     //commentreportanissue
         const handleSubmitReport = async (getBlockedUserId:any,getBlockedId:any) => {
              console.log('comment',getBlockedId); 
+             
              const reason = reasonValue[getBlockedUserId];
             if (!getBlockPostId || !getBlockedUserId || !userId) {
                 alert("Please select all required IDs!");
@@ -702,9 +718,9 @@ const CommunitySectionCmtDetails: React.FC = () => {
         // alert("Report submitted successfully!");
             console.log('blocked',response.data);
             if(response.data.status=== "success"){
-                setMessage('User blocked.');
+                setBlockCommentMessage('User blocked.');
             }else{
-                setMessage('Error submitting report.');
+                setBlockCommentMessage('Error submitting report.');
             }
             // setComments(response.data)
             } catch (error) {
@@ -1399,6 +1415,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                 <div className="row">
                                 {messageComment && <div style={{color:'#FC673C' , textAlign:'center'}}>{messageComment}</div>}
                                 {messageDeleteComment && <div style={{color:'#FC673C' , textAlign:'center'}}>{messageDeleteComment}</div>}
+                                {messageBlockComment && <div style={{color:'#FC673C' , textAlign:'left',margin:'0px'}}>{messageBlockComment}</div>}
                                 {
                                     
                                     // getComments.map((cmt:any,index:number)=>(
@@ -1420,7 +1437,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                     </div>
                                                     <div className="test-head">
                                                        
-                                                        <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">{cmt.name ?? 'N/A'}<span style={{color:'gray',fontSize:'14px'}} className="d-inline-block mx-1">•  {timeAgo(cmt.createdOn)}</span> </h3>
+                                                        <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">{cmt.name ?? 'N/A'}{cmt.id}<span style={{color:'gray',fontSize:'14px'}} className="d-inline-block mx-1">•  {timeAgo(cmt.createdOn)}</span> </h3>
                                                         {/* <StarRating rating={Number(review.rating)}/> */}
                                                         <p className="mb-0">{cmt.commentText ?? 'N/A'}</p>
                                                     </div>

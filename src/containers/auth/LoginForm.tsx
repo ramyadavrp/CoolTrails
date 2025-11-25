@@ -27,7 +27,8 @@ const LoginForm = () => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-
+// https://api.cooltrails.purchaseitnow.shop/api
+// https://api.cooltrails.purchaseitnow.shop/api/auth/login
     try {
       const response = await axios.post(`${BASE_URL}/auth/login`, {
         Username: email,
@@ -60,7 +61,7 @@ const LoginForm = () => {
       setLoading(false);
     }
   };
-
+// console.log('BASE_URL',BASE_URL);
 
   const togglePasswordVisibility = () => {
       setShowPassword(prevShowPassword => !prevShowPassword);
