@@ -38,34 +38,6 @@ const SearchDiscover: React.FC = () => {
         if (token) setToken(token);
       }, []);
     // Bookmark
-    // const handleBookmark = async (trailId: any) => {
-    //     const token = sessionStorage.getItem("token"); 
-    //     const userId = sessionStorage.getItem("id");
-    //     // Check login before making API call
-    //     if (!token || !userId) {
-    //       navigate("/login", { replace: true });
-    //       return;
-    //     }
-    //     try {
-    //         const response = await axios.post(`${BASE_URL}/trail/bookmark`, {
-    //         TrailId: trailId,
-    //         UserId: userId,
-    //         });
-    //         if (response.data.status === "success") {
-    //         // Toggle bookmark state locally
-    //         setBookmarkedTrails((prev) =>
-    //             prev.includes(trailId)
-    //             ? prev.filter((id) => id !== trailId) // remove if already bookmarked
-    //             : [...prev, trailId] // add if not bookmarked
-    //         );
-    //         } else {
-    //         alert("Error bookmarking trail.");
-    //         }
-    //     } catch (error) {
-    //         console.error("Error submitting report:", error);
-    //         alert("Failed to submit report");
-    //     }
-    // };
 
     const handleBookmark = async (trailId: number) => {
         if (!token || !userId) {
@@ -105,7 +77,7 @@ const SearchDiscover: React.FC = () => {
             console.error("Error submitting bookmark:", error);
             alert("Failed to submit bookmark");
         }
-        };
+    };
 
 
     
@@ -143,10 +115,18 @@ const SearchDiscover: React.FC = () => {
                 lon: longitude,
                 // lat: 27.1719517170742,
                 // lon: 78.0420843000696,
-                maxDistance: maxDistance
+                maxDistance: maxDistance,
+                userId:userId
             });
+            const data = response.data.data;
             console.log('near by',response.data.data);
-            setNearbytrails(response.data.data);
+            setNearbytrails(data);
+            // Extract bookmarked trailIds from response
+          const bookmarked = data
+            .filter((item: any) => item.do_bookmark === true)
+            .map((item: any) => item.trailId);
+
+          setBookmarkedTrails(bookmarked);
             //console.log('Server response:', response.data.data);
         }catch(err){
             console.error('Failed your location:',err);
@@ -181,7 +161,7 @@ const SearchDiscover: React.FC = () => {
         if (latitude !== null && longitude !== null) {
         postLocation();
         }
-    }, [latitude, longitude, take, skip,maxDistance]);
+    }, [latitude, longitude, take, skip,maxDistance,BASE_URL,userId]);
     // console.log('sdh',nearbytrails );
     useEffect(() => {
         // Initialize Owl Carousel only after data is loaded and component has rendered
@@ -299,22 +279,19 @@ const SearchDiscover: React.FC = () => {
                                                     >
                                                         <i className="bi bi-bookmark"></i>
                                                     </a> */}
-                                                    <a
-                                                        href="#!"
-                                                        className="bookmark-btn"
-                                                        title="Save"
+                                                    
+                                                    <a href="#!" className="bookmark-btn" title="Save"
                                                         onClick={(e) => {
                                                             e.preventDefault();
                                                             handleBookmark(nTrails.trailId);
                                                         }}
                                                     >
-                                                        <i
-                                                            className={`bi ${
-                                                            bookmarkedTrails.includes(nTrails.trailId)
-                                                                ? "bi-bookmark-fill bookmarked-icon" 
-                                                                : "bi-bookmark" 
-                                                            }`}
-                                                        ></i>
+                                                    <i className={`bi ${
+                                                        bookmarkedTrails.includes(nTrails.trailId)
+                                                            ? "bi-bookmark-fill bookmarked-icon" 
+                                                            : "bi-bookmark" 
+                                                        }`}
+                                                    ></i>
                                                     </a>
 
                                                 </div>

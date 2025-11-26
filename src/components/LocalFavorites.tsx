@@ -35,39 +35,101 @@ const LocalFavorites: React.FC = () => {
     if (token) setToken(token);
   }, []);
 // console.log('ggg',userId)
+
+//   useEffect(() => {
+//   const fetchTopLocalTrail = async () => {
+//     setLoadingLocatTrails(true);
+//     console.log('userIduserIduserId',userId);
+//     try {
+//       const apiUrl = userId
+//         ? `${BASE_URL}/home/toplocaltrail/10/${userId}`
+//         : `${BASE_URL}/home/toplocaltrail/10`; // No userId if not logged in 
+
+//       const response = await axios.get(apiUrl);
+//       const data = response.data.data || [];
+
+//       setTopLocatTrails(data);
+//       console.log('datadata',data);
+      
+
+//       if (userId) {
+//         // Extract bookmarked trails only if user logged in
+//         const bookmarked = data
+//           .filter(
+//             (item: any) =>
+//               item.do_bookmark === true ||
+//               item.do_bookmark === "true" ||
+//               item.do_bookmark === 1
+//           )
+//           .map((item: any) => Number(item.trailid));
+
+//         setBookmarkedTrails(bookmarked);
+//       } else {
+//         setBookmarkedTrails([]); // Guest user: no bookmarks
+//       }
+
+//     } catch (error) {
+//       console.error("API Error:", error);
+//       setErrorLocatTrails("Unable to fetch top local trails");
+//     } finally {
+//       setLoadingLocatTrails(false);
+//     }
+//   };
+
+//   fetchTopLocalTrail();
+// }, [userId, BASE_URL]);
+
+
+  useEffect(() => {
+      const fetchTopLocalTrail = async () => {
+        try {
+          const response = await axios.get(`${BASE_URL}/home/toplocaltrail/10/${userId}`);
+          const data = response.data.data;
+          console.log('datadata',data);
+          console.log('userIduserId',userId);
+          setTopLocatTrails(data);
+          // Extract bookmarked trailIds from response
+          const bookmarked = data
+            .filter((item: any) => item.do_bookmark === true)
+            .map((item: any) => item.trailid);
+
+          setBookmarkedTrails(bookmarked);
+          
+        } catch (error) {
+          console.error("API Error:", error);
+          setErrorLocatTrails("Unable to fetch top local trails");
+        } finally {
+          setLoadingLocatTrails(false);
+        }
+      };
+
+      fetchTopLocalTrail();
+  }, [userId, BASE_URL]);
   // Bookmark
-  const handleBookmark = async (trailId: any) => {
-        // const token = sessionStorage.getItem("token"); 
-        // const userId = sessionStorage.getItem("id");
-        // Check login before making API call
+  const handleBookmark = async (trailid: any) => {
         if (!token || !userId) {
           navigate("/login", { replace: true });
           return;
         }
          // Check current bookmark status
-        const isAlreadyBookmarked = bookmarkedTrails.includes(trailId);
+        const isAlreadyBookmarked = bookmarkedTrails.includes(trailid);
        
         try {
          
             const response = await axios.post(`${BASE_URL}/trail/bookmark`, {
-              TrailId: trailId,
-              UserId: userId,
-              do_bookmark: !isAlreadyBookmarked
-            }
-            // {
-            //   headers: {
-            //     AuthKey: token,   // send token
-            //   },
-            // }
-          
-          );
+                TrailId: trailid,
+                UserId: userId,
+                do_bookmark: !isAlreadyBookmarked
+              }
+            
+            );
              console.log('bookmark',response.data);
             if (response.data.status === "success") {
             // Toggle bookmark state locally
             setBookmarkedTrails((prev) =>
                 isAlreadyBookmarked
-                ? prev.filter((id) => id !== trailId)
-                : [...prev, trailId]
+                ? prev.filter((id) => id !== trailid)
+                : [...prev, trailid]
             );
             } else {
             alert("Error bookmarking trail.");
@@ -78,27 +140,8 @@ const LocalFavorites: React.FC = () => {
         }
     };
  
-    useEffect(() => {
-      const fetchTopLocalTrail = async () => {
-        // alert(userId);
-        try {
-          const response = await axios.get(`${BASE_URL}/home/toplocaltrail/10/${userId}`);
-          // const response = await axios.get(`https://api.cooltrails.purchaseitnow.shop/api/home/toplocaltrail/10/20c8a597-25b7-414d-8b9c-c9575f40b9fc`);
-          // const response = await axios.get(
-          //   "https://api.cooltrails.purchaseitnow.shop/api/home/toplocaltrail/10/20c8a597-25b7-414d-8b9c-c9575f40b9fc"
-          // );
-          console.log("Top Local Listing:", response.data.data);
-          setTopLocatTrails(response.data.data);
-        } catch (error) {
-          console.error("API Error:", error);
-          setErrorLocatTrails("Unable to fetch top local trails");
-        } finally {
-          setLoadingLocatTrails(false);
-        }
-      };
+    
 
-      fetchTopLocalTrail();
-    }, []);
 
 //    useEffect(() => {
 //   if (!userId) return;
@@ -236,25 +279,28 @@ if (topLocatTrails.length === 0) return <p>No local favorites found.</p>;
                               }}
                           />
                           {/* </Link> */}
-                          <a href="#!" className="bookmark-btn" title="Save"
+                         <a
+                          href="#!"
+                          className="bookmark-btn"
                           onClick={(e) => {
-                              e.preventDefault();
-                              handleBookmark(locatTrail.trailid);//locatTrail.trailId
+                            e.preventDefault();
+                            handleBookmark(locatTrail.trailid);
                           }}
-                          > <i
-                                className={`bi ${
-                                bookmarkedTrails.includes(locatTrail.trailid)
-                                    ? "bi-bookmark-fill bookmarked-icon" 
-                                    : "bi-bookmark" 
-                                }`}
-                            ></i>
-                            {/* <i className="bi bi-bookmark"></i> */}
-                          </a>
+                        >
+                          <i
+                            className={`bi ${
+                              bookmarkedTrails.includes(locatTrail.trailid)
+                                ? "bi-bookmark-fill bookmarked-icon"
+                                : "bi-bookmark"
+                            }`}
+                          ></i>
+                        </a>
+
                         </div>
                          
                         <div className="lfc-content">
                           <Link to={`/${locatTrail.urltitle || generateSlug(locatTrail.title || '')}`}>
-                            <h3 className="lfc-title">{locatTrail.title} </h3>
+                            <h3 className="lfc-title">{locatTrail.title}</h3>
                             <p className="lfc-location mb-1">{locatTrail.address} </p>
                             <p className="lfc-tags">
                               <i className="bi bi-star-fill"></i> 4.6 · Moderate · {locatTrail.distance} · Est. {locatTrail.time_duration || 'N/A'} {locatTrail.trailid}
