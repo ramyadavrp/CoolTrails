@@ -2,11 +2,12 @@ import React, { useEffect, useState,useRef ,useCallback} from 'react';
 import { Link as ScrollLink } from 'react-scroll';
 import { Link as RouterLink } from 'react-router-dom';
 // import SearchDiscover from './SearchDiscover';
-import { useParams } from 'react-router-dom';
+import {useLocation, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { SquareLoader } from "react-spinners"; 
 import { SyncLoader } from "react-spinners";
-
+import {getAuth} from '../utils/storage';
+import {useAlertMessage} from '../utils/useAlertMessage';
 // import { setTimeout, clearTimeout } from 'timers';
 
 import path from 'path';
@@ -25,6 +26,7 @@ import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import { useLayoutEffect } from "react";
 import Weathers from './AffiliateDetails/Weathers';
+import  {useAutoClearMessage} from '../utils/useAutoClearMessage';
 
 // import data from '../data/alltrailDetails.json';
 
@@ -75,7 +77,12 @@ interface UserFavorite {
     users_description: string;
     users_elevation_gain: number;
 }
-
+interface Review {
+  userName: string;
+  userId: string;
+  title: string;
+  descriptions: string;
+}
 
 type ShareOption = {
   label: string;
@@ -86,7 +93,13 @@ type ShareOption = {
 mapboxgl.accessToken = 'pk.eyJ1IjoiMTExMnZpcmVuZHJhIiwiYSI6ImNtYmE0emNyNjBwbHMyanNibHBpZHgxMjUifQ.5FSp2VZ1T1kXcGV38bC5jA';
        
 const AffiliateDetailTrail: React.FC = () => {
-    const { country, state, city, title } = useParams();
+    const { country, state, city, title ,slug} = useParams();
+    const location = useLocation();
+    const stateTrailId = location.state?.trailId;
+    // console.log('get trail id',stateTrailId);
+    const [trailId, setTrailId] = useState(() => {
+        return stateTrailId || localStorage.getItem("trailId") || null;
+    });
     // const { id: encodedId, slug } = useParams(); // url link
      const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [trailDetail, setTrailDetail] = useState<TrailDetail | null>(null);
@@ -116,24 +129,54 @@ const AffiliateDetailTrail: React.FC = () => {
     const [phone, setPhone] = useState("");/* Text share*/ 
     const [showQR, setShowQR] = useState(false);
     const qrRef = useRef<HTMLCanvasElement>(null);
+    const [loginIdBased, setLoginIdBased] = useState("");
+    const [userId, setUserId] = useState<string>("");
+    // Add review
+    const [isReviewOpen, setIsReviewOpen] = useState(false);
+    const [rating, setRating] = useState(0);
+    const [hover, setHover] = useState(0);
+    const [review, setReview] = useState("");
+        const [reviewVisibleCount, setReviewVisibleCount] = useState(4);
+    
+    const [userReview, setUserReview] = useState<any | null>(null); 
+    const [token, setToken] = useState<string>("");
+    const [loginId, setLoginId] = useState("");
     // const [loading,setloading] = useState(false);
      // Review Show
     const [showReviews, setShowReviews] = useState(true);
-
+    const [showbuttonReviews, setShowbuttonReviews] = useState(true);
+    const [message, setMessage] = useState<string | null>(null);
+    const [reviewDetails, setReviewdetails] = useState<Review[]>([]);
     const shareUrl = window.location.href;
+    useAutoClearMessage(message, setMessage, 3000);
+    
+    
     const qrImage = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://example.com";
     // useEffect(()=>{
     //     const loadpage = setTimeout(()=>setLoadingDetailTrails(false), 1000);
     //     return clearTimeout(loadpage);
     // },[]);
     usePageTitle("Cooltrails | Trail");
-    
-    
+     // Get id by helper
+    useEffect(() => {
+        const { userId, token ,login,email} = getAuth();
+            if (userId) setUserId(userId);
+            if (token) setToken(token);
+            if (login) setLoginIdBased(login);
+            if (email) setLoginId(email);
+    }, []);
+    useEffect(() => {
+        if (stateTrailId) {
+        localStorage.setItem("trailId", stateTrailId);
+        setTrailId(stateTrailId);
+        }
+    }, [stateTrailId]);
     //  loader time set 
     // window.scrollTo(0,0);
-   useLayoutEffect(() => {
-    window.scrollTo(0,0);
+    useLayoutEffect(() => {
+        window.scrollTo(0,0);
     }, []);
+    // console.log('loginIdBased',userId)
 //  Loader
     useEffect(()=>{
         const timer = setTimeout(()=>
@@ -164,6 +207,144 @@ const AffiliateDetailTrail: React.FC = () => {
         }
     }
     }, [title]);
+     // Show review 
+        const handleShowReviewMore = () => {
+            setReviewVisibleCount((prev) => prev + 2); // Show 2 more each time
+        };
+    // Add review
+    //  List review
+    const loadReviewPost = async () => {
+        if (!userId) return; // wait until userId is available
+        try {
+        const response = await axios.post(`${BASE_URL}/trail/user/Review/${userId}`, {
+            LoginId: loginIdBased,
+            // LoginId: '1112VIRENDRA',
+        });
+
+        console.log("REvi trail Data:", response.data);
+        if (response.data.status === "success") {
+            const data = response.data.data;
+            setReviewdetails(data); //reviewDetails
+        }
+        } catch (error) {
+        console.error("Error loading profile:", error);
+        alert("Failed to load profile");
+        }
+    };
+    useEffect(() => {
+        loadReviewPost();
+    }, [userId]);
+     // review details
+    useEffect(() => {
+        if (reviewDetails.length > 0 && userId) {
+            const myReview = reviewDetails.find(r => r.userId === userId);
+            setUserReview(myReview || null);
+        }
+    }, [reviewDetails, userId]);
+    // Add rating // 27-11-25
+    // console.log('tariliddd',trailId);
+    const addReviewAPI = async () => {
+        return axios.post(`${BASE_URL}/trail/addrating`, {
+            TrailId: trailId,
+            UserId: userId,
+            // UserId: "e08ee354-20e2-4af6-a37f-c30127cf322d",
+            Rating: rating,
+            Review: review,
+        });
+        };
+
+    const updateReviewAPI = async () => {
+        return axios.post(`${BASE_URL}/trail/updaterating`, {
+            TrailId: trailId,
+            UserId: userId,
+            // UserId: "e08ee354-20e2-4af6-a37f-c30127cf322d",
+            Rating: rating,
+            Review: review,
+        });
+    };
+        // console.log('PostId  handle',postId);
+    const handleSubmitReview = async () => {
+        if (!userId || !trailId ) {
+            //alert("Login required to add review!");
+            window.location.href = "/login";
+            return;
+        }
+
+        try {
+            let response;
+
+            if (userReview) {
+                // UPDATE review
+                response = await updateReviewAPI();
+                console.log('response',response);
+                if (response.data.status === "success") {
+                    useAlertMessage({
+                        icon: "success",
+                        title: "Done!",
+                        html: "<strong>Review updated successfully!</strong>",
+                        confirmButtonText: "Ok!",
+                        width: "350px",
+                        confirmButtonColor: "#fc673c",
+                        padding: "1rem",
+                    });
+                } else {
+                    useAlertMessage({
+                        title: "Failed",
+                        html: `<strong style="color:red;">${response.data.message || "Something went wrong."}</strong>`,
+                        icon: "error",
+                        width: "350px",
+                        confirmButtonText: "OK",
+                        confirmButtonColor: "#dc3545",
+                        padding: "1rem",
+                    });
+                }
+                loadReviewPost();
+                // setMessage("Review updated successfully!");
+            } else {
+                // ADD review
+                response = await addReviewAPI();
+                if (response.data.status === "success") {
+                    useAlertMessage({
+                        icon: "success",
+                        title: "Done!",
+                        html: "<strong>Review Added successfully!</strong>",
+                        confirmButtonText: "Ok!",
+                        width: "350px",
+                        confirmButtonColor: "#fc673c",
+                        padding: "1rem",
+                    });
+                } else{
+                    useAlertMessage({
+                        title: "Failed",
+                        html: `<strong style="color:red;">${response.data.message || "Something went wrong."}</strong>`,
+                        icon: "error",
+                        width: "350px",
+                        confirmButtonText: "OK",
+                        confirmButtonColor: "#dc3545",
+                        padding: "1rem",
+                    });
+                    
+                }
+                loadReviewPost();
+                // setMessage("Review added successfully!");
+            }
+
+            if (response?.data?.status === "success") {
+                setUserReview({
+                    UserId: userId,
+                    Rating: rating,
+                    Review: review,
+                });
+            }
+
+            setIsReviewOpen(false);
+        } catch (error) {
+            console.error(error);
+            alert("Failed to submit review");
+        }
+    };
+
+
         // console.log(getUserFavorite);
     const fetchTrailDetail = async (title:String) =>{
         try{
@@ -207,6 +388,7 @@ const AffiliateDetailTrail: React.FC = () => {
                 style: 'mapbox://styles/mapbox/outdoors-v12',
                 center: [firstPoint.longitude, firstPoint.latitude],
                 zoom: 13,
+                attributionControl: false // remove © Mapbox © OpenStreetMap Improve this map
             });
         }
 
@@ -749,7 +931,7 @@ const AffiliateDetailTrail: React.FC = () => {
                                     </p>
                                 </div>
                                 {
-                                    showReviews.lenght > 0 &&(
+                                    showbuttonReviews.lenght > 0 &&(
                                         <div className="tusc-cn-3">
                                             <a  href="#reviews" className="btn-style-1">Show all Reviews</a>
                                         </div>
@@ -837,10 +1019,12 @@ const AffiliateDetailTrail: React.FC = () => {
                                             </div>
                                         </div>
                                         );
+                                    
                                     })
                                     ) : (
-                                    <p>Review is not Available..</p>
-                                    )}
+                                    <p>Itinerary is not Available..</p>
+                                    )
+                                }
 
                                 
                                 {/* <div className="accordion-item">
@@ -1222,59 +1406,214 @@ const AffiliateDetailTrail: React.FC = () => {
                     </div>
                 </div>
                 {/* <!-- reviews --> */}
+
+                    {isReviewOpen && (
+                    <div
+                        style={{
+                            position: "fixed",
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            background: "rgba(0,0,0,0.5)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            zIndex: 1000,
+                        }}
+                        >
+                        <div
+                            style={{
+                            background: "#fff",
+                            borderRadius: "12px",
+                            padding: "24px",
+                            width: "400px",
+                            boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
+                            }}
+                        >
+                            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                <h3 style={{ marginTop:'34px'}}>{userReview ? "Edit Your Review" : "Add Your Review"}</h3>
+                                <button className="btn-cross" onClick={() => setIsReviewOpen(false)}>
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M4 4L16 16M16 4L4 16" stroke="#05073D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            {/* <h3 className="mb-3">Add Your Review</h3> */}
+
+                            {/* ⭐ Rating Stars */}
+                            <div style={{ marginBottom: "15px" }}>
+                            {[1, 2, 3, 4, 5].map((star) => (
+                                <span
+                                key={star}
+                                style={{
+                                    cursor: "pointer",
+                                    color: star <= (hover || rating) ? "#FC673C" : "#ccc",
+                                    fontSize: "24px",
+                                    marginRight: "4px",
+                                }}
+                                onClick={() => setRating(star)}
+                                onMouseEnter={() => setHover(star)}
+                                onMouseLeave={() => setHover(0)}
+                                >
+                                ★
+                                </span>
+                            ))}
+                            </div>
+
+                            {/* Review Textarea */}
+                            <textarea
+                            className="form-control mb-3"
+                            rows={4}
+                            value={review}
+                            onChange={(e) => setReview(e.target.value)}
+                            placeholder="Write your review..."
+                            ></textarea>
+
+                            <div className="text-end">
+                            <button className="btn" style={{background:'#FC673C',color:'#fff'}} 
+                                onClick={ () =>{
+                                    handleSubmitReview(),
+                                    setIsReviewOpen(false)
+                                }}
+                                disabled={!review.trim()}>
+                               {userReview ? "Update" : "Add"}  
+                            </button>
+                            </div>
+                        </div>
+                        </div>
+                    )}    
                 <div className="trails-reviews-widget" id="reviews">
+                     {/* {message && <div style={{color:'#FC673C' , textAlign:'left',margin:'0px'}}>{message}</div>} */}
                     <div className="row">
                         <div className="col-12">
-                            <div className="section-title review">
+                            <div className="section-title review d-flex align-items-center">
                                 <h2 className="title">Reviews</h2>
-                                {isLoggedIn ? (
+                                {/* {isLoggedIn ? (
                                     <a href="" className="btn-style-review">Review trail</a>
-                                ):(null )}
-                                
+                                ):(null )} */}
+                                    <a href="#"
+                                        style={{
+                                            background: "#FC673C",
+                                            border: "none",
+                                            borderRadius: "50px",
+                                            padding: "10px",
+                                            opacity: userReview ? 0.5 : 1,
+                                            pointerEvents: userReview ? "none" : "auto",
+                                            cursor: userReview ? "not-allowed" : "pointer",
+                                        }}
+                                        className="btn btn-sm btn-primary ms-2"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+
+                                            if (userReview) {
+                                            setRating(userReview.rating);
+                                            setReview(userReview.decription);}
+                                            // } else {
+                                            // setRating(0);
+                                            // setReview("");
+                                            // }
+                                            setIsReviewOpen(true);
+                                        }}
+                                    >
+                                    {userReview ? "Review Submitted" : "Add Review"}
+                                    </a>
                             </div>
                         </div>
                     </div>
 
                     <div className="row review-row g-3">
                         
-                        	{getReviews.length > 0 ? (
-                                getReviews.map((review:any,index:number) =>{
-                                        return (
-                                        <div key={index}  className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
-                                            <div  className="testimonial-single position-relative">
-                                                <div className="testimonial-head d-flex w-100 align-items-center position-relative">
-                                                    <div className="test-image">
-                                                        <img
-                                                            src={review.userImage || '/assets/images/not-found.jpg'}
-                                                            alt="Top Trail" className="img-fluid img-fixed-size" 
-                                                            onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                                                                const target = e.currentTarget;
-                                                                target.onerror = null; // prevent infinite loop
-                                                                target.src = '/assets/images/not-found.jpg'; // fallback image
-                                                            }}
-                                                        />
+                        	{
+                            showReviews &&(
+                            <>
+                                {message && <div style={{color:'#FC673C' , textAlign:'left',margin:'0px'}}>{message}</div>}
+                                {reviewDetails.length > 0 ? (
+                                    <>
+                                        {reviewDetails.slice(0, reviewVisibleCount).map((rev:any,index:number) => (
+                                        // reviewDetails.map((rev:any,index:number)=>(
+                                            <div key={index} className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
+                                                <div className="testimonial-single position-relative">
+                                                    <div className="testimonial-head d-flex w-100 align-items-center position-relative">
+                                                        <div className="test-image">
+                                                            <img
+                                                                src={rev.userImage || '/assets/images/other/testimonial-1.png'}
+                                                                alt="Top Trail" className="img-fluid" 
+                                                                onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                                                    const target = e.currentTarget;
+                                                                    target.onerror = null; // prevent infinite loop
+                                                                    target.src = '/assets/images/other/testimonial-1.png'; // fallback image
+                                                                }}
+                                                            />
+                                                            {/* <img src="/assets/images/other/testimonial-1.png" alt="" className="img-fluid"/> */}
+                                                        </div>
+                                                        <div className="test-head">
+                                                             <div className="d-flex align-items-center">
+                                                                <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">
+                                                                    {rev.userWithAddress ?? ''}
+                                                                </h3>
+                                                                <a className=" ms-2" title="Edit Review"
+                                                                onClick={(e) => {
+                                                                e.preventDefault();
+                                                                // pre-fill if editing
+                                                                if (userReview) {
+                                                                    setRating(userReview.rating);
+                                                                    setReview(userReview.decription);}
+                                                                // } else {
+                                                                //     setRating(0);
+                                                                //     setReview("");
+                                                                // }
+                                                                setIsReviewOpen(true);
+                                                                }}
+                                                                >
+                                                                    <svg width="19" height="18" viewBox="0 0 19 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                        <path d="M10.5137 0.80598C11.5867 -0.268666 13.3274 -0.269589 14.4014 0.804027L16.8936 3.29621C17.958 4.36095 17.9687 6.08414 16.918 7.16243L7.68555 16.6361C6.98003 17.3599 6.01137 17.7679 5.00098 17.7679H2.25C1.05069 17.7678 0.0774547 16.8306 0.00488281 15.6595L0.00292969 15.4232L0.120117 12.6146C0.159615 11.6756 0.550055 10.7843 1.21387 10.1195L10.5137 0.80598ZM17.5146 16.1947C17.9286 16.1947 18.2646 16.5304 18.2646 16.9447C18.2646 17.359 17.9287 17.6947 17.5146 17.6947H11.3936L11.3164 17.6907C10.9386 17.6521 10.6436 17.333 10.6436 16.9447C10.6436 16.5564 10.9386 16.2372 11.3164 16.1986L11.3936 16.1947H17.5146ZM2.27441 11.181C1.87636 11.5798 1.64186 12.1138 1.61816 12.6771L1.50098 15.4857V15.5657C1.52555 15.9556 1.84974 16.2676 2.24902 16.2679H5.00195C5.60809 16.2678 6.18906 16.0225 6.6123 15.5882L13.1436 8.88508L8.85059 4.59309L2.27441 11.181ZM13.3418 1.86555C12.8536 1.37755 12.062 1.37805 11.5742 1.86653L9.91113 3.53157L14.1914 7.81184L15.8447 6.11555C16.3222 5.62547 16.3176 4.84171 15.834 4.35774L13.3418 1.86555Z"
+                                                                            fill="#7D7D7D"/>
+                                                                    </svg>
+                                                                </a>
+                                                            </div>
+                                                            {/* <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">{rev.userWithAddress ?? ''} </h3> */}
+                                                                <StarRating rating={Number(rev?.rating)}/>
+                                                            {/* <div className="rating">
+                                                                <i className="bi bi-star-fill"></i>
+                                                                <i className="bi bi-star-fill"></i>
+                                                                <i className="bi bi-star-fill"></i>
+                                                                <i className="bi bi-star-fill"></i>
+                                                                <i className="bi bi-star-fill"></i>
+                                                            </div> */}
+                                                            <p className="mb-0">{rev.ratingOn ?? ''} <span className="d-inline-block mx-1">•</span>
+                                                            {rev.category ?? 'N/A'} </p>
+                                                        </div>
+                                                        {/* <div className="right-abs">
+                                                            <i className="bi bi-three-dots"></i>
+                                                        </div> */}
                                                     </div>
-                                                    <div className="test-head">
-                                                        <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">{review.userWithAddress ?? 'N/A'}</h3>
-                                                        <StarRating rating={Number(review.rating)}/>
-                                                        <p className="mb-0">{review.ratingOn ?? 'N/A'} <span className="d-inline-block mx-1">•</span> {review.category ?? 'N/A'}</p>
+                                                    <div className="testimonial-body">
+                                                        <p className="text-midnight-navy">{rev.decription ?? 'N/A'}</p>
                                                     </div>
-                                                    <div className="right-abs">
-                                                        <i className="bi bi-three-dots"></i>
-                                                    </div>
-                                                </div>
-                                                <div className="testimonial-body">
-                                                    <p className="text-midnight-navy">{review.decription ?? 'N/A'}</p>
                                                 </div>
                                             </div>
-                                        </div>
-                                        )
-                                    }
-                                    
-                                )
-                            ):(
-                                <p> Review  is not available...</p>
-                            )}
+                                        ))}
+                                        {reviewVisibleCount < reviewDetails.length && (
+                                            <div className="row">
+                                                <div className="col-12 text-end">
+                                                    <button
+                                                    style={{textDecoration:'none', marginBottom:'10px',float:'left'}}
+                                                    className="btn btn-link text-orange fw-bold ms-1"
+                                                    onClick={handleShowReviewMore}
+                                                    >
+                                                    Show more... 
+                                                    </button>
+                                                </div>
+                                            </div>   
+                                        )}
+                                    </>
+                                ):(
+                                    <p>Not Found Review </p>
+                                )}
+                        </>
+                            )
+                        }
                         {/* <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
                             <div className="testimonial-single position-relative">
                                 <div className="testimonial-head d-flex w-100 align-items-center position-relative">
@@ -1419,20 +1758,17 @@ const AffiliateDetailTrail: React.FC = () => {
                         </div> */}
                     </div>
                     <div className="row">
-                        <div className="col-12 mb-4 text-center">
-                            {
-                                showReviews && (
-                                    <button
-                                    className="btn-style-1"
-                                    onClick={() => setShowReviews(!showReviews)}
-                                >
-                                    {showReviews ? "Hide Reviews" : "Check All Reviews"}
-                                </button>
-                                )
-                            }
-                            {/* <a href="" className="btn-style-1">Check All Reviews</a> */}
-                        </div>
+                            <div className="col-12 mb-4 text-center">
+                            <button
+                                className="btn-style-1"
+                                onClick={() => setShowReviews(!showReviews)}
+                            >
+                                {showReviews ? "Hide Reviews" : "Check All Reviews"}
+                            </button>
+                            </div>
+                             {/* <a href="" className="btn-style-1">Check All Reviews</a> */}
                     </div>
+                    
                 </div>
                 {/* <!-- review-end --> */}
             </div>

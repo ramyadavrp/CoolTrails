@@ -27,8 +27,7 @@ const ReviewSection: React.FC = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const navigate = useNavigate();
     const [userId, setUserId] = useState<string>("");
-      const [token, setToken] = useState<string>("");
-    
+    const [token, setToken] = useState<string>("");
     const [getFollow, setFollow] = useState<{ [key: number]: boolean }>({});
     // Get id by helper
       useEffect(() => {
@@ -36,70 +35,69 @@ const ReviewSection: React.FC = () => {
         if (userId) setUserId(userId);
         if (token) setToken(token);
       }, []);
-      
+    console.log('userId',userId);
     useEffect(() => {
         // const token = sessionStorage.getItem("token");
         setIsLoggedIn(!!token);
     }, []);
+    // console.log('userId',userId);
     useEffect(() => {
-        const fetchtopExplorers = async ()=>{
-            try{ 
-                // https://api.cooltrails.purchaseitnow.shop/API/trail/FellowExplorers/2/7196612b-89fa-450f-92bf-74320a090b98
+        const fetchtopExplorers = async () => {
+            try {
                 const response = await axios.get(`${BASE_URL}/trail/FellowExplorers/10/${userId}`);
-                console.log('followList',response.data.data);
-                setExplorers(response.data.data);
-            }catch(err){
-                console.error('API Error:', err);
-                setErrorExplorers('Unable to fetch adventure');
-            } finally{
+                const data = response.data.data;
+                setExplorers(data);
+                // console.log('explorers',data);
+                const initialFollows: Record<string, boolean> = {};
+                data.forEach((exp: any) => {
+                    // Default logic: if do_follow true → Following
+                    if (exp.do_follow === true || exp.do_follow === "true") {
+                        initialFollows[exp.id] = true;
+                    } else {
+                        initialFollows[exp.id] = false; // default fallback
+                    }
+                });
+                setFollow(initialFollows);
+
+            } catch (err) {
+                console.error("API Error:", err);
+            } finally {
                 setLoadingExplorers(false);
             }
         };
-        fetchtopExplorers();  
-    }, []);
+
+        fetchtopExplorers();
+    }, [userId]);
+
+
     // console.log("user ID:", userId); userId
     const handleFollow = useCallback(
-            async (id: string) => {
-                try {
-                    const response = await axios.post(`${BASE_URL}/user/follow`, {
-                        FollowerId: userId,//9c4eede4-8850-4f89-aaf0-4e417d40b942
-                        UserId: id, //a2dc38a2-f4fa-4a6f-8eb3-4400932bc62c
-        
-                    },
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,   // send token
-                        },
-                    }
-                );
-                // console.log('follow',response.data);
+        async (id: string) => {
+            try {
+                const response = await axios.post(`${BASE_URL}/user/follow`, {
+                    FollowerId: userId,//9c4eede4-8850-4f89-aaf0-4e417d40b942
+                    UserId: id, //a2dc38a2-f4fa-4a6f-8eb3-4400932bc62c
+    
+                }
+            );
+            // console.log('follow',response.data);
                 if (response.data.status === "success") {
                     const doFollow = response.data.do_follow 
                                     ?? response.data.data?.do_follow 
                                     ?? response.data.follow;
-    
-                    // console.log("doFollow:", doFollow);
+
+                    console.log("doFollow:", doFollow);
                     setFollow((prev) => ({
                         ...prev,
                         [id]: doFollow === true || doFollow === "true",
                     }));
-                  
-                // console.log(response.data);
-                // if (response.data.status === "success") {
-                //     // Update getCommunity directly
-                //      console.log(response.data.do_follow);
-                //     setFollow((prev) => ({
-                //     ...prev,
-                //     [id]: response.data.do_follow === true || response.data.do_follow === "true",
-                // }));
-    
-                    
+                        
                 }
-                } catch (error) {
-                console.error(error);
-                }
-            },[userId] // dependencies
-        );
+            } catch (error) {
+            console.error(error);
+            }
+        },[userId] // dependencies
+    );
 
     // const handleFollow = useCallback(
     //     async (id: string) => {
@@ -312,16 +310,32 @@ const ReviewSection: React.FC = () => {
                                                 {explorer.id === userId ? (
                                                     <span className="btn-style-1 stretched-link">You</span> // optional text
                                                     ) : (
-                                                    <a
-                                                        href="#"
+                                                    <button
+                                                        disabled={getFollow[explorer.id]} 
                                                         onClick={(e) => {
-                                                        e.preventDefault();
-                                                        handleFollow(explorer.id);
+                                                            if (getFollow[explorer.id]) {
+                                                                e.preventDefault(); // block click if already followed
+                                                                return;
+                                                            }
+                                                            e.preventDefault();
+                                                            handleFollow(explorer.id);
+                                                        }}
+                                                        style={{
+                                                            cursor: getFollow[explorer.id] ? 'not-allowed' : 'pointer',
+                                                            opacity: getFollow[explorer.id] ? 0.5 : 1,
+                                                            backgroundColor: getFollow[explorer.id] ? '#ccc' : '#FC673C', 
+                                                            color: getFollow[explorer.id] ? '#666' : '#fff',
+                                                            border: 'none',
+                                                            padding: '5px 25px',
+                                                            borderRadius: '50px',
+                                                            textAlign:'center',
+                                                            fontSize:'14px'
+                                                        
                                                         }}
                                                         className="btn-style-1 stretched-link"
                                                     >
                                                         {getFollow[explorer.id] ? "Following" : "Follow"}
-                                                    </a>
+                                                    </button>
                                                 )}
                                             </div>
                                         </div>
@@ -359,15 +373,32 @@ const ReviewSection: React.FC = () => {
                                                     explorer.id === userId ? (
                                                         <span className="btn-style-1 stretched-link">You</span>
                                                     ):(
-                                                    <a href="#" 
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        handleFollow(explorer.id);
-                                                    }}
-
-                                                    className="btn-style-1 stretched-link">
+                                                    <button
+                                                        disabled={getFollow[explorer.id]} 
+                                                        onClick={(e) => {
+                                                            if (getFollow[explorer.id]) {
+                                                                e.preventDefault(); // block click if already followed
+                                                                return;
+                                                            }
+                                                            e.preventDefault();
+                                                            handleFollow(explorer.id);
+                                                        }}
+                                                        style={{
+                                                            cursor: getFollow[explorer.id] ? 'not-allowed' : 'pointer',
+                                                            opacity: getFollow[explorer.id] ? 0.5 : 1,
+                                                            backgroundColor: getFollow[explorer.id] ? '#ccc' : '#FC673C', 
+                                                            color: getFollow[explorer.id] ? '#666' : '#fff',
+                                                            border: 'none',
+                                                            padding: '5px 25px',
+                                                            borderRadius: '50px',
+                                                            textAlign:'center',
+                                                            fontSize:'14px'
+                                                        
+                                                        }}
+                                                        className="btn-style-1 stretched-link"
+                                                    >
                                                         {getFollow[explorer.id] ? "Following" : "Follow"}
-                                                    </a>
+                                                    </button>
                                                     )
                                                 }
                                                 

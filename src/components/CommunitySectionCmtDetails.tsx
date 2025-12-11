@@ -7,11 +7,12 @@ import StarRating from './AffiliateDetails/StarRating';
 import { useLocation, useParams } from 'react-router-dom';
 import { decodeId,encodeId, generateSlug ,slugToTitle,timeAgo} from '../utils/helpers';
 import  {useAutoClearMessage} from '../utils/useAutoClearMessage';
+import {useAlertMessage}  from '../utils/useAlertMessage';
 const BASE_URL = import.meta.env.VITE_API_URL;
 import axios from 'axios';
 import { SquareLoader } from "react-spinners"; 
 import {getAuth} from '../utils/storage';
-
+import Swal from "sweetalert2";
 import mapboxgl from "mapbox-gl";
 // import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
@@ -59,6 +60,7 @@ type ShareOption = {
 };
 interface Review {
   userName: string;
+  userId: string;
   title: string;
   descriptions: string;
 }
@@ -67,13 +69,13 @@ const CommunitySectionCmtDetails: React.FC = () => {
     const { slug } = useParams();
     const location = useLocation();
     const statePostId = location.state?.postId;
-    // console.log('gettt',statePostId);
+    console.log('gettt',statePostId);
     // const [postId, setPostId] = useState(statePostId || localStorage.getItem("postId"));
     const [postId, setPostId] = useState(() => {
         // initialize from location.state or localStorage
         return statePostId || localStorage.getItem("postId") || null;
     });
-    // console.log('postIdss',postId);
+    console.log('postIdss',postId);
     const [activeTab, setActiveTab] = useState('');
     const [CommunityLoading,setCommunityLoading] = useState(true);
     const [getprofileCommunity, setProfileCommunity ]= useState<any[]>([]);
@@ -109,17 +111,21 @@ const CommunitySectionCmtDetails: React.FC = () => {
     const [isShareOpen, setShareIsOpen] = useState(false);
     const [copied, setCopied] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    // rating
     const [isReviewOpen, setIsReviewOpen] = useState(false);
     const [rating, setRating] = useState(0);
     const [hover, setHover] = useState(0);
     const [review, setReview] = useState("");
     const [reviewDetails, setReviewdetails] = useState<Review[]>([]);
+    const [userReview, setUserReview] = useState<any | null>(null); 
     const [getImagesArray, setImagesArray] = useState([]);    
     // start message show state define
     const [message, setMessage] = useState<string | null>(null);
     const [messageComment, setCommentMessage] = useState<string | null>(null);
     const [messageDeleteComment, setDeleteCommentMessage] = useState<string | null>(null);
     const [messageBlockComment, setBlockCommentMessage] = useState<string | null>(null);
+    const [messageUpload, setMessageUpload] = useState<string | null>(null);
+    const [messageUploadError, setMessageUploadError] = useState<string | null>(null);
     // end message show state define
     // Review Show
     const [showReviews, setShowReviews] = useState(true);
@@ -135,16 +141,29 @@ const CommunitySectionCmtDetails: React.FC = () => {
     const [titles, setTitles] = useState<string[]>([]);
     const [markers, setMarkers] = useState<mapboxgl.Marker[]>([]);
     const [loopClosed, setLoopClosed] = useState(false);
+    const [loadingMap,setLoadingMap] = useState(true);
+ 
      // map state close
     const [selectedCommentId, setSelectedCommentId] = useState(null);
     const shareUrl = window.location.href;
-
+    // image popup
+    const [selectedImages, setSelectedImages] = useState<File[]>([]);
+    const [isImagePopupOpen, setIsImagePopupOpen] = useState(false);
     // Use hook for each Clear  message after success
     useAutoClearMessage(message, setMessage, 3000);
     useAutoClearMessage(messageComment, setCommentMessage, 3000);
     useAutoClearMessage(messageDeleteComment, setDeleteCommentMessage, 3000);
     useAutoClearMessage(messageBlockComment, setBlockCommentMessage, 3000);
+    useAutoClearMessage(messageUpload, setMessageUpload, 3000);
+    useAutoClearMessage(messageUploadError, setMessageUploadError, 3000);
+    const [Multipleimages, setMultipleImages] = useState<File[]>([]);
+    const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+    const [isUploading, setIsUploading] = useState<boolean>(false)
+    const [postVisibleCount, setPostVisibleCount] = useState(10);
 
+    // const handleRemoveImage = (index: number) => {
+    //     setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
+    // };
      // Get id by helper
     useEffect(() => {
         const { userId, token ,login,email} = getAuth();
@@ -153,7 +172,13 @@ const CommunitySectionCmtDetails: React.FC = () => {
             if (login) setLoginIdBased(login);
             if (email) setLoginId(email);
     }, []);
-
+    // review details
+    useEffect(() => {
+        if (reviewDetails.length > 0 && userId) {
+            const myReview = reviewDetails.find(r => r.userId === userId);
+            setUserReview(myReview || null);
+        }
+    }, [reviewDetails, userId]);
     useEffect(() => {
         // Check if token exists in localStorage
         // const token = localStorage.getItem("token");
@@ -169,16 +194,120 @@ const CommunitySectionCmtDetails: React.FC = () => {
     // }, []);
 
     useEffect(() => {
-    if (statePostId) {
-      localStorage.setItem("postId", statePostId);
-      setPostId(statePostId);
-    }
-  }, [statePostId]);
+        if (statePostId) {
+        localStorage.setItem("postId", statePostId);
+        setPostId(statePostId);
+        }
+    }, [statePostId]);
+    
     // useEffect(() => {
     // if (statePostId) localStorage.setItem("postId", statePostId);
     //     setPostId(statePostId);
     // }, [statePostId])
     // console.log('ss',statePostId)
+     const handleShowPostMore = () => {
+        setPostVisibleCount((prev) => prev + 5); // Show 2 more each time
+    };
+    const MAX_FILE_SIZE = 500 * 1024; // 500 KB
+    const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFiles = e.target.files ? Array.from(e.target.files) : [];
+        if (selectedFiles.length === 0) return;
+        
+        const validFiles: File[] = [];
+        const validImageURLs: string[] = [];
+
+        selectedFiles.forEach((file) => {
+            if (file.size <= MAX_FILE_SIZE && file.type.startsWith("image/")) {
+                validFiles.push(file);
+                validImageURLs.push(URL.createObjectURL(file));
+            } else {
+                const sizeKB = (file.size / 1024).toFixed(0);
+                // setMessageUploadError(`${file.name} is ${sizeKB} KB — must be under 500 KB`);
+                    useAlertMessage({
+                        icon: "error",
+                        title: "File Too Large",
+                        html: `<strong>${file.name} is ${sizeKB} KB — must be under 500 KB</strong>`,
+                        width: "350px",
+                        confirmButtonColor: "#d33",
+                        confirmButtonText: "OK",
+                    });
+               
+            }
+        });
+
+        if (validFiles.length === 0) {
+            e.target.value = ""; 
+            return;
+        }
+        setMultipleImages((prev) => [...prev, ...validFiles]);
+        setPreviewUrls((prev) => [...prev, ...validImageURLs]);
+        // const imageURLs = selectedFiles.map((file) => URL.createObjectURL(file));
+        // Update UI
+        // setMultipleImages((prev) => [...prev, ...selectedFiles]);
+        // setPreviewUrls((prev) => [...prev, ...imageURLs]);
+
+        await handleUploadImages(selectedFiles);
+    };
+
+    const handleUploadImages = async (files: File[]) => {
+        if (!userId || !postId || files.length === 0) return;
+
+        const formData = new FormData();
+        formData.append("UserId", userId.toString());
+        formData.append("feedId", postId.toString());
+        formData.append("UploadTime", new Date().toISOString());
+
+        files.forEach((file) => {
+            formData.append("MediaFiles", file); // FIXED
+        });
+
+        try {
+            setIsUploading(true);
+
+            const response = await axios.post(`${BASE_URL}/feed/addimages`, formData);
+
+            // console.log("API Response:", response.data);
+            if (response.data.status === "success") {
+                // Swal.fire("Uploaded!", "Images uploaded successfully!", "success");
+                useAlertMessage({
+                    icon: "success",
+                    title: "Done!",
+                    html: "<strong>Images uploaded successfully!</strong>",
+                    confirmButtonText: "Ok!",
+                    width: "350px",
+                    confirmButtonColor: "#fc673c",
+                    padding: "1rem",
+                });
+            } else {
+                useAlertMessage({
+                    title: "Failed",
+                    html: "<strong>Upload failed — server rejected</strong>",
+                    icon: "error",
+                    width: "350px",
+                    confirmButtonText: "OK",
+                    confirmButtonColor: "#dc3545",
+                    padding: "1rem",
+                });
+            }
+
+            // if (response.data.status === "success") {
+            //     setMessageUpload("Images uploaded successfully!");
+            // } else {
+            //     alert("Upload failed - server rejected");
+            // }
+        } catch (error: any) {
+            useAlertMessage({
+                title: "Upload Failed",
+                html: "<strong>Error uploading images. Please try again.</strong>",
+                icon: "error",
+                width: "350px",
+                confirmButtonText: "OK",
+                confirmButtonColor: "#dc3545",
+            });
+        } finally {
+            setIsUploading(false);
+        }
+    };
 
     const handleDeleteClick = (id:any ) => {
         // alert(id);
@@ -196,136 +325,323 @@ const CommunitySectionCmtDetails: React.FC = () => {
             setIsOpen(false);
             setSelectedCommentId(null);
             if (response.data.status === "success") {
-                setDeleteCommentMessage("Comment deleted successfully!");
+                useAlertMessage({
+                    icon: "success",
+                    title: "Done!",
+                    html: "<strong>Comment deleted successfully!</strong>",
+                    confirmButtonText: "Ok!",
+                    width: "350px",
+                    confirmButtonColor: "#fc673c",
+                    padding: "1rem",
+                });
             } else {
-                setDeleteCommentMessage("Error submitting report.");
+                useAlertMessage({
+                    title: "Failed",
+                    html: "<strong>Report failed — server rejected</strong>",
+                    icon: "error",
+                    width: "350px",
+                    confirmButtonText: "OK",
+                    confirmButtonColor: "#dc3545",
+                    padding: "1rem",
+                });
             }
             
-        } catch (error) {
-            console.error("Error submitting report:", error);
-            alert("Failed to submit report");
+        } catch (error:any) {
+            useAlertMessage({
+                title: "Upload Failed",
+                html: "<strong>Error uploading images. Please try again.</strong>",
+                icon: "error",
+                width: "350px",
+                confirmButtonText: "OK",
+                confirmButtonColor: "#dc3545",
+            });
         }
     }
-    // Add rating
+    // Add rating // 27-11-25
+    const addReviewAPI = async () => {
+        return axios.post(`${BASE_URL}/feed/addrating`, {
+            FeedId: postId,
+            UserId: userId,
+            Rating: rating,
+            Review: review,
+        });
+    };
+
+    const updateReviewAPI = async () => {
+        return axios.post(`${BASE_URL}/feed/updaterating`, {
+            // Id:1   optional check
+            feedId: postId,
+            UserId: userId,
+            Rating: rating,
+            Review: review,
+        });
+    };
+    // console.log('PostId  handle',postId);
     const handleSubmitReview = async () => {
-        // alert(postId);
-        // console.log('ratting',rating ); 
-        // console.log('review',review );
-        // console.log('userId',userId );
-        // console.log('postIdaaasss',statePostId );
-        try {
-            if (userId && postId) {
-            const response = await axios.post(`${BASE_URL}/feed/addrating`, {
-                FeedId: postId,
-                UserId: userId,
-                // UserId: "e08ee354-20e2-4af6-a37f-c30127cf322d",
-                Rating: rating,
-                Review: review,
+        if (!userId || !postId) {
+            Swal.fire({
+                icon: "error",
+                title: "Missing Information",
+                text: "Missing user or post ID",
+                showConfirmButton: false,
+                width: "350px",
+                timer: 2500,
             });
-             console.log('addReview',response.data );
-            if (response.data.status === "success") {
-                setMessage("Review added successfully!");
+            return;
+        }
+
+        try {
+            let response;
+
+            if (userReview) {
+            // UPDATE existing review
+            response = await updateReviewAPI();
+            // console.log(response.data.data);
+                if (response.data.status === "success") {
+                    useAlertMessage({
+                        icon: "success",
+                        title: "Done!",
+                        html: "<strong>Review updated successfully!</strong>",
+                        confirmButtonText: "Ok!",
+                        width: "350px",
+                        confirmButtonColor: "#fc673c",
+                        padding: "1rem",
+                    });
+                } else {
+                    useAlertMessage({
+                        title: "Failed",
+                        html: `<strong style="color:red;">${response.data.message || "Something went wrong."}</strong>`,
+                        icon: "error",
+                        width: "350px",
+                        confirmButtonText: "OK",
+                        confirmButtonColor: "#dc3545",
+                        padding: "1rem",
+                    });
+                }
+            
+            loadReviewPost();
             } else {
-                setMessage("Error submitting report.");
+            // ADD new review
+            response = await addReviewAPI();
+                if (response.data.status === "success") {
+                    useAlertMessage({
+                        icon: "success",
+                        title: "Done!",
+                        html: "<strong>Review Added successfully!</strong>",
+                        confirmButtonText: "Ok!",
+                        width: "350px",
+                        confirmButtonColor: "#fc673c",
+                        padding: "1rem",
+                    });
+                } else{
+                    useAlertMessage({
+                        title: "Failed",
+                        html: `<strong style="color:red;">${response.data.message || "Something went wrong."}</strong>`,
+                        icon: "error",
+                        width: "350px",
+                        confirmButtonText: "OK",
+                        confirmButtonColor: "#dc3545",
+                        padding: "1rem",
+                    });
+                   
+                }
+            loadReviewPost();
             }
-            } else {
-            alert("Missing user or post ID");
+
+            if (response?.data?.status === "success") {
+                setUserReview({
+                    UserId: userId,
+                    Rating: rating,
+                    Review: review,
+                });
             }
-        } catch (error) {
-            console.error("Error submitting report:", error);
-            alert("Failed to submit report");
+
+            setIsReviewOpen(false);
+        } catch (error:any) {
+            useAlertMessage({
+                title: "Upload Failed",
+                html: "<strong>Error. Please try again.</strong>",
+                icon: "error",
+                width: "350px",
+                confirmButtonText: "OK",
+                confirmButtonColor: "#dc3545",
+            });
+            
         }
     };
+    const fetchUserImages = async () => {
+        if (!userId) return; 
+
+        try {
+            const response = await axios.post(
+                `${BASE_URL}/feed/user/Images/${userId}`,
+                {
+                    LoginId: loginIdBased
+                }
+            );
+
+            console.log("Images:", response.data.data);
+            if (Array.isArray(response.data?.data)) {
+                setPreviewUrls(response.data.data); // this is your images array
+            }
+
+            // if (response.data?.images) {
+            //     setPreviewUrls(response.data.data);
+            // }
+        } catch (error: any) {
+            useAlertMessage({
+                title: "Failed",
+                html: `<strong style="color:red;">${error.response?.data || "Something went wrong."}</strong>`,
+                icon: "error",
+                width: "350px",
+                confirmButtonText: "OK",
+                confirmButtonColor: "#dc3545",
+                padding: "1rem",
+            });
+            // console.error("Fetch Images Error:", error.response?.data || error);
+            // alert("Failed to load images");
+        }
+    };
+
+    useEffect(() => {
+        if (userId && loginIdBased) {
+            fetchUserImages();
+        }
+    }, [userId, loginIdBased]);
+
+    
+    // const handleSubmitReview = async () => {
+    //     // alert(postId);
+    //     // console.log('ratting',rating ); 
+    //     // console.log('review',review );
+    //     // console.log('userId',userId );
+    //     // console.log('postIdaaasss',statePostId );
+    //     try {
+    //         if (userId && postId) {
+    //         const response = await axios.post(`${BASE_URL}/feed/addrating`, {
+    //             FeedId: postId,
+    //             UserId: userId,
+    //             // UserId: "e08ee354-20e2-4af6-a37f-c30127cf322d",
+    //             Rating: rating,
+    //             Review: review,
+    //         });
+    //         if (response.data.status === "success") {
+    //             setMessage("Review added successfully!");
+    //         } else {
+    //             setMessage("Error submitting report.");
+    //         }
+    //         } else {
+    //         alert("Missing user or post ID");
+    //         }
+    //     } catch (error) {
+    //         console.error("Error submitting report:", error);
+    //         alert("Failed to submit report");
+    //     }
+    // };
 
 
     
     //  List review
+    const loadReviewPost = async () => {
+        if (!userId) return; // wait until userId is available
+        try {
+        const response = await axios.post(`${BASE_URL}/feed/user/Review/${userId}`, {
+            LoginId: loginIdBased,
+            // LoginId: '1112VIRENDRA',
+        });
+
+        console.log("REvi Data:", response.data);
+
+        if (response.data.status === "success") {
+            const data = response.data.data;
+            setReviewdetails(data); //reviewDetails
+        }
+        } catch (error:any) {
+            useAlertMessage({
+                title: "Failed",
+                html: `<strong style="color:red;">${error.response?.data || "Something went wrong."}</strong>`,
+                icon: "error",
+                width: "350px",
+                confirmButtonText: "OK",
+                confirmButtonColor: "#dc3545",
+                padding: "1rem",
+            });
+            // console.error("Error loading profile:", error);
+            // alert("Failed to load profile");
+        }
+    };
     useEffect(() => {
-            if (!userId) return; // wait until userId is available
-    
-            const loadReviewPost = async () => {
-                try {
-                const response = await axios.post(`${BASE_URL}/feed/user/Review/${userId}`, {
-                    LoginId: loginIdBased,
-                    // LoginId: '1112VIRENDRA',
-                });
-    
-                // console.log("REvi Data:", response.data);
-    
-                if (response.data.status === "success") {
-                    const data = response.data.data;
-                    setReviewdetails(data); //reviewDetails
-                }
-                } catch (error) {
-                console.error("Error loading profile:", error);
-                alert("Failed to load profile");
-                }
-            };
-    
             loadReviewPost();
     }, [userId]);
     // Start map creation
     // Initialize map
     useEffect(() => {
-       const timeoutId = setTimeout(() => {
-            if (!mapContainer.current) return;  
-            // if (!mapContainer.current || mapRef.current) return;
-            const map = new mapboxgl.Map({
-                container: mapContainer.current,
-                style: "mapbox://styles/mapbox/streets-v12",
-                center: [78.0421, 27.1751],
-                zoom: 16,
-                pitch: 0,  
-                bearing: 0,
-                antialias: true,
+        if (!mapContainer.current) return;
+        setLoadingMap(true);
+
+        const map = new mapboxgl.Map({
+            container: mapContainer.current,
+            style: "mapbox://styles/mapbox/streets-v12",
+            center: [78.0421, 27.1751],
+            zoom: 16,
+            pitch: 0,
+            bearing: 0,
+            antialias: true,
+            attributionControl: false,
+        });
+
+        mapRef.current = map;
+
+        const geocoder = new MapboxGeocoder({
+            accessToken: mapboxgl.accessToken,
+            mapboxgl: mapboxgl,
+            marker: false,
+            placeholder: "Search location",
+        });
+
+        map.addControl(geocoder);
+
+        map.on("load", () => {
+            setLoadingMap(false);
+
+            map.addSource("route", {
+            type: "geojson",
+            data: {
+                type: "Feature",
+                properties: {},
+                geometry: { type: "LineString", coordinates: [] as [number, number][] },
+            },
             });
-            mapRef.current = map; 
+
+            map.addLayer({
+            id: "route-layer",
+            type: "line",
+            source: "route",
+            layout: { "line-join": "round", "line-cap": "round" },
+            paint: { "line-color": "#3b9ddd", "line-width": 5 },
+            });
+
+            // Walker marker
+            const el = document.createElement("div");
+            el.style.width = "30px";
+            el.style.height = "30px";
+            el.style.backgroundImage =
+            "url('https://img.icons8.com/color/48/person-male--v1.png')";
+            el.style.backgroundSize = "cover";
+            el.style.borderRadius = "50%";
+            el.style.border = "2px solid white";
             
-            const geocoder = new MapboxGeocoder({
-                accessToken: mapboxgl.accessToken,
-                mapboxgl: mapboxgl,
-                marker: false,
-                placeholder: "Search location",
-            });
-            map.addControl(geocoder);
-            map.on("load", () => {
-                map.addSource("route", {
-                    type: "geojson",
-                    data: {
-                        type: "Feature",
-                        properties: {},
-                        geometry: { type: "LineString", coordinates: [] as [number, number][] },
-                    },
-                });
+            walkerMarkerRef.current = new mapboxgl.Marker(el).setLngLat([0, 0]).addTo(map);
 
-                map.addLayer({
-                    id: "route-layer",
-                    type: "line",
-                    source: "route",
-                    layout: { "line-join": "round", "line-cap": "round" },
-                    paint: { "line-color": "#3b9ddd", "line-width": 5 },
-                });
+            loadMap();
+        });
 
-                // Walker marker
-                const el = document.createElement("div");
-                el.style.width = "30px";
-                el.style.height = "30px";
-                el.style.backgroundImage = "url('https://img.icons8.com/color/48/person-male--v1.png')";
-                el.style.backgroundSize = "cover";
-                el.style.borderRadius = "50%";
-                el.style.border = "2px solid white";
+      return () => {
+        map.remove();
+        if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      };
+    }, []);
 
-                walkerMarkerRef.current = new mapboxgl.Marker(el).setLngLat([0, 0]).addTo(map);
-                loadMap();
-            });
-        }, 500); // <-- delay (in ms)
-        return () => {
-            // map.remove(); 
-            clearTimeout(timeoutId);
-            if (mapRef.current) mapRef.current.remove();
-            if (animationRef.current) cancelAnimationFrame(animationRef.current);
-        };
-    }, [mapRef.current]); 
 
     // Map click handler
     useEffect(() => {
@@ -685,7 +1001,14 @@ const CommunitySectionCmtDetails: React.FC = () => {
              
              const reason = reasonValue[getBlockedUserId];
             if (!getBlockPostId || !getBlockedUserId || !userId) {
-                alert("Please select all required IDs!");
+                Swal.fire({
+                    icon: "error",
+                    title: "Missing Information",
+                    text: "Missing user or post ID",
+                    showConfirmButton: false,
+                    width: "350px",
+                    timer: 2500,
+                });
             return;
             }
             
@@ -717,15 +1040,35 @@ const CommunitySectionCmtDetails: React.FC = () => {
             });
         // alert("Report submitted successfully!");
             console.log('blocked',response.data);
-            if(response.data.status=== "success"){
-                setBlockCommentMessage('User blocked.');
-            }else{
-                setBlockCommentMessage('Error submitting report.');
+
+            if (response.data.status === "success") {
+                    Swal.fire({
+                        icon: "success",
+                        title: "Done!",
+                        html: "<strong>User blocked successfully!</strong>",
+                        confirmButtonText: "Ok!",
+                        width: "350px",
+                        confirmButtonColor: "#fc673c",
+                    });
+            }else if (response.data.status === "failed") {
+                Swal.fire({
+                    icon: "error",
+                    title: "User Failed",
+                    confirmButtonText: "Ok!",
+                    width: "350px",
+                    html: `<strong style="color:red;">${response.data.message || "Something went wrong."}</strong>`,
+                    confirmButtonColor: "#d32f2f",
+                });
             }
             // setComments(response.data)
             } catch (error) {
-            console.error("Error submitting report:", error);
-            alert("Failed to submit report");
+                Swal.fire({
+                    icon: "error",
+                    title: "Review Failed",
+                    width: "350px",
+                    confirmButtonColor: "#dc3545",
+                    text: "Error Submit review. Please try again.",
+                });
             }
         };
         // blocked user mess hide
@@ -748,7 +1091,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
             setReviewVisibleCount((prev) => prev + 2); // Show 2 more each time
         };
         
-        //  console.log('PostId',postId);
+        //  console.log('PostId  handle',postId);
         //  console.log('UserId',userId)
         //  console.log('loginId',loginId)
     
@@ -780,17 +1123,38 @@ const CommunitySectionCmtDetails: React.FC = () => {
                     );
                     // console.log("Comment posted:", response.data);
                     if (response.data.status === "success") {
-                        // console.log("Comment resposn posted:", response.data);
-                        setCommentMessage('Comment added.');
+                        // Swal.fire("Uploaded!", "Images uploaded successfully!", "success");
+                        Swal.fire({
+                            icon: "success",
+                            title: "Done!",
+                            html: "<strong>Comment Added successfully!</strong>",
+                            confirmButtonText: "Ok!",
+                             width: "350px",
+                            confirmButtonColor: "#fc673c",
+                            });
                         const newComment = response.data.comment_text;
                         // setComments((prev) => [...prev, newComment]);
                         // Clear input
                         setInputTextValue("");
                     } else {
-                        console.warn("Failed to post comment:", response.data);
+                        Swal.fire({
+                            title: "Failed",
+                            html: "<strong>Comment failed — server rejected</strong>",
+                            icon: "error",
+                             width: "350px",
+                            confirmButtonText: "OK",
+                            confirmButtonColor: "#dc3545",
+                        });
                     }
-            } catch (error) {
-                console.error("Error posting comment:", error);
+                    
+            } catch (error:any) {
+                Swal.fire({
+                    icon: "error",
+                    title: "Upload Failed",
+                    width: "350px",
+                    confirmButtonColor: "#dc3545",
+                    text: "Error Comment. Please try again.",
+                });
             }
         };  
         console.log(slug);
@@ -821,8 +1185,10 @@ const CommunitySectionCmtDetails: React.FC = () => {
                 setProfileCommunity(response.data?.data?.profile_Community || []);
                 const followingBy = response.data?.data?.following_by;
                 const images = response.data?.data?.following_by.images || [];
+                //  setImages(response.data.data.imageUrls);
+                 setImagesArray(response.data.data.following_by.images);
                 // console.log('images from API:', images);
-                setImagesArray(images);
+                // setImagesArray(images);
                 setFollowingBy(followingBy || []);
                 setComments(response.data.data.following_by.comments);
                 let postDats = [];
@@ -1217,13 +1583,13 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                         return (
                                             <a
                                             key={index}
-                                            href={image}
+                                            href={image.url}
                                             data-fancybox="MoreImages"
                                             style={{ display: index === currentIndex ? 'block' : 'none' }}
                                             >
                                                     
                                             <img
-                                                src={image || '/assets/images/not-found.jpg'}
+                                                src={image.url || '/assets/images/not-found.jpg'}
                                                 alt={`Trail ${index + 1}`}
                                                 className="w-100 br-20 coverImage"
                                                 onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
@@ -1237,7 +1603,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                     }) 
                                     ):(
                                         <img
-                                            src='/assets/images/not-found.jpg'
+                                            src=''
                                             alt=""
                                             className="w-100 br-20 coverImage"
                                             onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
@@ -1426,7 +1792,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                     <div className="test-image">
                                                         <img
                                                             style={{'height':'60px' ,'width':'60px'}}
-                                                            src='/assets/images/profile/profile-md.png'
+                                                             src={cmt.user_image || '/assets/images/profile/profile-md.png'}
                                                             alt="Top Trail" className="user-profile-img" 
                                                             onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                                                                 const target = e.currentTarget;
@@ -1668,7 +2034,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                             }}
                         >
                             <div style={{ display: "flex", justifyContent: "space-between" }}>
-                                <h3 style={{ marginTop:'34px'}}>Add Your Review</h3>
+                                <h3 style={{ marginTop:'34px'}}>{userReview ? "Edit Your Review" : "Add Your Review"}</h3>
                                 <button className="btn-cross" onClick={() => setIsReviewOpen(false)}>
                                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M4 4L16 16M16 4L4 16" stroke="#05073D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -1712,8 +2078,8 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                 handleSubmitReview(),
                                 setIsReviewOpen(false)
                             }}
-                             disabled={!review.trim()}>
-                                Submit
+                            disabled={!review.trim()}>
+                               {userReview ? "Update" : "Add"}  
                             </button>
                             </div>
                         </div>
@@ -1726,21 +2092,72 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                 <div className="section-title d-flex align-items-center">   
                                     <h2 className="title">Reviews</h2>
                                     
-                                     {isLoggedIn &&(
+                                {/* {isLoggedIn &&(
                                     <a href="#" style={{background:'#FC673C',border:'none',borderRadius:'50px',padding:'10px'}} className="btn btn-sm btn-primary ms-2"  
                                         onClick={(e) => {
                                             e.preventDefault();
                                             setIsReviewOpen(true);
                                         }}  
                                     >Add Review</a> 
+                                )} */}
+                                {isLoggedIn && (
+                                    <a href="#"
+                                        style={{
+                                            background: "#FC673C",
+                                            border: "none",
+                                            borderRadius: "50px",
+                                            padding: "10px",
+                                            opacity: userReview ? 0.5 : 1,
+                                            pointerEvents: userReview ? "none" : "auto",
+                                            cursor: userReview ? "not-allowed" : "pointer",
+                                        }}
+                                        className="btn btn-sm btn-primary ms-2"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+
+                                            if (userReview) {
+                                            setRating(userReview.rating);
+                                            setReview(userReview.decription);
+                                            } else {
+                                            setRating(0);
+                                            setReview("");
+                                            }
+                                            setIsReviewOpen(true);
+                                        }}
+                                    >
+                                    {userReview ? "Review Submitted" : "Add Review"}
+                                    </a>
+
+                                    // <a
+                                    //     href="#"
+                                    //     style={{background:'#FC673C',border:'none',borderRadius:'50px',padding:'10px'}}
+                                    //     className="btn btn-sm btn-primary ms-2"
+                                    //     onClick={(e) => {
+                                    //     e.preventDefault();
+                                    //     // pre-fill if editing
+                                    //     if (userReview) {
+                                    //         setRating(userReview.rating);
+                                    //         setReview(userReview.decription);
+                                    //     } else {
+                                    //         setRating(0);
+                                    //         setReview("");
+                                    //     }
+                                    //     setIsReviewOpen(true);
+                                    //     }}
+                                    //      disabled={!!userReview} 
+                                    // >
+                                    //      {userReview ? "Review Submitted" : "Add Review"}
+                                    //     {/* {userReview ? "Edit Review" : "Add Review"} */}
+                                    // </a>
                                 )}
+
                                 </div>
                             </div>
 
                         </div>
                         {
                             showReviews &&(
-                            <div className="row review-row g-3">
+                            <>
                                 {message && <div style={{color:'#FC673C' , textAlign:'left',margin:'0px'}}>{message}</div>}
                                 {reviewDetails.length > 0 ? (
                                     <>
@@ -1762,7 +2179,31 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                             {/* <img src="/assets/images/other/testimonial-1.png" alt="" className="img-fluid"/> */}
                                                         </div>
                                                         <div className="test-head">
-                                                            <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">{rev.userWithAddress ?? ''} </h3>
+                                                                <div className="d-flex align-items-center">
+                                                                <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">
+                                                                    {rev.userWithAddress ?? ''}
+                                                                </h3>
+                                                                <a className=" ms-2" title="Edit Review"
+                                                                onClick={(e) => {
+                                                                e.preventDefault();
+                                                                // pre-fill if editing
+                                                                if (userReview) {
+                                                                    setRating(userReview.rating);
+                                                                    setReview(userReview.decription);}
+                                                                // } else {
+                                                                //     setRating(0);
+                                                                //     setReview("");
+                                                                // }
+                                                                setIsReviewOpen(true);
+                                                                }}
+                                                                >
+                                                                    <svg width="19" height="18" viewBox="0 0 19 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                        <path d="M10.5137 0.80598C11.5867 -0.268666 13.3274 -0.269589 14.4014 0.804027L16.8936 3.29621C17.958 4.36095 17.9687 6.08414 16.918 7.16243L7.68555 16.6361C6.98003 17.3599 6.01137 17.7679 5.00098 17.7679H2.25C1.05069 17.7678 0.0774547 16.8306 0.00488281 15.6595L0.00292969 15.4232L0.120117 12.6146C0.159615 11.6756 0.550055 10.7843 1.21387 10.1195L10.5137 0.80598ZM17.5146 16.1947C17.9286 16.1947 18.2646 16.5304 18.2646 16.9447C18.2646 17.359 17.9287 17.6947 17.5146 17.6947H11.3936L11.3164 17.6907C10.9386 17.6521 10.6436 17.333 10.6436 16.9447C10.6436 16.5564 10.9386 16.2372 11.3164 16.1986L11.3936 16.1947H17.5146ZM2.27441 11.181C1.87636 11.5798 1.64186 12.1138 1.61816 12.6771L1.50098 15.4857V15.5657C1.52555 15.9556 1.84974 16.2676 2.24902 16.2679H5.00195C5.60809 16.2678 6.18906 16.0225 6.6123 15.5882L13.1436 8.88508L8.85059 4.59309L2.27441 11.181ZM13.3418 1.86555C12.8536 1.37755 12.062 1.37805 11.5742 1.86653L9.91113 3.53157L14.1914 7.81184L15.8447 6.11555C16.3222 5.62547 16.3176 4.84171 15.834 4.35774L13.3418 1.86555Z"
+                                                                            fill="#7D7D7D"/>
+                                                                    </svg>
+                                                                </a>
+                                                            </div>
+                                                            {/* <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">{rev.userWithAddress ?? ''} </h3> */}
                                                                 <StarRating rating={Number(rev?.rating)}/>
                                                             {/* <div className="rating">
                                                                 <i className="bi bi-star-fill"></i>
@@ -1801,18 +2242,132 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                 ):(
                                     <p>Not Found Review </p>
                                 )}
-                        </div>
+                        </>
                             )
                         }
-                        
                         <div className="row">
-                            <div className="col-12 mb-4 text-center">
-                            <button
-                                className="btn-style-1"
-                                onClick={() => setShowReviews(!showReviews)}
-                            >
-                                {showReviews ? "Hide Reviews" : "Check All Reviews"}
-                            </button>
+                            <div className="col-12">
+                                <div className="section-title d-flex align-items-center">   
+                                    <h2 className="title">Images</h2>
+                                     
+
+                                {/* {isLoggedIn &&(
+                                    <a href="#" style={{background:'#FC673C',border:'none',borderRadius:'50px',padding:'10px'}} className="btn btn-sm btn-primary ms-2"  
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            setIsReviewOpen(true);
+                                        }}  
+                                    >Add Review</a> 
+                                )} */}
+                                {isLoggedIn && (
+                                    <div className="d-flex justify-content-between align-items-center">
+
+                                        <label
+                                        htmlFor="imageInput"
+                                        style={{background: "#FC673C", border: "none",borderRadius: "50px", padding: "10px"}}
+                                            className="btn btn-sm btn-primary ms-2"
+                                        >
+                                        Add more Images
+                                        </label>
+                                        
+                                        <input
+                                        id="imageInput"
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        onChange={handleImageChange}
+                                        style={{ display: "none" }}
+                                        />
+                                    </div>
+                                )}
+
+                                </div>
+                                
+                            </div>
+
+                        </div>
+                        {messageUpload && <div style={{color:'#FC673C' ,padding: '10px',marginBottom:'10px'}}>{messageUpload}</div>}
+                        {messageUploadError && <div style={{color:'#dc3545' ,padding: '10px',marginBottom:'10px'}}>{messageUploadError}</div>}
+                        <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
+                            <div className="testimonial-single position-relative ">
+                                {/* <div className="testimonial-body review_style" style={{paddingTop:'0px'}}> */}
+                                    {/* <p className="text-midnight-navy">CoolTrails helped me discover hidden gems right in my backyard. The trail difficulty ratings were spot on, and the user tips saved me big time!</p> */}
+                                    <div className="review-gallery" style={{overflow: 'visible'}}>
+                                        <div className="d-flex flex-wrap gap-2">
+                                            {previewUrls.length > 0 ? (
+                                                <>
+                                                    {
+                                                        previewUrls.slice(0, postVisibleCount).map((imgUrl:any,index:number) => (
+                                                        //previewUrls.map((imgUrl: string, index: number) => (
+                                                        <div
+                                                            key={index}
+                                                            className="position-relative"
+                                                            style={{ width: "90px", height: "90px" }}
+                                                            >
+                                                            <a
+                                                                href={imgUrl.mediaUrl}
+                                                                data-fancybox="reviewImages"
+                                                                style={{ display: "block" }}
+                                                            >
+                                                                <img
+                                                                src={imgUrl.mediaUrl}
+                                                                alt="Preview"
+                                                                style={{
+                                                                    width: "90px",
+                                                                    height: "90px",
+                                                                    objectFit: "cover",
+                                                                    borderRadius: "8px",
+                                                                }}
+                                                                onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                                                    const target = e.currentTarget;
+                                                                    target.onerror = null;
+                                                                    target.src = "/assets/images/not-found.jpg";
+                                                                }}
+                                                                />
+                                                            </a>
+
+                                                            {/* Delete Button */}
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-sm btn-danger position-absolute"
+                                                                style={{
+                                                                top: "-8px",
+                                                                right: "-8px",
+                                                                padding: "2px 6px",
+                                                                borderRadius: "50%",
+                                                                fontSize: "12px",
+                                                                lineHeight: "12px",
+                                                                }}
+                                                                // onClick={() => handleRemoveImage(index)}
+                                                            >
+                                                                ×
+                                                            </button>
+                                                        </div>
+                                                        ))
+                                                    }
+                                                    {postVisibleCount < previewUrls.length && (
+                                                        <div className="row">
+                                                            <div className="col-12 text-end">
+                                                                <button
+                                                                style={{textDecoration:'none', marginBottom:'10px',float:'right'}}
+                                                                className="btn btn-link text-orange fw-bold ms-1"
+                                                                onClick={handleShowPostMore}
+                                                                >
+                                                                Show more... 
+                                                                </button>
+                                                            </div>
+                                                        </div>   
+                                                    )}
+                                                </>
+                                                
+                                            ) : (
+                                                <p>Review Images not available...</p>
+                                            )}
+                                        </div>
+                                        {isUploading && <p style={{color:'#fc673c'}} className="text-info">Uploading...</p>}
+                                </div>
+
+                                {/* </div> */}
                             </div>
                         </div>
                         {/* <div className="row">

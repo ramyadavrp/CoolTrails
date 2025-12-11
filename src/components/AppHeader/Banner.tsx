@@ -80,7 +80,7 @@ const Banner: React.FC = () => {
         setSuggestions([]);
     }
    
-// console.log(suggestions);
+ console.log(suggestions);
     return (
       <section className="home-hero-section">
         <div className="container-fluid  bg-image">
@@ -142,7 +142,7 @@ const Banner: React.FC = () => {
                                             {item.title}
                                         </Link> */}
                                         
-                                        <Link className="a-text"
+                                        <Link className="a-text" state={{trailId:item.trailId}}
                                             to={
                                                 item.type === 'Trail'
                                                 ? trailurl

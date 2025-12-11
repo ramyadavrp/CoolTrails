@@ -278,11 +278,9 @@ const CommunitySection: React.FC = () => {
             if (Array.isArray(apidata.suggested_nearby)) {
                 const initialCounts: { [key: number]: number } = {};
                 const initialLiked: { [key: number]: boolean } = {};
-
                 apidata.suggested_nearby.forEach((item: any) => {
                 initialCounts[item.id] = item.like_count || 0;
                 initialLiked[item.id] = item.do_like || false; // if backend sends this
-               
                 });
 
                 setLikeCounts(initialCounts);
@@ -401,7 +399,7 @@ const CommunitySection: React.FC = () => {
                                 ?? response.data.data?.do_follow 
                                 ?? response.data.follow;
 
-                console.log("doFollow:", doFollow);
+                // console.log("doFollow:", doFollow);
                 setFollow((prev) => ({
                     ...prev,
                     [id]: doFollow === true || doFollow === "true",
@@ -507,7 +505,7 @@ const CommunitySection: React.FC = () => {
     //         };
     //         fetchCommunityData();
     // },[]);
-    // console.log('ddd',getSuggestedNearby);
+    //  console.log('getSuggestedNearby  ',getSuggestedNearby);
 
 
     useEffect(() => {
@@ -626,7 +624,18 @@ const CommunitySection: React.FC = () => {
                                                     <div className="sms-btn d-flex align-items-center">
                                                         
                                                         <button 
+                                                        disabled={getFollow[getCom.id]} 
                                                         onClick={()=>handleFollow(getCom.id)}
+                                                       style={{
+                                                            cursor: getFollow[getCom.id] ? 'not-allowed' : 'pointer',
+                                                            opacity: getFollow[getCom.id] ? 0.5 : 1,
+                                                            backgroundColor: getFollow[getCom.id] ? '#ccc' : '#FC673C', 
+                                                            color: getFollow[getCom.id] ? '#666' : '#fff',
+                                                            border: 'none',
+                                                            padding: '10px 30px',
+                                                            borderRadius: '50px',
+                                                            textAlign:'center'
+                                                        }}
                                                         className="btn-style-1">
                                            
                                                         {getFollow[getCom.id] ? "Following" : "Follow"}

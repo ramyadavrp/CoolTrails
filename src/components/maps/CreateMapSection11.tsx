@@ -51,25 +51,7 @@ const CreateMapSection: React.FC = () => {
     const [markers, setMarkers] = useState<mapboxgl.Marker[]>([]);
     const [loopClosed, setLoopClosed] = useState(false);
      // map state close
-    const [showPrompt, setShowPrompt] = useState(false);
-    const [promptValue, setPromptValue] = useState("");
-    const [promptCallback, setPromptCallback] = useState<((value: string | null) => void) | null>(null);
-
-
     const shareUrl = window.location.href;
-    // Function you will call instead of prompt()
-    const openCustomPrompt = (callback: (value: string | null) => void) => {
-        setPromptCallback(() => callback);
-        setPromptValue("");
-        setShowPrompt(true);
-    };
-
-    // close popup
-    const closePrompt = (value: string | null) => {
-        setShowPrompt(false);
-        if (promptCallback) promptCallback(value);
-    };
-
     useEffect(() => {
         // Check if token exists in localStorage
         const token = sessionStorage.getItem("token");
@@ -79,146 +61,131 @@ const CreateMapSection: React.FC = () => {
     // Start map creation
     // Initialize map
     useEffect(() => {
-      if (!mapContainer.current) return;
-      setLoadingMap(true);
-
-      const map = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: "mapbox://styles/mapbox/streets-v12",
-        center: [78.0421, 27.1751],
-        zoom: 16,
-        pitch: 0,
-        bearing: 0,
-        antialias: true,
-        attributionControl: false,
-      });
-
-      mapRef.current = map;
-
-      const geocoder = new MapboxGeocoder({
-        accessToken: mapboxgl.accessToken,
-        mapboxgl: mapboxgl,
-        marker: false,
-        placeholder: "Search location",
-      });
-
-      map.addControl(geocoder);
-
-      map.on("load", () => {
-        setLoadingMap(false);
-
-        map.addSource("route", {
-          type: "geojson",
-          data: {
-            type: "Feature",
-            properties: {},
-            geometry: { type: "LineString", coordinates: [] as [number, number][] },
-          },
+        if (!mapContainer.current) return;
+        setLoadingMap(true);
+        const map = new mapboxgl.Map({
+            container: mapContainer.current,
+            style: "mapbox://styles/mapbox/streets-v12",
+            center: [78.0421, 27.1751],
+            zoom: 16,
+            pitch: 0,
+            bearing: 0,
+            antialias: true,
+            attributionControl: false // remove © Mapbox © OpenStreetMap Improve this map
+        });
+        mapRef.current = map; 
+        
+        const geocoder = new MapboxGeocoder({
+            accessToken: mapboxgl.accessToken,
+            mapboxgl: mapboxgl,
+            marker: false,
+            placeholder: "Search location",
         });
 
-        map.addLayer({
-          id: "route-layer",
-          type: "line",
-          source: "route",
-          layout: { "line-join": "round", "line-cap": "round" },
-          paint: { "line-color": "#3b9ddd", "line-width": 5 },
+        map.addControl(geocoder);
+        
+        map.on("load", () => {
+            setLoadingMap(false);
+            map.addSource("route", {
+                type: "geojson",
+                data: {
+                    type: "Feature",
+                    properties: {},
+                    geometry: { type: "LineString", coordinates: [] as [number, number][] },
+                },
+            });
+
+            map.addLayer({
+                id: "route-layer",
+                type: "line",
+                source: "route",
+                layout: { "line-join": "round", "line-cap": "round" },
+                paint: { "line-color": "#3b9ddd", "line-width": 5 },
+            });
+
+            // Walker marker
+            const el = document.createElement("div");
+            el.style.width = "30px";
+            el.style.height = "30px";
+            el.style.backgroundImage = "url('https://img.icons8.com/color/48/person-male--v1.png')";
+            el.style.backgroundSize = "cover";
+            el.style.borderRadius = "50%";
+            el.style.border = "2px solid white";
+
+            walkerMarkerRef.current = new mapboxgl.Marker(el).setLngLat([0, 0]).addTo(map);
+
+            loadMap();
         });
 
-        // Walker marker
-        const el = document.createElement("div");
-        el.style.width = "30px";
-        el.style.height = "30px";
-        el.style.backgroundImage =
-          "url('https://img.icons8.com/color/48/person-male--v1.png')";
-        el.style.backgroundSize = "cover";
-        el.style.borderRadius = "50%";
-        el.style.border = "2px solid white";
-        walkerMarkerRef.current = new mapboxgl.Marker(el).setLngLat([0, 0]).addTo(map);
-
-        loadMap();
-      });
-
-      return () => {
-        map.remove();
-        if (animationRef.current) cancelAnimationFrame(animationRef.current);
-      };
+        return () => {
+            map.remove();
+            if (animationRef.current) cancelAnimationFrame(animationRef.current);
+        };
     }, []);
 
-  // Map click handler
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
+    // Map click handler
+    useEffect(() => {
+        const map = mapRef.current;
+        if (!map) return;
 
-    const handleClick = (e: mapboxgl.MapMouseEvent) => {
-      if (loopClosed) return alert("Loop already closed.");
+        const handleClick = async (e: mapboxgl.MapMouseEvent) => {
+            if (loopClosed) return alert("Loop already closed.");
 
-      const coords: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+            const coords: [number, number] = [e.lngLat.lng, e.lngLat.lat];
 
-      // Loop detection
-      if (points.length > 2) {
-        const first = points[0];
-        const dist =
-          Math.sqrt(Math.pow(first[0] - coords[0], 2) + Math.pow(first[1] - coords[1], 2));
-        if (dist < 0.0001) {
-          setLoopClosed(true);
-          alert("Loop closed!");
-          setPoints((prev) => {
-            const newPoints = [...prev, coords];
-            updateRoute(newPoints);
-            handleAddMapPoints(newPoints);
-            return newPoints;
-          });
-          return;
-        }
-      }
+            if (points.length > 2) {
+                const first = points[0];
+                const dist = Math.sqrt(Math.pow(first[0] - coords[0], 2) + Math.pow(first[1] - coords[1], 2));
+                if (dist < 0.0001) {
+                    setLoopClosed(true);
+                    alert("Loop closed!");
+                    setPoints(prev => {
+                        const newPoints = [...prev, coords];
+                        updateRoute(newPoints);
+                        return newPoints;
+                    });
+                    return;
+                }
+            }
 
-      // Prompt for title
-      openCustomPrompt((title) => {
-        if (!title) return;
+            const title = prompt("Enter title for this point:");
+            if (!title) return;
 
-        const index = points.length;
+            const index = points.length; // assign index for this marker
 
-        const marker = new mapboxgl.Marker({ draggable: true })
-          .setLngLat(coords)
-          .setPopup(new mapboxgl.Popup().setText(title))
-          .addTo(mapRef.current!);
+            const marker = new mapboxgl.Marker({ draggable: true })
+                .setLngLat(coords)
+                .setPopup(new mapboxgl.Popup().setText(title))
+                .addTo(mapRef.current!);
 
-        marker.togglePopup();
+            marker.togglePopup();
 
-        // Drag update
-        marker.on("dragend", () => {
-          const lngLat = marker.getLngLat();
-          setPoints((prev) => {
-            const updatedPoints = [...prev];
-            updatedPoints[index] = [lngLat.lng, lngLat.lat];
-            updateRoute(updatedPoints);
-            handleAddMapPoints(updatedPoints);
-            return updatedPoints;
-          });
-        });
+            // marker drag updates correct index
+            marker.on("dragend", () => {
+                const lngLat = marker.getLngLat();
+                setPoints(prev => {
+                    const updatedPoints = [...prev];
+                    updatedPoints[index] = [lngLat.lng, lngLat.lat];
+                    updateRoute(updatedPoints);
+                    return updatedPoints;
+                });
+            });
 
-        // Update state
-        setPoints((prev) => {
-          const newPoints = [...prev, coords];
-          setTitles((prevTitles) => [...prevTitles, title]);
-          setMarkers((prevMarkers) => [...prevMarkers, marker]);
+            setMarkers(prev => [...prev, marker]);
+            setTitles(prev => [...prev, title]);
+            setPoints(prev => {
+                const newPoints = [...prev, coords];
+                updateRoute(newPoints);
+                return newPoints;
+            });
+        };
 
-          updateRoute(newPoints);
+            map.on("click", handleClick);
 
-          // API call
-          handleAddMapPoints(newPoints);
-
-          return newPoints;
-        });
-      });
-    };
-
-    map.on("click", handleClick);
-     return () => {
-      map.off("click", handleClick);
-    };
-    // return () => map.off("click", handleClick);
-  }, [points, loopClosed]);
+            return () => {
+                map.off("click", handleClick);
+            };
+    }, [points, titles, loopClosed]);
 
     // Get route using Mapbox Directions API
     const getRoute = async (start: [number, number], end: [number, number]) => {
@@ -227,7 +194,7 @@ const CreateMapSection: React.FC = () => {
         const json = await res.json();
         return json.routes?.[0]?.geometry.coordinates || null;
     };
-    
+
     const updateRoute = async (pts: [number, number][]) => {
         const map = mapRef.current;
         if (!map) return;
@@ -386,94 +353,11 @@ const CreateMapSection: React.FC = () => {
     };
  
   // End map creation
-    // API call
-  const handleAddMapPoints = async (pointsWithCoords: [number, number][]) => {
-    console.log("pointsWithCoords", pointsWithCoords);
-
-    const payload = {
-      UserId: "20c8a597-25b7-414d-8b9c-c9575f40b9fc",
-      feedId: 1,
-      points: pointsWithCoords.map((p) => ({
-        Latitude: p[1].toString(),
-        Longitude: p[0].toString(),
-      })),
-    };
-
-    console.log("Payload to send:", payload);
-
-    try {
-      const res = await axios.post(`${BASE_URL}/feed/addmap`, payload);
-      console.log("API response:", res.data);
-      if (res.data.success) alert("Points saved successfully!");
-    } catch (err) {
-      console.error("API error:", err);
-      alert("Failed to save points.");
-    }
-  };
-
-
+    
     return (
         <main className="mainContent">
             <section className="section-trail-detail">
-                <div style={{paddingLeft: '20px'}}>
-                    <h1>Create Map</h1>
-                    <p style={{margin:'0px',color:'#FC673C'}}>Please click the over map and set point.</p>
-                </div>
-                {/* start show phpup */}
-                {showPrompt && (
-                    <div style={{position: "fixed",top: 0,left: 0, right: 0,bottom: 0, background: "rgba(0,0,0,0.5)",display: "flex", 
-                            alignItems: "center", justifyContent: "center", zIndex: 1000,}}
-                        onClick={() => closePrompt(null)}>
-                        <div
-                            style={{ background: "white",padding: "25px",borderRadius: "10px",width: "450px",maxHeight: "80vh", overflowY: "auto",}}
-                            onClick={(e) => e.stopPropagation()}>
-
-                            {/* Close Button */}
-                            <div style={{ display: "flex", justifyContent: "end" }}>
-                                <button className="btn-cross" onClick={() => closePrompt(null)}>
-                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M4 4L16 16M16 4L4 16" stroke="#05073D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                    </svg>
-                                </button>
-                            </div>
-
-                            {/* Title */}
-                            <h4>Enter Title for This Point</h4>
-                            {/* Input */}
-                            <div className="row mt-3">
-                                <div className="col-md-12">
-                                    <input type="text" value={promptValue} onChange={(e) => setPromptValue(e.target.value)}
-                                        autoFocus
-                                        style={{width: "100%",padding: "10px",borderRadius: "6px", border: "1px solid #ccc",}}
-                                        placeholder="Enter title"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Buttons */}
-                            <div style={{ marginTop: "20px", display: "flex", gap: "10px" }}>
-                                {/* <button className="btn-send" 
-                                // onClick={() => closePrompt(promptValue)} 
-                                 onClick={() => handleAddMapPoints(points)} 
-                                disabled={!promptValue.trim()}> */}
-                                <button
-                                    className="btn-send"
-                                    onClick={() => {
-                                        if (promptCallback) promptCallback(promptValue);
-                                        closePrompt(promptValue)
-                                    }}
-                                    disabled={!promptValue.trim()}
-                                    >
-                                    OK</button>
-                                <button className="btn-cancel" onClick={() => closePrompt(null)}
-                                 style={{ background: "#ddd",padding: "9px 11px",borderRadius: "50px",border:'none'}}>Cancel
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-                {/* end popup */}
-
+                <h1>Create Map</h1>
                 <div
                     style={{
                     // position: "absolute",
@@ -498,12 +382,13 @@ const CreateMapSection: React.FC = () => {
                     <button  className="btn-style-12" onClick={clearMap}>Clear</button>
                     {/* <button  className="btn-style-12" onClick={() => (window.location.href = "")}>Trail Details</button>  */}
                     {/* <button  className="btn-style-12" onClick={() => (window.location.href = "/Trails/Details")}>Trail Details</button>  */}
-                </div> 
+            </div> 
                 {/* <div style={{ height: "100vh", width: "100%", position: "relative" ,padding:'20px'}}>
                     <div ref={mapContainer}  style={{ height: "100%", width: "100%",borderRadius: "10px" }}/>           
                 </div> */}
                 
                 <div style={{ position: "relative", width: "100%", height: "100vh",padding:'20px' }}>
+                    {/* Map Container Always Exists */}
                     <div
                     ref={mapContainer}
                     style={{
@@ -513,6 +398,8 @@ const CreateMapSection: React.FC = () => {
                         visibility: loadingMap ? "hidden" : "visible",
                     }}
                     />
+
+                    {/* Loader Overlay */}
                     {loadingMap && (
                     <div
                         style={{

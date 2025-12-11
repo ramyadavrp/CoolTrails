@@ -42,9 +42,9 @@ const ProfileSection: React.FC = () => {
             if (token) setToken(token);
             if (login) setLoginId(login);
     }, []);
-    //  console.log("loginId:", loginId); 
+    //   console.log("loginId:", loginId); 
     //  console.log("token:", token); 
-    //  console.log("userId:", userId); 
+     console.log("userId:", userId); 
     
     // Show the profile
     useEffect(() => {
@@ -54,7 +54,7 @@ const ProfileSection: React.FC = () => {
                 try {
                 const response = await axios.post(`${BASE_URL}/feed/user/${userId}`, {
                     LoginId: loginId,
-                    // LoginId: '1112VIRENDRA',
+                    // LoginId: '1112virendra@gmail.com',
                 }
                 // {
                 //     headers: {
@@ -161,7 +161,7 @@ const ProfileSection: React.FC = () => {
                                                 state={{ postId: post.id }}  
                                                 >
                                                     <img
-                                                    src={post.user_logo || '/assets/images/not-found.jpg'}
+                                                    src={post.media[0].thumbnailUrl  || '/assets/images/not-found.jpg'}
                                                     alt="Com" className="profile-sm rounded-circle"  
                                                     onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                                                         const target = e.currentTarget;
@@ -199,7 +199,7 @@ const ProfileSection: React.FC = () => {
                                             {/* <a href="" className="d-block"> */}
                                             <Link to={`/explore/recording/${post.slug}`} className="d-block" state={{ postId: post.id }} >
                                                 <img
-                                                    src={post.post_image || '/assets/images/not-found.jpg'}
+                                                    src={post.media[0].mediaUrl  || '/assets/images/not-found.jpg'}
                                                     alt="Com" className="w-100 br-20"  
                                                     onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                                                         const target = e.currentTarget;
