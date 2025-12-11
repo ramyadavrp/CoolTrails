@@ -7,9 +7,24 @@ import { Trash2, Upload } from "lucide-react";
 import { SquareLoader } from "react-spinners";
 import { SyncLoader } from "react-spinners";
 import {getAuth} from '../utils/storage';
+import mapboxgl from "mapbox-gl";
+// import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
+import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
+import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
+import "mapbox-gl/dist/mapbox-gl.css";
+
+mapboxgl.accessToken = "pk.eyJ1IjoiMTExMnZpcmVuZHJhIiwiYSI6ImNtYmE0emNyNjBwbHMyanNibHBpZHgxMjUifQ.5FSp2VZ1T1kXcGV38bC5jA";
 
 declare const Masonry: any;
 const BASE_URL = import.meta.env.VITE_API_URL;
+
+
+interface Point {
+  title: string;
+  latitude: number; 
+  longitude: number;
+  pointOrder: number;
+}
 
 interface FavoriteActivity {
   title: string;
@@ -85,6 +100,22 @@ const AddPostSection: React.FC = () => {
         favorite_activities: [],
         showStateCity: true,
     });
+     const [loadingMap,setLoadingMap] = useState(true);
+     // map state
+    const mapContainer = useRef<HTMLDivElement | null>(null);
+    const mapRef = useRef<mapboxgl.Map | null>(null);
+    // const mapContainer = useRef<HTMLDivElement | null>(null);
+    const walkerMarkerRef = useRef<mapboxgl.Marker | null>(null);
+    const animationRef = useRef<number | null>(null);
+    // const mapRef = useRef<mapboxgl.Map | null>(null);
+    const [points, setPoints] = useState<[number, number][]>([]);
+    const [titles, setTitles] = useState<string[]>([]);
+    const [markers, setMarkers] = useState<mapboxgl.Marker[]>([]);
+    const [loopClosed, setLoopClosed] = useState(false);
+        // map state close
+    const [showPrompt, setShowPrompt] = useState(false);
+    const [promptValue, setPromptValue] = useState("");
+    const [promptCallback, setPromptCallback] = useState<((value: string | null) => void) | null>(null);
 
     useEffect(() => {
         const { userId, token ,login,email} = getAuth();
@@ -93,6 +124,357 @@ const AddPostSection: React.FC = () => {
             // if (login) setLoginIdBased(login);
             // if (email) setLoginId(email);
     }, []);
+    // Function you will call instead of prompt()
+    const openCustomPrompt = (callback: (value: string | null) => void) => {
+        setPromptCallback(() => callback);
+        setPromptValue("");
+        setShowPrompt(true);
+    };
+
+    // close popup
+    const closePrompt = (value: string | null) => {
+        setShowPrompt(false);
+        if (promptCallback) promptCallback(value);
+    };
+    // Map
+    // Start map creation 
+    // Initialize map
+    useEffect(() => {
+      if (!mapContainer.current) return;
+      setLoadingMap(true);
+
+      const map = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: "mapbox://styles/mapbox/streets-v12",
+        center: [78.0421, 27.1751],
+        zoom: 16,
+        pitch: 0,
+        bearing: 0,
+        antialias: true,
+        attributionControl: false,
+      });
+
+      mapRef.current = map;
+
+      const geocoder = new MapboxGeocoder({
+        accessToken: mapboxgl.accessToken,
+        mapboxgl: mapboxgl,
+        marker: false,
+        placeholder: "Search location",
+      });
+
+      map.addControl(geocoder);
+
+      map.on("load", () => {
+        setLoadingMap(false);
+
+        map.addSource("route", {
+          type: "geojson",
+          data: {
+            type: "Feature",
+            properties: {},
+            geometry: { type: "LineString", coordinates: [] as [number, number][] },
+          },
+        });
+
+        map.addLayer({
+          id: "route-layer",
+          type: "line",
+          source: "route",
+          layout: { "line-join": "round", "line-cap": "round" },
+          paint: { "line-color": "#3b9ddd", "line-width": 5 },
+        });
+
+        // Walker marker
+        const el = document.createElement("div");
+        el.style.width = "30px";
+        el.style.height = "30px";
+        el.style.backgroundImage =
+          "url('https://img.icons8.com/color/48/person-male--v1.png')";
+        el.style.backgroundSize = "cover";
+        el.style.borderRadius = "50%";
+        el.style.border = "2px solid white";
+        walkerMarkerRef.current = new mapboxgl.Marker(el).setLngLat([0, 0]).addTo(map);
+
+        loadMap();
+      });
+
+      return () => {
+        map.remove();
+        if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      };
+    }, []);
+
+  // Map click handler
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const handleClick = (e: mapboxgl.MapMouseEvent) => {
+      if (loopClosed) return alert("Loop already closed.");
+
+      const coords: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+
+      // Loop detection
+      if (points.length > 2) {
+        const first = points[0];
+        const dist =
+          Math.sqrt(Math.pow(first[0] - coords[0], 2) + Math.pow(first[1] - coords[1], 2));
+        if (dist < 0.0001) {
+          setLoopClosed(true);
+          alert("Loop closed!");
+          setPoints((prev) => {
+            const newPoints = [...prev, coords];
+            updateRoute(newPoints);
+            handleAddMapPoints(newPoints);
+            return newPoints;
+          });
+          return;
+        }
+      }
+
+      // Prompt for title
+      openCustomPrompt((title) => {
+        if (!title) return;
+
+        const index = points.length;
+
+        const marker = new mapboxgl.Marker({ draggable: true })
+          .setLngLat(coords)
+          .setPopup(new mapboxgl.Popup().setText(title))
+          .addTo(mapRef.current!);
+
+        marker.togglePopup();
+
+        // Drag update
+        marker.on("dragend", () => {
+          const lngLat = marker.getLngLat();
+          setPoints((prev) => {
+            const updatedPoints = [...prev];
+            updatedPoints[index] = [lngLat.lng, lngLat.lat];
+            updateRoute(updatedPoints);
+            handleAddMapPoints(updatedPoints);
+            return updatedPoints;
+          });
+        });
+
+        // Update state
+        setPoints((prev) => {
+          const newPoints = [...prev, coords];
+          setTitles((prevTitles) => [...prevTitles, title]);
+          setMarkers((prevMarkers) => [...prevMarkers, marker]);
+
+          updateRoute(newPoints);
+
+          // API call
+          handleAddMapPoints(newPoints);
+
+          return newPoints;
+        });
+      });
+    };
+
+    map.on("click", handleClick);
+     return () => {
+      map.off("click", handleClick);
+    };
+    // return () => map.off("click", handleClick);
+  }, [points, loopClosed]); 
+
+    // Get route using Mapbox Directions API
+    const getRoute = async (start: [number, number], end: [number, number]) => {
+        const url = `https://api.mapbox.com/directions/v5/mapbox/walking/${start[0]},${start[1]};${end[0]},${end[1]}?geometries=geojson&access_token=${mapboxgl.accessToken}`;
+        const res = await fetch(url);
+        const json = await res.json();
+        return json.routes?.[0]?.geometry.coordinates || null;
+    };
+    
+    const updateRoute = async (pts: [number, number][]) => {
+        const map = mapRef.current;
+        if (!map) return;
+        if (pts.length < 2) {
+            const source = map.getSource("route") as mapboxgl.GeoJSONSource;
+            if (source) {
+                source.setData({
+                    type: "Feature",
+                    properties: {},
+                    geometry: {
+                        type: "LineString",
+                        coordinates: [],
+                    },
+                });
+            }
+            return;
+        }
+        let fullRoute: [number, number][] = [];
+
+        for (let i = 0; i < pts.length - 1; i++) {
+            const route = await getRoute(pts[i], pts[i + 1]);
+            if (!route) return;
+            if (i > 0) route.shift();
+            fullRoute = fullRoute.concat(route);
+        }
+
+        if (loopClosed && pts.length > 2) {
+            const closeRoute = await getRoute(pts[pts.length - 1], pts[0]);
+            if (closeRoute) {
+                closeRoute.shift();
+                fullRoute = fullRoute.concat(closeRoute);
+            }
+        }
+
+        walkerMarkerRef.current?.setLngLat(fullRoute[0]);
+        const source = map.getSource("route") as mapboxgl.GeoJSONSource;
+        if (source) {
+            source.setData({
+                type: "Feature",
+                properties: {},
+                geometry: {
+                    type: "LineString",
+                    coordinates: fullRoute,
+                },
+            });
+        }
+        animateAlongPath(fullRoute);
+    };
+
+    const animateAlongPath = (coords: [number, number][]) => {
+        if (!walkerMarkerRef.current) return;
+
+        let i = 0;
+
+        const step = () => {
+            if (i >= coords.length - 1) return;
+            const start = coords[i];
+            const end = coords[i + 1];
+            let progress = 0;
+            const duration = 200;
+            const startTime = performance.now();
+
+            const animate = (t: number) => {
+                progress = Math.min((t - startTime) / duration, 1);
+                const lng = start[0] + (end[0] - start[0]) * progress;
+                const lat = start[1] + (end[1] - start[1]) * progress;
+                walkerMarkerRef.current?.setLngLat([lng, lat]);
+
+                if (progress < 1) {
+                    animationRef.current = requestAnimationFrame(animate);
+                } else {
+                    i++;
+                    animationRef.current = requestAnimationFrame(step);
+                }
+            };
+
+            animationRef.current = requestAnimationFrame(animate);
+        };
+
+        if (animationRef.current) cancelAnimationFrame(animationRef.current);
+        animationRef.current = requestAnimationFrame(step);
+    };
+
+    const clearMap = () => {
+        markers.forEach((m) => m.remove());
+        setMarkers([]);
+        setPoints([]);
+        setTitles([]);
+        setLoopClosed(false);
+        walkerMarkerRef.current?.setLngLat([0, 0]);
+        mapRef.current?.getSource("route")?.setData({
+            type: "Feature",
+            geometry: { type: "LineString", coordinates: [] },
+        });
+    };
+
+    const toggle3D = () => {
+        const map = mapRef.current;
+        if (!map) return;
+        const pitch = map.getPitch();
+        map.easeTo({ pitch: pitch === 0 ? 60 : 0, bearing: pitch === 0 ? 20 : 0 });
+    };
+
+
+    const loadMap = async () => {
+        //alert('load'); 
+        const res = await fetch("/Trails/Load");
+        if (!res.ok) return console.warn("Map not found.");
+        const data = await res.json();
+
+        clearMap();
+        const bounds = new mapboxgl.LngLatBounds();
+        const newPoints: [number, number][] = [];
+        const newMarkers: mapboxgl.Marker[] = [];
+        const newTitles: string[] = [];
+
+        data.points.data.forEach((p: any, idx: number) => {
+            const coords: [number, number] = [p.longitude, p.latitude];
+            const marker = new mapboxgl.Marker({ draggable: true })
+                .setLngLat(coords)
+                .setPopup(new mapboxgl.Popup().setText(p.title))
+                .addTo(mapRef.current!);
+            marker.togglePopup();
+
+            // use index binding
+            marker.on("dragend", () => {
+                const lngLat = marker.getLngLat();
+                setPoints(prev => {
+                    const updatedPoints = [...prev];
+                    updatedPoints[idx] = [lngLat.lng, lngLat.lat];
+                    updateRoute(updatedPoints);
+                    return updatedPoints;
+                });
+            });
+
+            newPoints.push(coords);
+            newMarkers.push(marker);
+            newTitles.push(p.title);
+            bounds.extend(coords);
+        });
+
+        setPoints(newPoints);
+        setMarkers(newMarkers);
+        setTitles(newTitles);
+
+        if (newPoints.length > 2) {
+            const first = newPoints[0],
+                last = newPoints[newPoints.length - 1];
+            const dist = Math.sqrt(Math.pow(first[0] - last[0], 2) + Math.pow(first[1] - last[1], 2));
+            setLoopClosed(dist < 0.0001);
+        }
+
+        if (!bounds.isEmpty()) mapRef.current!.fitBounds(bounds, { padding: 50, maxZoom: 17 });
+
+        updateRoute(newPoints);
+    };
+ 
+  // End map creation
+    // API call
+  const handleAddMapPoints = async (pointsWithCoords: [number, number][]) => {
+    console.log("pointsWithCoords", pointsWithCoords);
+
+    const payload = {
+      UserId: "20c8a597-25b7-414d-8b9c-c9575f40b9fc",
+      feedId: 1,
+      points: pointsWithCoords.map((p) => ({
+        Latitude: p[1].toString(),
+        Longitude: p[0].toString(),
+      })),
+    };
+
+    console.log("Payload to send:", payload);
+
+    try {
+      const res = await axios.post(`${BASE_URL}/feed/addmap`, payload);
+      console.log("API response:", res.data);
+      if (res.data.success) alert("Points saved successfully!");
+    } catch (err) {
+      console.error("API error:", err);
+      alert("Failed to save points.");
+    }
+  };
+
+
+
+    
 
     // useEffect(() => {
     //         // const storedId = localStorage.getItem("id");
@@ -460,54 +842,9 @@ const AddPostSection: React.FC = () => {
                                     )}
                             </div>
                             </>
-                            {/* <div className="profile-info-edit d-flex align-items-center">
-                                <div className="profile-img">
-                                    <img
-                                        src={preview || 'assets/images/profile/profile-md.png'}
-                                        alt="Profile"
-                                        width={100}
-                                    />
-                                    
-                                    </div>
-                                <div className="profile-info-edit-cn d-flex">
-                                    <div className="pfe-title">
-                                        <h3 className="pfe-name text-midnight-navy mb-0">Amit Singh</h3>
-                                        <p className="pfe-location text-midnight-navy mb-0">Dubai, United Arab Emirates</p>
-                                    </div>
-                                    <div className="pfe-uplo d-flex align-items-center">
-                                        <div className="upload-btn-wrapper">
-                                           
-                                            <button type="button" className="btn"  onClick={() => fileInputRef.current?.click()} >
-                                                <svg width="25" height="23" viewBox="0 0 25 23" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17 8.5L19 8.5C21.2091 8.5 23 10.2909 23 12.5L23 17.5C23 19.7091 21.2091 21.5 19 21.5L7 21.5C4.79086 21.5 3 19.7091 3 17.5L3 12.5C3 10.2909 4.79086 8.5 7 8.5L9 8.5" stroke="#05073D" strokeWidth="1.5" strokeLinecap="round"/><path d="M16 5.5L13.7071 3.20711C13.3166 2.81658 12.6834 2.81658 12.2929 3.20711L10 5.5" stroke="#05073D" strokeWidth="1.5" strokeLinecap="round"/><path d="M13 3.5L13 15.5" stroke="#05073D" strokeWidth="1.5" strokeLinecap="round"/></svg>
-                                                Upload photo</button>
-                                               
-                                            <input type="file"  multiple ref={fileInputRef} onChange={handleFileChange} />
-                                            {imgMessage && <div style={{color:'#FC673C' , fontSize: "11px",textAlign:'center'}}>{imgMessage}</div>}
-                                           
-                                        </div>
-                                        <button className="delete-btn" onClick={handleDeleteImage}>
-                                            <svg width="25" height="25" viewBox="0 0 25 25" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <path d="M5.55063 9.23418C4.70573 8.10763 5.50954 6.5 6.91772 6.5H18.0823C19.4905 6.5 20.2943 8.10763 19.4494 9.23418V9.23418C18.8331 10.0558 18.5 11.0552 18.5 12.0823V18.5C18.5 20.7091 16.7091 22.5 14.5 22.5H10.5C8.29086 22.5 6.5 20.7091 6.5 18.5V12.0823C6.5 11.0552 6.16688 10.0558 5.55063 9.23418V9.23418Z" stroke="#717171" strokeWidth="1.5"/>
-                                            <path d="M14.5 17.5L14.5 11.5" stroke="#717171" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                            <path d="M10.5 17.5L10.5 11.5" stroke="#717171" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                            <path d="M16.5 6.5L15.9558 4.86754C15.6836 4.05086 14.9193 3.5 14.0585 3.5H10.9415C10.0807 3.5 9.31638 4.05086 9.04415 4.86754L8.5 6.5" stroke="#717171" strokeWidth="1.5" strokeLinecap="round"/>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div> */}
+                            
                         </div>
                     </div>
-                    {/* <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12 grid-item">
-                        <div className="bg-almost-white br-20 profile-card-2">
-                            <h2 className="profile-card-title text-midnight-navy">Bio</h2>
-                            <div className="bg-lavender-gray bio">
-                                <p className="mb-0 text-grey">Nature lover. Trail chaser. Sunrise enthusiast. <br /> I explore
-                                    one path at a time — from hidden forest gems to epic mountain climbs. Always up
-                                    for new trails and sharing honest tips to help others hike smarter.</p>
-                            </div>
-                        </div>
-                    </div> */}
                     <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12 grid-item">
                         <div className="bg-almost-white br-20 profile-card-2">
                             <h2 className="profile-card-title text-midnight-navy">Post information</h2>
@@ -596,12 +933,15 @@ const AddPostSection: React.FC = () => {
                                     })
                                 }
                             </div>
+                            {/* <div ref={mapContainer}
+                        style={{width: "100%", height: "100%",borderRadius: "10px",
+                            }}/></div> */}
+                                   
+                    
                         </div>
-
-                        <div className="my-4">
-                            <button className="btn-style-1" onClick={handleProfileUpdate}>Add Post</button>
-                            <button className="btn-style-0">Cancel</button>
-                        </div>
+                         
+                        
+                        
                     </div>
                     <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12 grid-item">
                         <div className="bg-almost-white br-20 profile-card-2">
@@ -721,112 +1061,188 @@ const AddPostSection: React.FC = () => {
                                         )
                                     }
                                     
-                                   
-                                    {/* <div className="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-12">
-                                        <div className="form-floating mb-3"> 
-                                                <input type="text" className="form-control" placeholder="" name="birthday_date" id="birthdate"  
-                                                value={profileData.birthday_date}
-                                                onChange={handleInputChange}
-                                                /> 
-                                            <label htmlFor="birthdate">Date</label>
-                                        </div>
-                                            
-                                    </div>
-                                    <div className="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-12">
-                                            <div className="form-floating mb-3">
-                                            <input type="text" className="form-control" placeholder="" name="birthday_year" id="birthYear"  
-                                             value={profileData.birthday_year}
-                                                onChange={handleInputChange}
-                                            /> 
-                                            <label htmlFor="birthYear">Year</label>
-                                        </div>                                             
-                                    </div> */}
-                                    
-                                    {/* <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12">
-                                        <div className="form-floating mb-3">
-                                            <select className="form-select" name="language" id="mktLang">
-                                                <option >English[US]</option>
-                                                <option value="">Hindi</option>
-                                            </select>
-                                            <label htmlFor="mktLang">Marketing Language</label>
-                                        </div>
-                                    </div> */}
-                                    
                                 </div>
 
                             </div>
                         </div>
                         
                     </div>
-                    
-                    
-                    
-                    {/* <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12 grid-item">
-                        <div className="row g-4">
-                            <div className="col-xl-6 col-lg-12 col-md-12 col-sm-12 col-12">
-                                <div className="bg-almost-white br-20 profile-card-2 radio-card">
-                                    <h2 className="profile-card-title text-midnight-navy">Units</h2>
-                                    <div className="pc-radio">
-                                        <div className="form-check form-check-inline">
-                                            <input className="form-check-input" type="radio" name="units" id="imp"
-                                                value="Imperial"
-                                                checked={profileData.units === "Imperial"}
-                                                onChange={handleInputChange}
-                                                />
-                                            <label className="form-check-label" htmlFor="imp">Imperial</label>
-                                        </div>
-                                        <div className="form-check form-check-inline">
-                                            <input className="form-check-input" type="radio" name="units" id="metr"
-                                                value="Metric"
-                                                checked={profileData.units === "Metric"}
-                                                onChange={handleInputChange}
-                                                 />
-                                            <label className="form-check-label" htmlFor="metr">Metric</label>
-                                        </div>
-                                    </div>
-
-                                </div>
-                            </div>
-                            <div className="col-xl-6 col-lg-12 col-md-12 col-sm-12 col-12">
-                                <div className="bg-almost-white br-20 profile-card-2 radio-card">
-                                    <h2 className="profile-card-title text-midnight-navy">Activity time preference</h2>
-                                    <div className="pc-radio">
-                                        <div className="form-check form-check-inline">
-                                            <input className="form-check-input" type="radio" name="activity_time_preference" id="spd"
-                                                value="Speed"
-                                                checked={profileData.activity_time_preference === "Speed"}
-                                                onChange={handleInputChange}
-                                                 />
-                                            <label className="form-check-label" htmlFor="spd">Speed</label>
-                                        </div>
-                                        <div className="form-check form-check-inline">
-                                            <input className="form-check-input" type="radio" name="activity_time_preference" id="pace"
-                                                value="Pace"
-                                                checked={profileData.activity_time_preference === "Pace"}
-                                                onChange={handleInputChange} 
-                                                 />
-                                            <label className="form-check-label" htmlFor="pace">Pace</label>
-                                        </div>
-                                    </div>
-
-                                </div>
-                            </div>
+                    <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12 grid-item">
+                        <div ref={mapContainer} style={{ width: "100%", height: "400px",borderRadius:'10px'}}></div>
+                        <div className="my-4">
+                            <button className="btn-style-1" onClick={handleProfileUpdate}>Add Post</button>
+                            <button className="btn-style-0">Cancel</button>
                         </div>
-                    </div>  */}
-                    
-                    {/* <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12 grid-item">
+                    </div>
+                     <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12 grid-item">
                         <div className="bg-almost-white br-20 profile-card-2">
-                            <h2 className="profile-card-title text-midnight-navy">Social Media</h2>
-                            <div className="platform-logins">
-                                <a href="" className="login-btn mb-2"> <img src="assets/images/icons/facebook-color.svg"
-                                        alt="" /> Connect with Facebook</a>
-                                <a href="" className="login-btn mb-2"> <img src="assets/images/icons/instagram-2.png"
-                                        alt="" /> Connect with Instagram</a>
+                            <h2 className="profile-card-title text-midnight-navy"></h2>
+                            <div className="profile-inner-form">
+                                <div className="row">
+                                    <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
+                                        <div className="form-floating mb-3">
+                                            <select className="form-select" name="TrailLevel" id="TrailLevel" 
+                                                //  value={profileData.height}
+                                                // onChange={handleInputChange} 
+                                            >
+                                                <option value="1">Difficulty</option>
+                                                <option value="2">Easy</option>
+                                                <option value="3">Moderate</option>
+                                                <option value="4">Hard</option>
+                                            </select>
+                                            <label htmlFor="TrailLevel">TrailLevel</label>
+                                        </div>
+                                    </div>
+                                    <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
+                                        <div className="form-floating mb-3">
+                                            <select className="form-select" name="weight" id="weight"
+                                                // value={profileData.weight}
+                                                // onChange={handleInputChange}
+                                            >
+                                                <option value="1">Unspecified</option>
+                                                <option value="2">One</option>
+                                            </select>
+                                            <label htmlFor="weight">Weight</label>
+                                        </div>
+                                    </div>
+                                    {/* <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
+                                        <div className="form-floating mb-3">
+                                            <select className="form-select" name="birthday_month" id="birthday"
+                                            // value={profileData.birthday_month}
+                                            //     onChange={handleInputChange}
+                                            >
+                                                <option >Month</option>
+                                                <option value="01">January</option>
+                                            </select>
+                                            <label htmlFor="birthday">Estimated Time </label>
+                                        </div>
+                                    </div> */}
+                                    <div className="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-12">
+                                        <div className="form-floating mb-3"> 
+                                                <input type="text" className="form-control" placeholder="" name="EstimatedTime_H" id="EstimatedTime_H"  
+                                                // value={profileData.birthday_date}
+                                                // onChange={handleInputChange}
+                                                /> 
+                                            <label htmlFor="EstimatedTime_H">Time Hour</label>
+                                        </div>
+                                            
+                                    </div>
+                                    <div className="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-12">
+                                        <div className="form-floating mb-3"> 
+                                                <input type="text" className="form-control" placeholder="" name="EstimatedTime_M" id="EstimatedTime_M"  
+                                                // value={profileData.birthday_date}
+                                                // onChange={handleInputChange}
+                                                /> 
+                                            <label htmlFor="EstimatedTime_M">Time M</label>
+                                        </div>
+                                            
+                                    </div>
+                                    <div className="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-12">
+                                        <div className="form-floating mb-3"> 
+                                                <input type="text" className="form-control" placeholder="" name="EstimatedTime_D" id="EstimatedTime_D"  
+                                                // value={profileData.birthday_date}
+                                                // onChange={handleInputChange}
+                                                /> 
+                                            <label htmlFor="EstimatedTime_D">Time D</label>
+                                        </div>
+                                            
+                                    </div>
+                                    <div className="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-12">
+                                            <div className="form-floating mb-3">
+                                            <input type="text" className="form-control" placeholder="" name="Length" id="Length"  
+                                            //  value={profileData.birthday_year}
+                                            //     onChange={handleInputChange}
+                                            /> 
+                                            <label htmlFor="Length">Length</label>
+                                        </div>                                             
+                                    </div>
+                                    
+                                    <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
+                                            <div className="form-floating mb-3">
+                                            <input type="text" className="form-control" placeholder="" name="ElevationGain" id="ElevationGain"  
+                                            //  value={profileData.birthday_year}
+                                            //     onChange={handleInputChange}
+                                            /> 
+                                            <label htmlFor="ElevationGain">ElevationGain</label>
+                                        </div>                                             
+                                    </div>
+                                    <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
+                                            <div className="form-floating mb-3">
+                                            <input type="text" className="form-control" placeholder="" name="TrailType" id="TrailType"  
+                                            //  value={profileData.birthday_year}
+                                            //     onChange={handleInputChange}
+                                            /> 
+                                            <label htmlFor="TrailType">TrailType</label>
+                                        </div>                                             
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div> 
+                {showPrompt && (
+                    <div style={{position: "fixed",top: 0,left: 0, right: 0,bottom: 0, background: "rgba(0,0,0,0.5)",display: "flex", 
+                            alignItems: "center", justifyContent: "center", zIndex: 1000,}}
+                        onClick={() => closePrompt(null)}>
+                        <div
+                            style={{ background: "white",padding: "25px",borderRadius: "10px",width: "450px",maxHeight: "80vh", overflowY: "auto",}}
+                            onClick={(e) => e.stopPropagation()}>
+
+                            {/* Close Button */}
+                            <div style={{ display: "flex", justifyContent: "end" }}>
+                                <button className="btn-cross" onClick={() => closePrompt(null)}>
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M4 4L16 16M16 4L4 16" stroke="#05073D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                </button>
                             </div>
 
+                            {/* Title */}
+                            <h4>Enter Title for This Point</h4>
+                            {/* Input */}
+                            <div className="row mt-3">
+                                <div className="col-md-12">
+                                    <input type="text" value={promptValue} onChange={(e) => setPromptValue(e.target.value)}
+                                        autoFocus
+                                        style={{width: "100%",padding: "10px",borderRadius: "6px", border: "1px solid #ccc",}}
+                                        placeholder="Enter title"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Buttons */}
+                            <div style={{ marginTop: "20px", display: "flex", gap: "10px" }}>
+                                {/* <button className="btn-send" 
+                                // onClick={() => closePrompt(promptValue)} 
+                                 onClick={() => handleAddMapPoints(points)} 
+                                disabled={!promptValue.trim()}> */}
+                                <button
+                                    className="btn-send"
+                                    onClick={() => {
+                                        if (promptCallback) promptCallback(promptValue);
+                                        closePrompt(promptValue)
+                                    }}
+                                    disabled={!promptValue.trim()}
+                                    >
+                                    OK</button>
+                                <button className="btn-cancel" onClick={() => closePrompt(null)}
+                                 style={{ background: "#ddd",padding: "9px 11px",borderRadius: "50px",border:'none'}}>Cancel
+                                </button>
+                            </div>
                         </div>
-                    </div> */}
-                </div> 
+                    </div>
+                )}
+                {/* end popup */} 
+                {/* <div className="row">
+                    <div className="col-12">
+                            <div ref={mapContainer} style={{ width: "100%", height: "400px",borderRadius:'10px'}}></div>
+                    </div>
+                        <div className="my-4">
+                        <button className="btn-style-1" onClick={handleProfileUpdate}>Add Post</button>
+                        <button className="btn-style-0">Cancel</button>
+                    </div>
+                </div> */}
             </div>
         </section>
     </main>

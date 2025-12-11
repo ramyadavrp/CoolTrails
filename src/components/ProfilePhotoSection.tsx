@@ -47,8 +47,8 @@ const ProfilePhotoSection: React.FC = () => {
             }  
     }, []);
     useEffect(() => {
-            // const storeLocal = sessionStorage.getItem("login");
-            const storeLocal = localStorage.getItem("login");
+            const storeLocal = sessionStorage.getItem("login");
+            // const storeLocal = localStorage.getItem("login");
             //  console.log(storeLocal)
             if (storeLocal) {
                 setLoginId(storeLocal);
@@ -103,7 +103,7 @@ const ProfilePhotoSection: React.FC = () => {
                 }
             );
 
-            // console.log('Images response:', response.data);
+            console.log('Images response:', response.data);
             setFeedProfile(response.data.data);
         } catch (error: any) {
             console.error(

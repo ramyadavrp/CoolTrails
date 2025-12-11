@@ -27,8 +27,7 @@ const ReviewSection: React.FC = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const navigate = useNavigate();
     const [userId, setUserId] = useState<string>("");
-      const [token, setToken] = useState<string>("");
-    
+    const [token, setToken] = useState<string>("");
     const [getFollow, setFollow] = useState<{ [key: number]: boolean }>({});
     // Get id by helper
       useEffect(() => {
@@ -41,7 +40,7 @@ const ReviewSection: React.FC = () => {
         // const token = sessionStorage.getItem("token");
         setIsLoggedIn(!!token);
     }, []);
-
+    // console.log('userId',userId);
     useEffect(() => {
         const fetchtopExplorers = async () => {
             try {
@@ -311,16 +310,32 @@ const ReviewSection: React.FC = () => {
                                                 {explorer.id === userId ? (
                                                     <span className="btn-style-1 stretched-link">You</span> // optional text
                                                     ) : (
-                                                    <a
-                                                        href="#"
+                                                    <button
+                                                        disabled={getFollow[explorer.id]} 
                                                         onClick={(e) => {
-                                                        e.preventDefault();
-                                                        handleFollow(explorer.id);
+                                                            if (getFollow[explorer.id]) {
+                                                                e.preventDefault(); // block click if already followed
+                                                                return;
+                                                            }
+                                                            e.preventDefault();
+                                                            handleFollow(explorer.id);
+                                                        }}
+                                                        style={{
+                                                            cursor: getFollow[explorer.id] ? 'not-allowed' : 'pointer',
+                                                            opacity: getFollow[explorer.id] ? 0.5 : 1,
+                                                            backgroundColor: getFollow[explorer.id] ? '#ccc' : '#FC673C', 
+                                                            color: getFollow[explorer.id] ? '#666' : '#fff',
+                                                            border: 'none',
+                                                            padding: '5px 25px',
+                                                            borderRadius: '50px',
+                                                            textAlign:'center',
+                                                            fontSize:'14px'
+                                                        
                                                         }}
                                                         className="btn-style-1 stretched-link"
                                                     >
                                                         {getFollow[explorer.id] ? "Following" : "Follow"}
-                                                    </a>
+                                                    </button>
                                                 )}
                                             </div>
                                         </div>
@@ -358,15 +373,32 @@ const ReviewSection: React.FC = () => {
                                                     explorer.id === userId ? (
                                                         <span className="btn-style-1 stretched-link">You</span>
                                                     ):(
-                                                    <a href="#" 
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        handleFollow(explorer.id);
-                                                    }}
-
-                                                    className="btn-style-1 stretched-link">
+                                                    <button
+                                                        disabled={getFollow[explorer.id]} 
+                                                        onClick={(e) => {
+                                                            if (getFollow[explorer.id]) {
+                                                                e.preventDefault(); // block click if already followed
+                                                                return;
+                                                            }
+                                                            e.preventDefault();
+                                                            handleFollow(explorer.id);
+                                                        }}
+                                                        style={{
+                                                            cursor: getFollow[explorer.id] ? 'not-allowed' : 'pointer',
+                                                            opacity: getFollow[explorer.id] ? 0.5 : 1,
+                                                            backgroundColor: getFollow[explorer.id] ? '#ccc' : '#FC673C', 
+                                                            color: getFollow[explorer.id] ? '#666' : '#fff',
+                                                            border: 'none',
+                                                            padding: '5px 25px',
+                                                            borderRadius: '50px',
+                                                            textAlign:'center',
+                                                            fontSize:'14px'
+                                                        
+                                                        }}
+                                                        className="btn-style-1 stretched-link"
+                                                    >
                                                         {getFollow[explorer.id] ? "Following" : "Follow"}
-                                                    </a>
+                                                    </button>
                                                     )
                                                 }
                                                 

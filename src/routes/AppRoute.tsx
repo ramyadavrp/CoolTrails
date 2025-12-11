@@ -64,9 +64,10 @@ const AppRoute = () => {
         <Route path="/gift" element={<GiftPage />} />
         <Route path="/community" element={<CommunityPage />} /> 
         <Route path="/page-9" element={<Page9 />} />*/}
-        <Route path="/create-map" element={<CreateMap />} /> 
+        
 
         <Route element={<PrivateRoute />}>
+          <Route path="/create-map" element={<CreateMap />} /> 
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/edit-profile" element={<ProfileEdit />} />
           <Route path="/profile-feed" element={<ProfilePage />} />

@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'; // Import useNavigate for redire
 import { Trash2, Upload } from "lucide-react";
 import  {useAutoClearMessage} from '../utils/useAutoClearMessage';
 import {getAuth} from '../utils/storage';
+import {useAlertMessage}  from '../utils/useAlertMessage';
 
 declare const Masonry: any;
 const BASE_URL = import.meta.env.VITE_API_URL;
@@ -16,7 +17,7 @@ interface FavoriteActivity {
 
 interface ProfileData {
     email: string;
-    first_name: string;
+    full_name: string;
     last_name: string;
     phone_no: string;
     about_me: string;
@@ -63,13 +64,12 @@ const ProfileEditSection: React.FC = () => {
     // input field check
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [profile, setProfile] = useState<Profile | null>(null);
-    
     // Use hook for each Clear  message after success
     useAutoClearMessage(message, setMessage, 3000);
     useAutoClearMessage(imgmessage, setImgMessage, 3000);
 
     const [profileData, setProfileData] = useState<ProfileData>({
-        first_name: "",
+        full_name: "",
         last_name: "",
         email: "",
         phone_no: "",
@@ -89,7 +89,7 @@ const ProfileEditSection: React.FC = () => {
     // Get id by helper
     useEffect(() => {
         const { userId } = getAuth();
-    if (userId) setUserId(userId);
+        if (userId) setUserId(userId);
     }, []);
 
     
@@ -103,21 +103,53 @@ const ProfileEditSection: React.FC = () => {
                     UserId: userId,
                 });
     
-                // console.log("Profile Dataqqq:", response.data);
+                console.log("Profile Dataqqq:", response.data);
     
                 if (response.data.status === "success") {
-                    const data = response.data.data;
-                    setProfile(data);
-                    // setProfileData({
-                    //     first_name: data.first_name || "",
-                    //     email: data.email || "",
-                    //     phone: data.phone_no || "",
-                    //     adress: data.member_location || "",
-                    // });
+                    const d = response.data.data;
+                    setProfile(d);
+                    setProfileData({
+                        full_name: d.fullName || "",
+                        last_name: "", // If not provided by API
+                        email: d.email || "",
+                        phone_no: d.phone_no || "",
+                        about_me: d.abount || "",
+                        // favorite_activities: d.favoriteactivities || [],
+                         favorite_activities: Array.isArray(d.favoriteactivities)
+                        ? d.favoriteactivities
+                            .filter((item: any) => item) // remove null/undefined/empty
+                            .map((item: any) =>
+                                typeof item === "string" && item.trim() !== ""
+                                    ? { title: item.trim() }
+                                    : typeof item === "object" && item.title
+                                    ? { title: item.title }
+                                    : null
+                            )
+                            .filter((item: any) => item !== null) // remove invalid
+                        : d.favoriteactivities && d.favoriteactivities.trim() !== ""
+                        ? [{ title: d.favoriteactivities.trim() }]
+                        : [],
+                        member_location: d.address || "",
+                        units: d.units || "",
+                        activity_time_preference: d.activityTimePreference || "",
+                        height: d.height || "",
+                        weight: d.weight || "",
+                        birthday_month: d.month || "",
+                        birthday_date: d.day || "",
+                        birthday_year: d.year || "",
+                        language: d.language || "",
+                        new_password: ""
+                    });
                 }
-                } catch (error) {
-                console.error("Error loading profile:", error);
-                alert("Failed to load profile");
+                } catch (error:any) {
+                    useAlertMessage({
+                        title: "Upload Failed",
+                        html: "<strong>Error uploading images. Please try again.</strong>",
+                        icon: "error",
+                        width: "350px",
+                        confirmButtonText: "OK",
+                        confirmButtonColor: "#dc3545",
+                    });
                 }
             };
     
@@ -175,10 +207,25 @@ const ProfileEditSection: React.FC = () => {
                 // if (res.data.data?.profile_photo_url) {
                 //     setPreview(res.data.data.profile_photo_url); 
                 // }
-
-                setImgMessage("Image uploaded successfully!");
+                useAlertMessage({
+                    icon: "success",
+                    title: "Done!",
+                    html: "<strong>Images uploaded successfully!</strong>",
+                    confirmButtonText: "Ok!",
+                    width: "350px",
+                    confirmButtonColor: "#fc673c",
+                    padding: "1rem",
+                });
             } else {
-                setImgMessage(res.data.message || "Upload failed");
+                useAlertMessage({
+                    title: "Failed",
+                    html: `<strong>${res.data.message  || "Upload failed — server rejected"}</strong>`,
+                    icon: "error",
+                    width: "350px",
+                    confirmButtonText: "OK",
+                    confirmButtonColor: "#dc3545",
+                    padding: "1rem",
+                });
             }
             // setTimeout(() => setImgMessage(""), 2000);
         } catch (err) {
@@ -198,14 +245,17 @@ const ProfileEditSection: React.FC = () => {
             ...prev,
             [name]: value
         }));
+        setErrors((prev) => ({ ...prev, [name] :""}));
     };
 
     const getPayload = () => ({
     ...profileData,
-    favorite_activities: profileData.favorite_activities.length
+        favorite_activities: profileData.favorite_activities.length
         ? profileData.favorite_activities.map(a => ({ title: a.title }))
         : [{ title: "Trails" }],
+        
     });
+    
 
     const handleActivityToggle = (activity: string) => {
         setProfileData((prev) => {
@@ -220,48 +270,68 @@ const ProfileEditSection: React.FC = () => {
 
     const handleProfileUpdate = async () => {
         const payload = getPayload();
-        // console.log("Payload being sent:", JSON.stringify(payload, null, 2));
         const newErrors: { [key: string]: string } = {};
-        // Required field validation
-        if (!payload.first_name) newErrors.first_name = "Name is required";
-        if (!payload.email) newErrors.email = "Email is required";
-        if (!payload.phone_no) newErrors.phone_no = "Phone number is required";
 
-        // Email format validation
-        if (payload.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) {
+        if (!payload.full_name) newErrors.full_name = "Full name is required";
+        if (!payload.height) newErrors.height = "Height is required";
+        if (!payload.weight) newErrors.weight = "Weight is required";
+        if (!payload.birthday_month) newErrors.birthday_month = "Birthday Month is required";
+        if (!payload.birthday_date) newErrors.birthday_date = "Birthday Date is required";
+        if (!payload.birthday_year) newErrors.birthday_year = "Birthday Year is required";
+        if (!payload.email) newErrors.email = "Email address is required";
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) {
             newErrors.email = "Please enter a valid email address";
         }
 
-        // Stop submission if errors exist
+        setErrors(newErrors);
         if (Object.keys(newErrors).length > 0) {
-            setErrors(newErrors);
+            const firstInvalid = document.querySelector(".is-invalid") as HTMLElement;
+            if (firstInvalid) {
+            firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
+            firstInvalid.focus();
+            }
             return;
         }
+        //if (Object.keys(newErrors).length > 0) return; // stop submission if errors exist
+
         try {
             const response = await axios.post(`${BASE_URL}/user/profileupdate`, payload, {
-            headers: { "Content-Type": "application/json" }
+                headers: { "Content-Type": "application/json" }
             });
-
+            console.log(response.data);
             if (response.data.status === "success") {
-                console.log(response.data);
-                setMessage('Profile Updated Successfuly !');
-            //   alert("Profile updated successfully!");
+                useAlertMessage({
+                    icon: "success",
+                    title: "Done!",
+                    html: "<strong>Profile Updated Successfully!</strong>",
+                    confirmButtonText: "Ok!",
+                    width: "350px",
+                    confirmButtonColor: "#fc673c",
+                    padding: "1rem",
+                });
             } else {
-            alert(response.data.message || "Unexpected response from server.");
+                useAlertMessage({
+                    title: "Failed",
+                    html: `<strong>${response.data.message || "Update failed — server rejected"}</strong>`,
+                    icon: "error",
+                    width: "350px",
+                    confirmButtonText: "OK",
+                    confirmButtonColor: "#dc3545",
+                    padding: "1rem",
+                });
             }
         } catch (error: any) {
-            if (error.response?.data?.errors) {
-            // Flatten array of messages into single string per field
-            const formattedErrors: { [key: string]: string } = {};
-            for (const key in error.response.data.errors) {
-                formattedErrors[key] = error.response.data.errors[key].join(", ");
-            }
-            setErrors(formattedErrors);
-            }
-            console.error("Update failed:", error.response?.data || error);
-            //alert("Failed to update feed. Check console for details.");
+            useAlertMessage({
+                title: "Update failed",
+                html: "<strong>Error updating profile. Please try again.</strong>",
+                icon: "error",
+                width: "350px",
+                confirmButtonText: "OK",
+                confirmButtonColor: "#dc3545",
+            });
         }
     };
+
         // useEffect(() => {
         //     if (message) {
         //         const timer = setTimeout(() => {
@@ -359,20 +429,22 @@ const ProfileEditSection: React.FC = () => {
                             <h2 className="profile-card-title text-midnight-navy">Personal information</h2>
                             <div className="profile-inner-form">
                                 <div className="form-floating mb-3">
-                                    <input type="email" className={`form-control ${errors.email  ? "is-invalid" : ""}`}  name="email" id="emailIn" placeholder=""
+                                    <input type="email" className={`form-control ${errors.email ? "is-invalid bg-danger bg-opacity-10" : ""}`} name="email" id="emailIn" placeholder=""
                                         value={profileData.email}
                                         onChange={handleInputChange}
                                          />
                                     <label htmlFor="emailIn">Email address</label>
+                                    
                                      {errors.email && <div style={{color:'#FC673C'}} className="invalid-feedback">{errors.email}</div>}
                                 </div>
                                 <div className="form-floating mb-3">
-                                    <input type="text" className={`form-control ${errors.first_name  ? "is-invalid" : ""}`} name="first_name" id="first_name" placeholder=""
-                                        value={profileData.first_name}
+                                    <input type="text" className={`form-control ${errors.full_name ? "is-invalid bg-danger bg-opacity-10" : ""}`}
+                                     name="full_name" id="full_name" placeholder=""
+                                        value={profileData.full_name}
                                         onChange={handleInputChange}
                                          />
                                     <label htmlFor="fullName">Full Name</label>
-                                     {errors.first_name && <div style={{color:'#FC673C'}} className="invalid-feedback">{errors.first_name}</div>}
+                                     {errors.full_name && <div style={{color:'#FC673C'}} className="invalid-feedback">{errors.full_name}</div>}
                                 </div>
                                 <div className="form-floating mb-3">
                                     <input type="text" className={`form-control ${errors.phone_no  ? "is-invalid" : ""}`} name="phone_no" id="phone" placeholder=""
@@ -545,7 +617,7 @@ const ProfileEditSection: React.FC = () => {
                                 <div className="row">
                                     <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
                                         <div className="form-floating mb-3">
-                                            <select className="form-select" name="height" id="height" 
+                                            <select  className={`form-select ${errors.height ? "is-invalid" : ""}`} name="height" id="height" 
                                                  value={profileData.height}
                                                 onChange={handleInputChange} 
                                             >
@@ -553,11 +625,14 @@ const ProfileEditSection: React.FC = () => {
                                                 <option value="2">One</option>
                                             </select>
                                             <label htmlFor="height">Height</label>
+                                            
+                                            {errors.height && <div style={{color:'#FC673C'}} className="invalid-feedback">{errors.height}</div>}
+
                                         </div>
                                     </div>
                                     <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
                                         <div className="form-floating mb-3">
-                                            <select className="form-select" name="weight" id="weight"
+                                            <select className={`form-select ${errors.weight ? "is-invalid" : ""}`} name="weight" id="weight"
                                                 value={profileData.weight}
                                                 onChange={handleInputChange}
                                             >
@@ -565,37 +640,41 @@ const ProfileEditSection: React.FC = () => {
                                                 <option value="2">One</option>
                                             </select>
                                             <label htmlFor="weight">Weight</label>
+                                             {errors.weight && <div style={{color:'#FC673C'}} className="invalid-feedback">{errors.weight}</div>}
                                         </div>
                                     </div>
                                     <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
                                         <div className="form-floating mb-3">
-                                            <select className="form-select" name="birthday_month" id="birthday"
+                                            <select className={`form-select ${errors.birthday_month ? "is-invalid" : ""}`}  name="birthday_month" id="birthday_month"
                                             value={profileData.birthday_month}
                                                 onChange={handleInputChange}
                                             >
                                                 <option >Month</option>
                                                 <option value="01">January</option>
                                             </select>
-                                            <label htmlFor="birthday">Birthday</label>
+                                            <label htmlFor="birthday_month">Birthday</label>
+                                            {errors.birthday_month && <div style={{color:'#FC673C'}} className="invalid-feedback">{errors.birthday_month}</div>}
                                         </div>
                                     </div>
                                     <div className="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-12">
                                         <div className="form-floating mb-3"> 
-                                                <input type="text" className="form-control" placeholder="" name="birthday_date" id="birthdate"  
+                                                <input type="text" className={`form-select ${errors.birthday_date ? "is-invalid" : ""}`} placeholder="" name="birthday_date" id="birthdate"  
                                                 value={profileData.birthday_date}
                                                 onChange={handleInputChange}
                                                 /> 
                                             <label htmlFor="birthdate">Date</label>
+                                            {errors.birthday_date && <div style={{color:'#FC673C'}} className="invalid-feedback">{errors.birthday_date}</div>}
                                         </div>
                                             
                                     </div>
                                     <div className="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-12">
                                             <div className="form-floating mb-3">
-                                            <input type="text" className="form-control" placeholder="" name="birthday_year" id="birthYear"  
+                                            <input type="text" className={`form-select ${errors.birthday_year ? "is-invalid" : ""}`} placeholder="" name="birthday_year" id="birthYear"  
                                              value={profileData.birthday_year}
                                                 onChange={handleInputChange}
                                             /> 
                                             <label htmlFor="birthYear">Year</label>
+                                            {errors.birthday_year && <div style={{color:'#FC673C'}} className="invalid-feedback">{errors.birthday_year}</div>}
                                         </div>                                             
                                     </div>
                                     

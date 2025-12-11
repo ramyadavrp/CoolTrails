@@ -40,13 +40,13 @@ const ProfileLeftSection: React.FC = () => {
                 try {
                 const response = await axios.post(`${BASE_URL}/user/profile`, {
                     UserId: userId,
-                },
-                {
-                    headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${sessionStorage.getItem("token")}`
-                    }
                 }
+                // {
+                //     headers: {
+                //     "Content-Type": "application/json",
+                //     "Authorization": `Bearer ${sessionStorage.getItem("token")}`
+                //     }
+                // }
                 );
     
                 console.log("Profile Data:", response.data);
