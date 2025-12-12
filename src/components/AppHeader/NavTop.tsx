@@ -166,7 +166,7 @@ const NavTop: React.FC = () => {
                                         </Link>
                                     </li>
                                     <li>
-                                        <Link to={'/profile-feed'} className="dropdown-item">
+                                        <Link to={'/plans'} className="dropdown-item">
                                             <img src="/assets/images/icons/lists.svg" alt="" />
                                             Show all lists
                                         </Link>

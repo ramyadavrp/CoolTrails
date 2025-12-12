@@ -114,8 +114,8 @@ const ProfileEditSection: React.FC = () => {
                         email: d.email || "",
                         phone_no: d.phone_no || "",
                         about_me: d.abount || "",
-                        // favorite_activities: d.favoriteactivities || [],
-                         favorite_activities: Array.isArray(d.favoriteactivities)
+                        // favorite_activities: d.favoriteactivities || [],favoriteactivities
+                        favorite_activities: Array.isArray(d.favoriteactivities)
                         ? d.favoriteactivities
                             .filter((item: any) => item) // remove null/undefined/empty
                             .map((item: any) =>
@@ -132,8 +132,10 @@ const ProfileEditSection: React.FC = () => {
                         member_location: d.address || "",
                         units: d.units || "",
                         activity_time_preference: d.activityTimePreference || "",
-                        height: d.height || "",
-                        weight: d.weight || "",
+                        // height: d.height || "",
+                        // weight: d.weight || "",
+                        height: d.height != null ? Number(d.height).toFixed(1) : "",
+                        weight: d.weight != null ? Number(d.weight).toFixed(2) : "",
                         birthday_month: d.month || "",
                         birthday_date: d.day || "",
                         birthday_year: d.year || "",
@@ -252,7 +254,7 @@ const ProfileEditSection: React.FC = () => {
     ...profileData,
         favorite_activities: profileData.favorite_activities.length
         ? profileData.favorite_activities.map(a => ({ title: a.title }))
-        : [{ title: "Trails" }],
+        : [{ title: "Walking" }],
         
     });
     
@@ -271,10 +273,21 @@ const ProfileEditSection: React.FC = () => {
     const handleProfileUpdate = async () => {
         const payload = getPayload();
         const newErrors: { [key: string]: string } = {};
+        const positiveNumber = /^(?:\d+|\d*\.\d+)$/;
 
+        if (!payload.weight) {
+        newErrors.weight = "Weight is required";
+        } 
+        else if (!positiveNumber.test(payload.weight)) {
+        newErrors.weight = "Enter a valid positive number (no minus allowed)";
+        }
+        if (!payload.height) {
+        newErrors.height = "Height is required";
+        } 
+        else if (!positiveNumber.test(payload.height)) {
+        newErrors.height = "Enter a valid positive number (no minus allowed)";
+        }
         if (!payload.full_name) newErrors.full_name = "Full name is required";
-        if (!payload.height) newErrors.height = "Height is required";
-        if (!payload.weight) newErrors.weight = "Weight is required";
         if (!payload.birthday_month) newErrors.birthday_month = "Birthday Month is required";
         if (!payload.birthday_date) newErrors.birthday_date = "Birthday Date is required";
         if (!payload.birthday_year) newErrors.birthday_year = "Birthday Year is required";
@@ -617,40 +630,43 @@ const ProfileEditSection: React.FC = () => {
                                 <div className="row">
                                     <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
                                         <div className="form-floating mb-3">
-                                            <select  className={`form-select ${errors.height ? "is-invalid" : ""}`} name="height" id="height" 
-                                                 value={profileData.height}
-                                                onChange={handleInputChange} 
-                                            >
-                                                <option value="1">Unspecified</option>
-                                                <option value="2">One</option>
-                                            </select>
-                                            <label htmlFor="height">Height</label>
-                                            
+                                            <input type="text" className={`form-control ${errors.height ? "is-invalid" : ""}`} placeholder="" name="height" id="height"  
+                                             value={profileData.height}
+                                                onChange={handleInputChange}
+                                            /> 
+                                            <label htmlFor="height">Height (Feet / Inch)</label>
                                             {errors.height && <div style={{color:'#FC673C'}} className="invalid-feedback">{errors.height}</div>}
-
-                                        </div>
+                                        </div> 
                                     </div>
                                     <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
                                         <div className="form-floating mb-3">
-                                            <select className={`form-select ${errors.weight ? "is-invalid" : ""}`} name="weight" id="weight"
-                                                value={profileData.weight}
+                                            <input type="text" className={`form-control ${errors.weight ? "is-invalid" : ""}`} placeholder="" name="weight" id="weight"  
+                                             value={profileData.weight}
                                                 onChange={handleInputChange}
-                                            >
-                                                <option value="1">Unspecified</option>
-                                                <option value="2">One</option>
-                                            </select>
-                                            <label htmlFor="weight">Weight</label>
-                                             {errors.weight && <div style={{color:'#FC673C'}} className="invalid-feedback">{errors.weight}</div>}
-                                        </div>
+                                            /> 
+                                            <label htmlFor="weight">Weight (Kilo / Gram)</label>
+                                            {errors.weight && <div style={{color:'#FC673C'}} className="invalid-feedback">{errors.weight}</div>}
+                                        </div>  
                                     </div>
+                                    
                                     <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
                                         <div className="form-floating mb-3">
                                             <select className={`form-select ${errors.birthday_month ? "is-invalid" : ""}`}  name="birthday_month" id="birthday_month"
                                             value={profileData.birthday_month}
                                                 onChange={handleInputChange}
                                             >
-                                                <option >Month</option>
                                                 <option value="01">January</option>
+                                                <option value="02">February</option>
+                                                <option value="03">March</option>
+                                                <option value="04">April</option>
+                                                <option value="05">May</option>
+                                                <option value="06">June</option>
+                                                <option value="07">July</option>
+                                                <option value="08">August</option>
+                                                <option value="09">September</option>
+                                                <option value="10">October</option>
+                                                <option value="11">November</option>
+                                                <option value="12">December</option>
                                             </select>
                                             <label htmlFor="birthday_month">Birthday</label>
                                             {errors.birthday_month && <div style={{color:'#FC673C'}} className="invalid-feedback">{errors.birthday_month}</div>}
@@ -658,7 +674,7 @@ const ProfileEditSection: React.FC = () => {
                                     </div>
                                     <div className="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-12">
                                         <div className="form-floating mb-3"> 
-                                                <input type="text" className={`form-select ${errors.birthday_date ? "is-invalid" : ""}`} placeholder="" name="birthday_date" id="birthdate"  
+                                                <input type="text" className={`form-control ${errors.birthday_date ? "is-invalid" : ""}`} placeholder="" name="birthday_date" id="birthdate"  
                                                 value={profileData.birthday_date}
                                                 onChange={handleInputChange}
                                                 /> 
@@ -668,8 +684,8 @@ const ProfileEditSection: React.FC = () => {
                                             
                                     </div>
                                     <div className="col-xl-3 col-lg-3 col-md-6 col-sm-12 col-12">
-                                            <div className="form-floating mb-3">
-                                            <input type="text" className={`form-select ${errors.birthday_year ? "is-invalid" : ""}`} placeholder="" name="birthday_year" id="birthYear"  
+                                        <div className="form-floating mb-3">
+                                            <input type="text" className={`form-control ${errors.birthday_year ? "is-invalid" : ""}`} placeholder="" name="birthday_year" id="birthYear"  
                                              value={profileData.birthday_year}
                                                 onChange={handleInputChange}
                                             /> 
@@ -708,7 +724,7 @@ const ProfileEditSection: React.FC = () => {
                             <button className="btn-style-0">Cancel</button>
                         </div>
                     </div>
-                    <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12 grid-item">
+                    {/* <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12 grid-item">
                         <div className="bg-almost-white br-20 profile-card-2">
                             <h2 className="profile-card-title text-midnight-navy">Social Media</h2>
                             <div className="platform-logins">
@@ -719,7 +735,7 @@ const ProfileEditSection: React.FC = () => {
                             </div>
 
                         </div>
-                    </div>
+                    </div> */}
                 </div> 
             </div>
         </section>
