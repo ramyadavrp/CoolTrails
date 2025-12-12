@@ -10,6 +10,7 @@ import { SquareLoader } from "react-spinners";
 import StarRating from './AffiliateDetails/StarRating';
 import  {useAutoClearMessage} from '../utils/useAutoClearMessage';
 import {getAuth} from '../utils/storage';
+import {useAlertMessage}  from '../utils/useAlertMessage';
 // import data from '../data/community.json';
 import { decodeId,encodeId, generateSlug ,slugToTitle,usePageTitle } from '../utils/helpers';
 
@@ -176,7 +177,7 @@ const CommunitySection: React.FC = () => {
         }
     }
     const handleCheck = (postId: string,checked: boolean) => {
-        alert('dd');
+        // alert('dd');
         setCheckblock(checked);
         console.log('checked',checked);
         // console.log('varible',getCheckblock);
@@ -200,18 +201,42 @@ const CommunitySection: React.FC = () => {
         });
     // alert("Report submitted successfully!");
         console.log('repost',response.data);
-        if(response.data.status=== "success"){
-            setMessage('Report submitted successfully.');
+        if (response.data.status === "success") {
+            useAlertMessage({
+                icon: "success",
+                title: "Done!",
+                html: "<strong>Report submitted successfully!</strong>",
+                confirmButtonText: "Ok!",
+                width: "350px",
+                confirmButtonColor: "#fc673c",
+                padding: "1rem",
+            });
             setReasonValue('');
-            setTimeout(() => {
-                setMessage("");
-            }, 2000);
-        }else{
-            setMessage('Failed to submit report. Please try again later..');
-            setTimeout(() => {
-                setMessage("");
-            }, 2000);
+        } else{
+            useAlertMessage({
+                title: "Failed",
+                html: `<strong style="color:red;">${response.data.message || "Something went wrong."}</strong>`,
+                icon: "error",
+                width: "350px",
+                confirmButtonText: "OK",
+                confirmButtonColor: "#dc3545",
+                padding: "1rem",
+            });
+            
         }
+
+        // if(response.data.status=== "success"){
+        //     // setMessage('Report submitted successfully.');
+        //     setReasonValue('');
+        //     setTimeout(() => {
+        //         setMessage("");
+        //     }, 2000);
+        // }else{
+        //     setMessage('Failed to submit report. Please try again later..');
+        //     setTimeout(() => {
+        //         setMessage("");
+        //     }, 2000);
+        // }
         } catch (error) {
         console.error("Error submitting report:", error);
         alert("Failed to submit report");

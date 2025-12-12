@@ -415,89 +415,91 @@ const CreateMapSection: React.FC = () => {
     return (
         <main className="mainContent">
             <section className="section-trail-detail">
-                <div style={{paddingLeft: '20px'}}>
-                    <h1>Create Map</h1>
-                    <p style={{margin:'0px',color:'#FC673C'}}>Please click the over map and set point.</p>
-                </div>
-                {/* start show phpup */}
-                {showPrompt && (
-                    <div style={{position: "fixed",top: 0,left: 0, right: 0,bottom: 0, background: "rgba(0,0,0,0.5)",display: "flex", 
-                            alignItems: "center", justifyContent: "center", zIndex: 1000,}}
-                        onClick={() => closePrompt(null)}>
-                        <div
-                            style={{ background: "white",padding: "25px",borderRadius: "10px",width: "450px",maxHeight: "80vh", overflowY: "auto",}}
-                            onClick={(e) => e.stopPropagation()}>
+                <div style={{display: 'flex',justifyContent: 'space-between'}}>
+                  <div style={{paddingLeft: '20px'}}>
+                      <h1>Create Map</h1>
+                      <p style={{margin:'0px',color:'#FC673C'}}>Please click the over map and set point.</p>
+                  </div>
+                  {/* start show phpup */}
+                  {showPrompt && (
+                      <div style={{position: "fixed",top: 0,left: 0, right: 0,bottom: 0, background: "rgba(0,0,0,0.5)",display: "flex", 
+                              alignItems: "center", justifyContent: "center", zIndex: 1000,}}
+                          onClick={() => closePrompt(null)}>
+                          <div
+                              style={{ background: "white",padding: "25px",borderRadius: "10px",width: "450px",maxHeight: "80vh", overflowY: "auto",}}
+                              onClick={(e) => e.stopPropagation()}>
 
-                            {/* Close Button */}
-                            <div style={{ display: "flex", justifyContent: "end" }}>
-                                <button className="btn-cross" onClick={() => closePrompt(null)}>
-                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M4 4L16 16M16 4L4 16" stroke="#05073D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                    </svg>
-                                </button>
-                            </div>
+                              {/* Close Button */}
+                              <div style={{ display: "flex", justifyContent: "end" }}>
+                                  <button className="btn-cross" onClick={() => closePrompt(null)}>
+                                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                          <path d="M4 4L16 16M16 4L4 16" stroke="#05073D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                      </svg>
+                                  </button>
+                              </div>
 
-                            {/* Title */}
-                            <h4>Enter Title for This Point</h4>
-                            {/* Input */}
-                            <div className="row mt-3">
-                                <div className="col-md-12">
-                                    <input type="text" value={promptValue} onChange={(e) => setPromptValue(e.target.value)}
-                                        autoFocus
-                                        style={{width: "100%",padding: "10px",borderRadius: "6px", border: "1px solid #ccc",}}
-                                        placeholder="Enter title"
-                                    />
-                                </div>
-                            </div>
+                              {/* Title */}
+                              <h4>Enter Title for This Point</h4>
+                              {/* Input */}
+                              <div className="row mt-3">
+                                  <div className="col-md-12">
+                                      <input type="text" value={promptValue} onChange={(e) => setPromptValue(e.target.value)}
+                                          autoFocus
+                                          style={{width: "100%",padding: "10px",borderRadius: "6px", border: "1px solid #ccc",}}
+                                          placeholder="Enter title"
+                                      />
+                                  </div>
+                              </div>
 
-                            {/* Buttons */}
-                            <div style={{ marginTop: "20px", display: "flex", gap: "10px" }}>
-                                {/* <button className="btn-send" 
-                                // onClick={() => closePrompt(promptValue)} 
-                                 onClick={() => handleAddMapPoints(points)} 
-                                disabled={!promptValue.trim()}> */}
-                                <button
-                                    className="btn-send"
-                                    onClick={() => {
-                                        if (promptCallback) promptCallback(promptValue);
-                                        closePrompt(promptValue)
-                                    }}
-                                    disabled={!promptValue.trim()}
-                                    >
-                                    OK</button>
-                                <button className="btn-cancel" onClick={() => closePrompt(null)}
-                                 style={{ background: "#ddd",padding: "9px 11px",borderRadius: "50px",border:'none'}}>Cancel
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-                {/* end popup */}
+                              {/* Buttons */}
+                              <div style={{ marginTop: "20px", display: "flex", gap: "10px" }}>
+                                  {/* <button className="btn-send" 
+                                  // onClick={() => closePrompt(promptValue)} 
+                                  onClick={() => handleAddMapPoints(points)} 
+                                  disabled={!promptValue.trim()}> */}
+                                  <button
+                                      className="btn-send"
+                                      onClick={() => {
+                                          if (promptCallback) promptCallback(promptValue);
+                                          closePrompt(promptValue)
+                                      }}
+                                      disabled={!promptValue.trim()}
+                                      >
+                                      OK</button>
+                                  <button className="btn-cancel" onClick={() => closePrompt(null)}
+                                  style={{ background: "#ddd",padding: "9px 11px",borderRadius: "50px",border:'none'}}>Cancel
+                                  </button>
+                              </div>
+                          </div>
+                      </div>
+                  )}
+                  {/* end popup */}
 
-                <div
-                    style={{
-                    // position: "absolute",
-                    top: 10,
-                    left: 10,
-                    // background: "white",
-                    padding: 10,
-                    borderRadius: 8,
-                    // boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-                    zIndex: 1,
-                    display: "flex",
-                    gap: "8px",
-                    flexWrap: "wrap",
-                    // marginBottom: "25px",
-                    justifyContent: 'end' 
-                    }}
-                > 
-                    {/* <button onClick={saveMap}>💾 Save Map</button>
-                    <button onClick={deleteMap}>🗑️ Delete Map</button>
-                    <button onClick={() => window.location.reload()}>🔄 Refresh</button> */}
-                    <button className="btn-style-12" onClick={toggle3D}>3D View</button>
-                    <button  className="btn-style-12" onClick={clearMap}>Clear</button>
-                    {/* <button  className="btn-style-12" onClick={() => (window.location.href = "")}>Trail Details</button>  */}
-                    {/* <button  className="btn-style-12" onClick={() => (window.location.href = "/Trails/Details")}>Trail Details</button>  */}
+                  <div
+                      style={{
+                      // position: "absolute",
+                      top: 10,
+                      left: 10,
+                      // background: "white",
+                      padding: 15,
+                      borderRadius: 8,
+                      // boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+                      zIndex: 1,
+                      display: "flex",
+                      gap: "8px",
+                      flexWrap: "wrap",
+                      // marginBottom: "25px",
+                      justifyContent: 'end' 
+                      }}
+                  > 
+                      {/* <button onClick={saveMap}>💾 Save Map</button>
+                      <button onClick={deleteMap}>🗑️ Delete Map</button>
+                      <button onClick={() => window.location.reload()}>🔄 Refresh</button> */}
+                      <button className="btn-style-12" onClick={toggle3D}>3D View</button>
+                      <button  className="btn-style-12" onClick={clearMap}>Clear</button>
+                      {/* <button  className="btn-style-12" onClick={() => (window.location.href = "")}>Trail Details</button>  */}
+                      {/* <button  className="btn-style-12" onClick={() => (window.location.href = "/Trails/Details")}>Trail Details</button>  */}
+                  </div> 
                 </div> 
                 {/* <div style={{ height: "100vh", width: "100%", position: "relative" ,padding:'20px'}}>
                     <div ref={mapContainer}  style={{ height: "100%", width: "100%",borderRadius: "10px" }}/>           

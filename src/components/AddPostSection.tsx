@@ -38,6 +38,8 @@ interface ProfileData {
     CountryId: string;
     StateId: string;
     CityId: string;
+    TrailLevel: string;
+    TrailType: string;
     favorite_activities: FavoriteActivity[];
     showStateCity:boolean;
 }
@@ -97,6 +99,8 @@ const AddPostSection: React.FC = () => {
         CountryId: "",
         StateId: "",
         CityId: "",
+        TrailLevel: "",
+        TrailType: "",
         favorite_activities: [],
         showStateCity: true,
     });
@@ -587,6 +591,8 @@ const AddPostSection: React.FC = () => {
                     CountryId: "",
                     StateId: "",
                     CityId: "",
+                    TrailType: "",
+                    TrailLevel: "",
                     favorite_activities: [],
                     showStateCity: true,
                 });
@@ -1082,8 +1088,8 @@ const AddPostSection: React.FC = () => {
                                     <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
                                         <div className="form-floating mb-3">
                                             <select className="form-select" name="TrailLevel" id="TrailLevel" 
-                                                //  value={profileData.height}
-                                                // onChange={handleInputChange} 
+                                                 value={profileData.TrailLevel}
+                                                onChange={handleInputChange} 
                                             >
                                                 <option value="1">Difficulty</option>
                                                 <option value="2">Easy</option>
@@ -1169,8 +1175,8 @@ const AddPostSection: React.FC = () => {
                                     <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
                                             <div className="form-floating mb-3">
                                             <input type="text" className="form-control" placeholder="" name="TrailType" id="TrailType"  
-                                            //  value={profileData.birthday_year}
-                                            //     onChange={handleInputChange}
+                                             value={profileData.TrailType}
+                                                onChange={handleInputChange}
                                             /> 
                                             <label htmlFor="TrailType">TrailType</label>
                                         </div>                                             
