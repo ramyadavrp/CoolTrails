@@ -106,12 +106,22 @@ const ProfileLeftSection: React.FC = () => {
                 </div>  
                     <div className="profile-sidebar-menu  bg-almost-white">
                         <ul className="list-unstyled profile-menu">
-                            <li className={isActive('/community')}><Link to={'/community'} >Feed</Link></li>
+                            <li className={isActive('/profile-feed')}><Link to={'/profile-feed'} >Feed</Link></li>
                             <li className={isActive('/profile-photo')}><Link to={'/profile-photo'}>Photos</Link></li>
+                            <li className={isActive('/report-an-issue')}><Link to={'/report-an-issue'}>Reported an issue</Link></li>
+                            <li className={isActive('/blocked-user')}><Link to={'/blocked-user'}>Blocked User</Link></li>
+                            <li className={isActive('/comment-on-feed')}><Link to={'/comment-on-feed'}>Comment On Feed</Link></li>
+                            <li className={isActive('/bookmark-trail')}><Link to={'/bookmark-trail'}>Trail Bookmark</Link></li>
+                            <li className={isActive('/dismissed-user')}><Link to={'/dismissed-user'}>Dismissed User</Link></li>
+                            <li className={isActive('/review')}><Link to={'/review'}>Reviews</Link></li>
+                            <li className={isActive('/activities')}><Link to={'/activities'}>Activities</Link></li>
+                            <li className={isActive('/complete')}><Link to={'/complete'}>Completed</Link></li>
+                            
                             {/* <li><a href="">Reviews</a></li>
                             <li><a href="">Activities</a></li> */}
                             {/* <li><a href="">Completed</a></li> */}
                         </ul>
+                        <button className="btn-style-1" ><Link  style={{color:'#fff'}}  to={'/add-post'}> Share a Post</Link></button>
                     </div>      
                     <Link to={'/edit-profile'} className="abs-edit-profile" title="Edit Profile">
                         <svg width="19" height="18" viewBox="0 0 19 18" fill="none" xmlns="http://www.w3.org/2000/svg">

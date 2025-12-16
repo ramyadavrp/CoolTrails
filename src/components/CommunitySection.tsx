@@ -473,6 +473,11 @@ const CommunitySection: React.FC = () => {
                 );
                  console.log("API DismissedUser Response:", response.data);
                 if (response.data.status === "success") {
+                    
+                    setCommunity((prev: any[]) =>
+                    prev.filter((item) => item.id !== id)
+                    );
+                                // setUsers((prev) => prev.filter((u) => u.id !== id));
                     // setFollow((prev) => ({
                     //     ...prev,
                     //     // [id]: true, // true = Following, false = Follow
@@ -865,7 +870,7 @@ const CommunitySection: React.FC = () => {
                                                                             <Link to={`/explore/recording/${getSug.slug}`} className="fui"
                                                                                 state={{ postId: getSug.id }}  
                                                                                 >
-                                                                                <span className="fui-name text-midnight-navy mb-0">{getSug.name ?? 'N/A'}{getSug.id}</span>
+                                                                                <span className="fui-name text-midnight-navy mb-0">{getSug.name ?? 'N/A'}</span>
                                                                                 <span className="mb-0 fui-date d-block">{getSug.date ?? 'N/A'}</span>
                                                                             </Link>
                                                                            
@@ -1454,7 +1459,7 @@ const CommunitySection: React.FC = () => {
                                                     <li><a href="">Completed</a></li> */}
                                                 </ul>
                                                 
-                                                <button className="btn-style-1" ><Link  style={{color:'#fff'}}  to={'/add-post'}> Share a Post</Link></button>
+                                                {/* <button className="btn-style-1" ><Link  style={{color:'#fff'}}  to={'/add-post'}> Share a Post</Link></button> */}
                                             </div>
                                         </aside>
                                     </div>

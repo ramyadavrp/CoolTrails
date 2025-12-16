@@ -103,7 +103,7 @@ const ProfileEditSection: React.FC = () => {
                     UserId: userId,
                 });
     
-                console.log("Profile Dataqqq:", response.data);
+                // console.log("Profile get Data:", response.data.data);
     
                 if (response.data.status === "success") {
                     const d = response.data.data;
@@ -115,25 +115,15 @@ const ProfileEditSection: React.FC = () => {
                         phone_no: d.phone_no || "",
                         about_me: d.abount || "",
                         // favorite_activities: d.favoriteactivities || [],favoriteactivities
+                       
                         favorite_activities: Array.isArray(d.favoriteactivities)
-                        ? d.favoriteactivities
-                            .filter((item: any) => item) // remove null/undefined/empty
-                            .map((item: any) =>
-                                typeof item === "string" && item.trim() !== ""
-                                    ? { title: item.trim() }
-                                    : typeof item === "object" && item.title
-                                    ? { title: item.title }
-                                    : null
-                            )
-                            .filter((item: any) => item !== null) // remove invalid
-                        : d.favoriteactivities && d.favoriteactivities.trim() !== ""
-                        ? [{ title: d.favoriteactivities.trim() }]
+                        ? d.favoriteactivities.map((item: any) => ({
+                            title: item.name?.trim()   
+                            }))
                         : [],
                         member_location: d.address || "",
                         units: d.units || "",
-                        activity_time_preference: d.activityTimePreference || "",
-                        // height: d.height || "",
-                        // weight: d.weight || "",
+                        activity_time_preference: d.activity_time_preference || "",
                         height: d.height != null ? Number(d.height).toFixed(1) : "",
                         weight: d.weight != null ? Number(d.weight).toFixed(2) : "",
                         birthday_month: d.month || "",
@@ -142,6 +132,7 @@ const ProfileEditSection: React.FC = () => {
                         language: d.language || "",
                         new_password: ""
                     });
+                    
                 }
                 } catch (error:any) {
                     useAlertMessage({
@@ -158,12 +149,13 @@ const ProfileEditSection: React.FC = () => {
             loadProfile();
     }, [userId]);
 
+    
     useEffect(() => {
         const fetchActivity = async () => {
             try {
-                const response = await axios.get(`${BASE_URL}/home/topcategory/10`);
+                const response = await axios.get(`${BASE_URL}/home/topcategory/20`);
                 setAllActivity(response.data.data);
-                    // console.log('topcategory',response.data.data);
+                    // console.log('Alltopcategory',response.data.data);
             } catch (error) {
                 console.error('API Error:', error);
                 // setErrorLocatTrails('Unable to fetch top local trails');
@@ -241,8 +233,15 @@ const ProfileEditSection: React.FC = () => {
     const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
     ) => {
+        const MAX_WORDS = 30;
         const { name, value } = e.target;
         // console.log('ddssd',value);
+        if (name === "about_me") {
+            const words = value.trim().split(/\s+/); 
+
+            // Prevent typing beyond 30 words
+            if (words.length > MAX_WORDS) return;
+        }
         setProfileData(prev => ({
             ...prev,
             [name]: value
@@ -260,6 +259,7 @@ const ProfileEditSection: React.FC = () => {
     
 
     const handleActivityToggle = (activity: string) => {
+        // console.log('activityactivity',activity);
         setProfileData((prev) => {
             const exists = prev.favorite_activities.some((a) => a.title === activity);
             const updatedActivities = exists
@@ -288,6 +288,16 @@ const ProfileEditSection: React.FC = () => {
         newErrors.height = "Enter a valid positive number (no minus allowed)";
         }
         if (!payload.full_name) newErrors.full_name = "Full name is required";
+        if (!payload.about_me) {
+            newErrors.about_me = "Bio field is required";
+            } else {
+            const wordCount = payload.about_me.trim().split(/\s+/).length;
+
+            if (wordCount > 30) {
+                newErrors.about_me = "Bio must not exceed 30 words";
+            }
+        }
+
         if (!payload.birthday_month) newErrors.birthday_month = "Birthday Month is required";
         if (!payload.birthday_date) newErrors.birthday_date = "Birthday Date is required";
         if (!payload.birthday_year) newErrors.birthday_year = "Birthday Year is required";
@@ -311,7 +321,7 @@ const ProfileEditSection: React.FC = () => {
             const response = await axios.post(`${BASE_URL}/user/profileupdate`, payload, {
                 headers: { "Content-Type": "application/json" }
             });
-            console.log(response.data);
+            // console.log('profile update',response.data.data);
             if (response.data.status === "success") {
                 useAlertMessage({
                     icon: "success",
@@ -364,7 +374,11 @@ const ProfileEditSection: React.FC = () => {
             });
             }
         }, [profile, getAllActivity]);
-        
+        // about bio count word limit
+        const aboutMeWordCount = profileData.about_me?.trim()
+            ? profileData.about_me.trim().split(/\s+/).length
+            : 0;
+
 
   return (
     <main className="mainContent">
@@ -431,9 +445,7 @@ const ProfileEditSection: React.FC = () => {
                         <div className="bg-almost-white br-20 profile-card-2">
                             <h2 className="profile-card-title text-midnight-navy">Bio</h2>
                             <div className="bg-lavender-gray bio">
-                                <p className="mb-0 text-grey">Nature lover. Trail chaser. Sunrise enthusiast. <br /> I explore
-                                    one path at a time — from hidden forest gems to epic mountain climbs. Always up
-                                    for new trails and sharing honest tips to help others hike smarter.</p>
+                                <p className="mb-0 text-grey"> {profile?.abount ?? ''}</p>
                             </div>
                         </div>
                     </div>
@@ -486,6 +498,28 @@ const ProfileEditSection: React.FC = () => {
                                             aria-label="Username" aria-describedby="addon-wrapping" />
                                     </div>
                                 </div>
+                                <div className="form-floating mb-3">
+                                   <textarea
+                                        className={`form-control ${errors.about_me ? "is-invalid" : ""}`}
+                                        name="about_me"
+                                        id="about_me"
+                                        rows={5}
+                                        placeholder="Enter about yourself"
+                                        value={profileData.about_me}
+                                        onChange={handleInputChange}
+                                        />
+
+                                        <div className="d-flex justify-content-between mt-1">
+                                        <small className="text-muted">
+                                            {aboutMeWordCount} / 30 words
+                                        </small>
+
+                                        {errors.about_me && (
+                                            <small className="text-danger">{errors.about_me}</small>
+                                        )}
+                                        </div>
+                                </div>  
+                                
                             </div>
                         </div>
                     </div>  
@@ -497,9 +531,11 @@ const ProfileEditSection: React.FC = () => {
                                 {
                                     getAllActivity.map((act: any, index: number) => {
                                     const isSelected = profileData.favorite_activities.some(
-                                        (a) => a.title === act.title
-                                    );
-
+                                        (a) =>
+                                            a.title?.trim().toLowerCase() ===
+                                            act.title?.trim().toLowerCase()
+                                        );
+                                        // console.log('favorite_activities',isSelected);
                                         return (
                                         
                                             <div key={index} className={`fav-activity-single ${isSelected ? "active" : ""}`}
