@@ -12,6 +12,7 @@ import Affiliate from '../containers/Affiliate';
 import Affiliate4Page from '../containers/AffiliateDetails';
 import FrameTrail from '../containers/FrameTrail';
 import ProfilePage from '../containers/ProfilePage';
+import ProfilefeedPage from '../containers/ProfilefeedPage';
 import ProfileEdit from '../containers/ProfileEdit';
 import Trail5Page from '../containers/Trail5Page';
 import GiftPage from '../containers/GiftPage';
@@ -31,6 +32,14 @@ import GiftCustomize from '../containers/GiftCustomize';
 import CommunityPageCmtDetails from '../containers/CommunityPageCmtDetails';
 import CompleteTrailPage from '../containers/CompleteTrailPage';
 import AddPost from '../containers/AddPost';
+import ReportAnIssue from '../containers/ReportAnIssue';
+import BlockedUser from '../containers/blockedUser';
+import CommentOnFeed from '../containers/CommentOnFeed';
+import DismissedUser from '../containers/DismissedUser';
+import BookmarkTrail from '../containers/BookmarkTrail';
+import Review from '../containers/Review';
+import ActivitiesList from '../containers/ActivitiesList';
+import Complete from '../containers/Complete';
 
 const AppRoute = () => {
   
@@ -52,7 +61,17 @@ const AppRoute = () => {
         <Route path="/national-park-guide" element={<NationalParkGuide />} /> 
         <Route path="/gift-membership" element={<GiftMembership />} /> 
         <Route path="/plans" element={<Plan />} /> 
-        <Route path="/guides/:country/:title" element={<ParkDetails />} /> 
+        <Route path="/guides/:country/:title" element={<AffiliateDetails />} /> 
+        <Route path="/report-an-issue" element={<ReportAnIssue />} /> 
+        <Route path="/blocked-user" element={<BlockedUser />} /> 
+        <Route path="/comment-on-feed" element={<CommentOnFeed />} /> 
+        <Route path="/dismissed-user" element={<DismissedUser />} /> 
+        <Route path="/bookmark-trail" element={<BookmarkTrail />} />
+        <Route path="/review" element={<Review />} />
+        <Route path="/activities" element={<ActivitiesList />} />
+        <Route path="/complete" element={<Complete />} />
+        
+{/* <Route path="/guides/:country/:title" element={<ParkDetails />} />  15-12-25*/} 
         <Route path="/gift" element={<GiftPage />} />
         <Route path="/gift/customize" element={<GiftCustomize />} />
         
@@ -70,7 +89,8 @@ const AppRoute = () => {
           <Route path="/create-map" element={<CreateMap />} /> 
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/edit-profile" element={<ProfileEdit />} />
-          <Route path="/profile-feed" element={<ProfilePage />} />
+          {/* <Route path="/profile-feed" element={<ProfilePage />} /> */}
+          <Route path="/profile-feed" element={<ProfilefeedPage />} />
           {/* <Route path="/complete-trail" element={<CompleteTrailPage />} /> */}
           <Route path="/profile-photo" element={<ProfilePhotos />} />
           <Route path="/community" element={<CommunityPage />} />

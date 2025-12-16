@@ -322,6 +322,9 @@ const CommunitySectionCmtDetails: React.FC = () => {
                 commentId: selectedCommentId,
                 UserId: userId
             });
+            setComments((prev) =>
+                prev.filter((c) => c.id !== selectedCommentId)
+            );
             setIsOpen(false);
             setSelectedCommentId(null);
             if (response.data.status === "success") {
@@ -1121,8 +1124,33 @@ const CommunitySectionCmtDetails: React.FC = () => {
                     }, 
                     }
                     );
-                    // console.log("Comment posted:", response.data);
+                    console.log("Comment posted:", response.data);
                     if (response.data.status === "success") {
+                        const newComment = {
+                            id: response.data.id,              // or response.data.data.id
+                            commentText: commenttext,
+                            createdOn: new Date().toLocaleDateString("en-US", {
+                            month: "long",
+                            day: "2-digit",
+                            year: "numeric",
+                            }),
+                            time: new Date().toLocaleTimeString("en-US", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: true,
+                            }),
+                            name: response.data.name || "You",
+                            user_image: response.data.user_image,
+                            userId: userId,
+                            postId: postId,
+                            isLike: false,
+                            likeCount: 0,
+                            replies: [],
+                        };
+
+                        // ✅ ADD TO TOP
+                        setComments((prev) => [newComment, ...prev]);
+                        setInputTextValue("");
                         // Swal.fire("Uploaded!", "Images uploaded successfully!", "success");
                         Swal.fire({
                             icon: "success",
@@ -1132,10 +1160,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                              width: "350px",
                             confirmButtonColor: "#fc673c",
                             });
-                        const newComment = response.data.comment_text;
-                        // setComments((prev) => [...prev, newComment]);
-                        // Clear input
-                        setInputTextValue("");
+                       
                     } else {
                         Swal.fire({
                             title: "Failed",
@@ -1803,7 +1828,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                     </div>
                                                     <div className="test-head">
                                                        
-                                                        <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">{cmt.name ?? 'N/A'}{cmt.id}<span style={{color:'gray',fontSize:'14px'}} className="d-inline-block mx-1">•  {timeAgo(cmt.createdOn)}</span> </h3>
+                                                        <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">{cmt.name ?? 'N/A'}<span style={{color:'gray',fontSize:'14px'}} className="d-inline-block mx-1">•  {timeAgo(cmt.createdOn)}</span> </h3>
                                                         {/* <StarRating rating={Number(review.rating)}/> */}
                                                         <p className="mb-0">{cmt.commentText ?? 'N/A'}</p>
                                                     </div>
