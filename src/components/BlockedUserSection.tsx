@@ -9,6 +9,7 @@ import { SquareLoader } from "react-spinners";
 import { SyncLoader } from "react-spinners";
 import { encodeId, generateSlug ,slugToTitle,usePageTitle} from '../utils/helpers';
 import Select from "react-select";
+import {getAuth} from '../utils/storage';
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -18,17 +19,72 @@ interface Park{
 
 }
 
-interface Profile {
-  fullName: string;
-  address: string;
-  picturePath: string;
-  registeredOn: string;
-  totalFollowers: number;
-  totalFollowing: number;
+interface BlockedUser {
+    id:number;
+    user: string;
+    usertImage: string;
+    reason: string;
+    blockedDate: string;
 }
 const BlockedUserSection: React.FC = () => {
-    
+    const [loadingBlockedUser, setloadingBlockedUser] = useState<boolean>(true);
 
+    const [loginId, setLoginId] = useState("");
+    const [userId, setUserId] = useState<string>("");
+    const [token, setToken] = useState<string>("");
+    const [getBlockedUser, setBlockedUser] = useState<BlockedUser[]>([]);
+    useEffect(() => {
+        const { userId, token ,login} = getAuth();
+            if (userId) setUserId(userId);
+            if (login) setLoginId(login);
+            if (token) setToken(token);
+    }, []);
+    
+    useEffect(() => {
+        if (!userId) return; // wait until userId is available
+
+        const loadBlockedUser = async () => {
+            // setloadingBlockedUser(true);
+            try {
+            const response = await axios.post(`${BASE_URL}/common/blockedfeedbyuser`, {
+                userid: userId,
+                skip: 0,
+                take: 20
+            });
+
+                // console.log("Blocked Data:", response.data);
+
+            if (response.data.status === "success") {
+                setBlockedUser(response.data.data);
+            }
+            } catch (error) {
+                // setloadingBlockedUser(false);
+                console.error("Error loading profile:", error);
+            }
+        };
+
+        loadBlockedUser();
+    }, [userId]);
+    // if (loadingBlockedUser) {
+    //     return (
+    //         <div
+    //             style={{
+    //             position: "fixed",
+    //             top: 0,
+    //             left: 0,
+    //             width: "100vw",
+    //             height: "100vh",
+    //             background: "#FFF5E9",
+    //             display: "flex",
+    //             alignItems: "center",
+    //             justifyContent: "center",
+    //             zIndex: 9999,
+    //             }}
+    //         >
+    //             <SquareLoader color="#FC673C" size={80} speedMultiplier={1.5} />
+    //         </div>
+    //     );
+    // }
     return (
         <main className="mainContent">
            <section className="section-profile-feed inner-dashboard position-relative py-3">
@@ -48,18 +104,39 @@ const BlockedUserSection: React.FC = () => {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <tr>
-                                                <td><div className="profile-img"><img src="assets/images/profile/profile-md.png" alt=""/></div></td>
-                                                <td>User 1</td>
-                                                <td>text Blocked</td>
-                                                <td>10 Oct,2025</td>
-                                            </tr>
-                                            <tr>
-                                                <td><div className="profile-img"><img src="assets/images/profile/profile-md.png" alt=""/></div></td>
-                                                <td>User 1</td>
-                                                <td>text Blocked</td>
-                                                <td>10 Oct,2025</td>
-                                            </tr>
+                                            {
+                                                getBlockedUser.length > 0 && (
+                                                  getBlockedUser.map((buser:any, index:number)=>(
+                                                    <tr key={index}>
+                                                        <td>
+                                                            <div className="profile-img">
+                                                                <img
+                                                                    src={buser?.usertImage || '/assets/images/not-found.jpg'}
+                                                                    alt="locat not"  
+                                                                     width={80}
+                                                                    style={{borderRadius:'50%'}}
+                                                                    onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                                                        const target = e.currentTarget;
+                                                                        target.onerror = null; // prevent infinite loop
+                                                                        target.src = '/assets/images/not-found.jpg'; // fallback image
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                        </td>
+                                                        <td>{buser.user} </td>
+                                                        <td>{buser.reason || "Blocked"}</td>
+                                                        <td> 
+                                                            {new Date(buser.blockedDate).toLocaleDateString("en-IN", {
+                                                                day: "2-digit",
+                                                                month: "short",
+                                                                year: "numeric",
+                                                            })}
+                                                        </td>
+                                                    </tr>
+                                                  ))
+                                                )
+                                            }
+                                            
                                         </tbody>
                                     </table>
                                 </div>

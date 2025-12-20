@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo ,useRef} from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { SyncLoader } from "react-spinners";
@@ -8,7 +8,12 @@ import { decodeId, encodeId, generateSlug, slugToTitle,usePageTitle } from '../u
 import data from '../data/explorealltrails.json';
 import { SquareLoader } from "react-spinners";
 import Select from "react-select";
+import mapboxgl from "mapbox-gl";
+import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
+import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
+import "mapbox-gl/dist/mapbox-gl.css";
 
+mapboxgl.accessToken = "pk.eyJ1IjoiMTExMnZpcmVuZHJhIiwiYSI6ImNtYmE0emNyNjBwbHMyanNibHBpZHgxMjUifQ.5FSp2VZ1T1kXcGV38bC5jA";
 
 
 const BASE_URL = import.meta.env.VITE_API_URL;
@@ -64,9 +69,10 @@ function ExploreTrailSection() {
     const [nearbytrails, setNearbytrails] = useState<any[]>([]);
     const [latitude, setLatitude] = useState<number | null>(null);
     const [longitude, setLongitude] = useState<number | null>(null);
-     usePageTitle("Cooltrails | Explore ");
-    
 
+  
+
+     usePageTitle("Cooltrails | Explore ");
     const [filters, setFilters] = useState({
         distance: [],    // e.g., ["near", "away"]
         activity: [],    // e.g., ["running", "walking"]
@@ -81,7 +87,7 @@ function ExploreTrailSection() {
         return () => clearTimeout(timer);
     }, []);
 
-
+    
     const postLocation = async () => {
         try {
             const response = await axios.post(`${BASE_URL}/trail/NearTrailsByLatAndLan`, {
@@ -273,12 +279,13 @@ function ExploreTrailSection() {
             </div>
         );
     }
+    
     return (
         <main className="mainContent">
             <section className="section-explore-trails position-relative default-padding">
                 <div className="container">
                     <div className="row">
-                        <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12">
+                        <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
                             <div className="explore-trail-container position-relative z-1">
                                 <div className="section-title mb-3">
                                     <h2 className="title title-md">Explore trails</h2>
@@ -410,7 +417,7 @@ function ExploreTrailSection() {
                                             sortedData.map((trail: any, index: number) => (
                                                 <div
                                                     key={index} // always add a key in map
-                                                    className="col-xl-4 col-lg-4 col-md-4 col-sm-12 col-12"
+                                                    className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12"
                                                 >
                                                     <div className="local-favorite-single mb-4">
                                                         <div className="lfc-thumb position-relative">
@@ -521,14 +528,16 @@ function ExploreTrailSection() {
                         </div>
                     </div>
                 </div>
-                {/* <div className="explore-trail-abs-map">
+                <div className="explore-trail-abs-map">
+                   
+                   {/* <div ref={mapContainer} style={{ width: "100%", height: "500px" }}/> */}
                     <iframe
                         src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d623465.506385643!2d3.1753929462417525!3d50.71315181250765!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47c3a4ed73c76867%3A0xc18b3a66787302a7!2sBrussels%2C%20Belgium!5e0!3m2!1sen!2sin!4v1749977024534!5m2!1sen!2sin"
                         allowFullScreen
                         loading="lazy"
                         referrerPolicy="no-referrer-when-downgrade"
                     ></iframe>
-                </div> */}
+                </div>
             </section>
         </main>
 

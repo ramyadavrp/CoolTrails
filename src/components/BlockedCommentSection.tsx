@@ -13,49 +13,49 @@ import {getAuth} from '../utils/storage';
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
+interface Park{
+    title:string,
+    description:string
 
-interface DismissedUser {
-    id: number;
-    message: string;
-    userId: string;
-    user: {
-        id: string;
-        userId: string;
-        fullName: string;
-        picturePath: string;
-        address?: string | null;
-    };
 }
 
-const DismissedUserSection: React.FC = () => {
-    const [loadingDismissedUser, setloadingDismissedUser] = useState<boolean>(true);
-    
+interface BlockedUser {
+    id:number;
+    user: string;
+    usertImage: string;
+    reason: string;
+    blockedDate: string;
+}
+const BlockedCommentSection: React.FC = () => {
+    const [loadingBlockedComment, setloadingBlockedComment] = useState<boolean>(true);
+
     const [loginId, setLoginId] = useState("");
     const [userId, setUserId] = useState<string>("");
     const [token, setToken] = useState<string>("");
-    const [getDismissedUser, setDismissedUser] = useState<DismissedUser[]>([]);
+    const [getBlockedComment, setBlockedComment] = useState<BlockedUser[]>([]);
     useEffect(() => {
         const { userId, token ,login} = getAuth();
             if (userId) setUserId(userId);
             if (login) setLoginId(login);
             if (token) setToken(token);
     }, []);
+    
     useEffect(() => {
         if (!userId) return; // wait until userId is available
 
-        const loadDismissedUser = async () => {
+        const loadBlockedComment = async () => {
             // setloadingBlockedUser(true);
             try {
-            const response = await axios.post(`${BASE_URL}/common/dismisseduser`, {
+            const response = await axios.post(`${BASE_URL}/common/blockedcommentbyuser`, {
                 userid: userId,
                 skip: 0,
                 take: 20
             });
 
-                console.log("dismisseduser Data:", response.data.data);
+                // console.log("Blocked Data:", response.data);
 
             if (response.data.status === "success") {
-                setDismissedUser(response.data.data);
+                setBlockedComment(response.data.data);
             }
             } catch (error) {
                 // setloadingBlockedUser(false);
@@ -63,8 +63,28 @@ const DismissedUserSection: React.FC = () => {
             }
         };
 
-        loadDismissedUser();
+        loadBlockedComment();
     }, [userId]);
+    // if (loadingBlockedUser) {
+    //     return (
+    //         <div
+    //             style={{
+    //             position: "fixed",
+    //             top: 0,
+    //             left: 0,
+    //             width: "100vw",
+    //             height: "100vh",
+    //             background: "#FFF5E9",
+    //             display: "flex",
+    //             alignItems: "center",
+    //             justifyContent: "center",
+    //             zIndex: 9999,
+    //             }}
+    //         >
+    //             <SquareLoader color="#FC673C" size={80} speedMultiplier={1.5} />
+    //         </div>
+    //     );
+    // }
     return (
         <main className="mainContent">
            <section className="section-profile-feed inner-dashboard position-relative py-3">
@@ -84,31 +104,39 @@ const DismissedUserSection: React.FC = () => {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {getDismissedUser.length > 0 &&
-                                                getDismissedUser.map((buser: any, index: number) => (
-                                                    <tr key={buser.id ?? index}>
+                                            {
+                                                getBlockedComment.length > 0 && (
+                                                  getBlockedComment.map((buser:any, index:number)=>(
+                                                    <tr key={index}>
                                                         <td>
                                                             <div className="profile-img">
                                                                 <img
-                                                                    src={buser.user.picturePath || "/assets/images/not-found.jpg"}
-                                                                    alt={buser.user.fullName}
-                                                                    width={80}
+                                                                    src={buser?.usertImage || '/assets/images/not-found.jpg'}
+                                                                    alt="locat not"  
+                                                                     width={80}
                                                                     style={{borderRadius:'50%'}}
-                                                                    onError={(e) => {
-                                                                        e.currentTarget.src = "/assets/images/not-found.jpg";
+                                                                    onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                                                        const target = e.currentTarget;
+                                                                        target.onerror = null; // prevent infinite loop
+                                                                        target.src = '/assets/images/not-found.jpg'; // fallback image
                                                                     }}
                                                                 />
                                                             </div>
                                                         </td>
-
-                                                        <td>{buser.user.fullName}</td>
-
-                                                        <td>{buser.message || "Dismissed"}</td>
-
-                                                        <td>{buser.addedOn}</td>
+                                                        <td>{buser.user} </td>
+                                                        <td>{buser.reason || "Blocked"}</td>
+                                                        <td> 
+                                                            {new Date(buser.blockedDate).toLocaleDateString("en-IN", {
+                                                                day: "2-digit",
+                                                                month: "short",
+                                                                year: "numeric",
+                                                            })}
+                                                        </td>
                                                     </tr>
-                                                ))
+                                                  ))
+                                                )
                                             }
+                                            
                                         </tbody>
                                     </table>
                                 </div>
@@ -124,4 +152,4 @@ const DismissedUserSection: React.FC = () => {
     );
 };
 
-export default DismissedUserSection;
+export default BlockedCommentSection;

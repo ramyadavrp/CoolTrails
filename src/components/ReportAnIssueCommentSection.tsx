@@ -25,7 +25,7 @@ interface ReportIssueFeed {
     reason: string;
     blockedDate: string;
 }
-const ReportAnIssueSection: React.FC = () => {
+const ReportAnIssueCommentSection: React.FC = () => {
     const [loadingReportIssueFeed, setloadingReportIssueFeed] = useState<boolean>(true);
     const [loginId, setLoginId] = useState("");
     const [userId, setUserId] = useState<string>("");
@@ -43,7 +43,7 @@ const ReportAnIssueSection: React.FC = () => {
         const loadReportIssueFeed = async () => {
             // setloadingBlockedUser(true);
             try {
-            const response = await axios.post(`${BASE_URL}/common/reportanissue-feed`, {
+            const response = await axios.post(`${BASE_URL}/common/reportanissue-comment`, {
                 userid: userId,
                 skip: 0,
                 take: 20
@@ -177,4 +177,4 @@ const ReportAnIssueSection: React.FC = () => {
   );
 };
 
-export default ReportAnIssueSection;
+export default ReportAnIssueCommentSection;

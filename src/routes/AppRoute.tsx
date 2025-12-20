@@ -40,6 +40,10 @@ import BookmarkTrail from '../containers/BookmarkTrail';
 import Review from '../containers/Review';
 import ActivitiesList from '../containers/ActivitiesList';
 import Complete from '../containers/Complete';
+import BookmarkFeed from '../containers/BookmarkFeed';
+import BlockedComment from '../containers/BlockedComment';
+import ReportAnIssueComment from '../containers/ReportAnIssueComment';
+import FullTrailMapSection from '../components/FullTrailMapSection';
 
 const AppRoute = () => {
   
@@ -63,13 +67,19 @@ const AppRoute = () => {
         <Route path="/plans" element={<Plan />} /> 
         <Route path="/guides/:country/:title" element={<AffiliateDetails />} /> 
         <Route path="/report-an-issue" element={<ReportAnIssue />} /> 
+        <Route path="/report-an-issue-comment" element={<ReportAnIssueComment />} /> 
         <Route path="/blocked-user" element={<BlockedUser />} /> 
+        <Route path="/blocked-comment" element={<BlockedComment />} /> 
         <Route path="/comment-on-feed" element={<CommentOnFeed />} /> 
         <Route path="/dismissed-user" element={<DismissedUser />} /> 
         <Route path="/bookmark-trail" element={<BookmarkTrail />} />
+        <Route path="/bookmark-feed" element={<BookmarkFeed />} />
         <Route path="/review" element={<Review />} />
         <Route path="/activities" element={<ActivitiesList />} />
         <Route path="/complete" element={<Complete />} />
+        <Route path="/trail-map" element={<FullTrailMapSection />} />
+       
+        
         
 {/* <Route path="/guides/:country/:title" element={<ParkDetails />} />  15-12-25*/} 
         <Route path="/gift" element={<GiftPage />} />
