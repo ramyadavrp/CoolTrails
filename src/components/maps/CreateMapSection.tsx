@@ -506,15 +506,9 @@ const CreateMapSection: React.FC = () => {
                 </div> */}
                 
                 <div style={{ position: "relative", width: "100%", height: "100vh",padding:'20px' }}>
-                    <div
-                    ref={mapContainer}
-                    style={{
-                        width: "100%",
-                        height: "100%",
-                        borderRadius: "10px",
-                        visibility: loadingMap ? "hidden" : "visible",
-                    }}
-                    />
+                    <div ref={mapContainer}
+                    style={{width: "100%", height: "100%",borderRadius: "10px",
+                        visibility: loadingMap ? "hidden" : "visible",}}/>
                     {loadingMap && (
                     <div
                         style={{

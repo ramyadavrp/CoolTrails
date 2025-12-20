@@ -11,7 +11,7 @@ import {useAlertMessage} from '../utils/useAlertMessage';
 // import { setTimeout, clearTimeout } from 'timers';
 
 import path from 'path';
-import { Link } from 'react-router-dom';
+import { Link ,} from 'react-router-dom';
 import { decodeId,encodeId, generateSlug ,slugToTitle,usePageTitle} from '../utils/helpers';
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -89,7 +89,21 @@ type ShareOption = {
   icon: JSX.Element | (() => JSX.Element);
   action: () => void;
 };
+type ShareOption1 = {
+  label: string;
+  icon: JSX.Element | (() => JSX.Element);
+  action: () => void;
+};
 
+type ExportItem = {
+  title: string;
+  value?: string;
+};
+interface DownloadItem {
+  id: number;
+  name: string;
+  email: string;
+}
 mapboxgl.accessToken = 'pk.eyJ1IjoiMTExMnZpcmVuZHJhIiwiYSI6ImNtYmE0emNyNjBwbHMyanNibHBpZHgxMjUifQ.5FSp2VZ1T1kXcGV38bC5jA';
        
 const AffiliateDetailTrail: React.FC = () => {
@@ -128,6 +142,7 @@ const AffiliateDetailTrail: React.FC = () => {
     const [showTextModal, setShowTextModal] = useState(false); // For Text this park modal
     const [phone, setPhone] = useState("");/* Text share*/ 
     const [showQR, setShowQR] = useState(false);
+    
     const qrRef = useRef<HTMLCanvasElement>(null);
     const [loginIdBased, setLoginIdBased] = useState("");
     const [userId, setUserId] = useState<string>("");
@@ -148,6 +163,16 @@ const AffiliateDetailTrail: React.FC = () => {
     const [message, setMessage] = useState<string | null>(null);
     const [reviewDetails, setReviewdetails] = useState<Review[]>([]);
     const shareUrl = window.location.href;
+    const [showPopup, setShowPopup] = useState(false);
+
+    const [qrData, setQrData] = useState<string | null>(null);
+    const [loadingQr, setQrLoading] = useState(false);
+    const [showQRHitTrail, setShowQRHitTrail] = useState(false);
+    const [showDownloadApp, setShowDownloadApp] = useState(false);
+    const [downloadData, setDownloadData] = useState<DownloadItem[]>([]);
+    const [showExportFile, setshowExportFile] = useState(false);
+    const [exportData, setExportData] = useState<ExportItem[]>([]);
+    const [selectedFile, setSelectedFile] = useState<string>("");
     useAutoClearMessage(message, setMessage, 3000);
     
     
@@ -165,6 +190,83 @@ const AffiliateDetailTrail: React.FC = () => {
             if (login) setLoginIdBased(login);
             if (email) setLoginId(email);
     }, []);
+    useEffect(() => {
+        if (showQRHitTrail) {
+            fetchQRCode();
+        }
+    }, [showQRHitTrail]);
+    useEffect(() => {
+        if (exportData) {
+            fetchExportFile();
+        }
+    }, []);
+     useEffect(() => {
+        if (downloadData) {
+            fetchDownloadFile();
+        }
+    }, []);
+
+    const fetchQRCode = async () => {
+        if (!userId) return; 
+        try {
+         setQrLoading(true);
+        const response = await axios.post(`${BASE_URL}/common/MapQRCode`, {
+            UserId: userId,
+            TrailTitle: title,
+        });
+
+        // console.log("QR:", response.data);
+        setQrData(`data:image/png;base64,${response.data}`); 
+        if (response.data.status === "success") {
+           
+        }
+        } catch (error) {
+            setQrLoading(false);
+        console.error("Error loading profile:", error);
+        }
+    };
+    const fetchExportFile = async () => {
+        // if (!selectedFile) {
+        //     alert("Please select a file type");
+        //     return;
+        // }
+
+        // console.log("Exporting:", selectedFile);
+        if (!userId) return; 
+        try {
+         setQrLoading(true);
+        const response = await axios.post(`${BASE_URL}/common/getfilenamefordownloadmap`, {
+            UserId: userId,
+            TrailTitle: title,
+        });
+        if (response.data.status === "success") {
+           setExportData(response.data.data);
+        }
+        } catch (error) {
+            setQrLoading(false);
+        console.error("Error loading profile:", error);
+        }
+    };
+    const fetchDownloadFile = async () => {
+        
+        if (!userId) return; 
+        try {
+         setQrLoading(true);
+        const response = await axios.post(`${BASE_URL}/common/downloadfile`, {
+            id:1,
+            UserId: userId,
+            TrailTitle: title,
+        });
+        // console.log('setDownloadData',response.data.data);
+        if (response.data.status === "success") {
+           setDownloadData(response.data.data);
+        }
+        } catch (error) {
+            setQrLoading(false);
+        console.error("Error loading profile:", error);
+        }
+    };
+
     useEffect(() => {
         if (stateTrailId) {
         localStorage.setItem("trailId", stateTrailId);
@@ -419,7 +521,11 @@ const AffiliateDetailTrail: React.FC = () => {
             });
 
             map.current.fitBounds(bounds, { padding: 50, maxZoom: 17 });
-
+            /* CLICK MAP → OPEN FULL PAGE */
+            map.current.getCanvas().style.cursor = "pointer";
+            map.current.on("click", () => {
+                navigate("/trail/full");
+            });
             // Route source
             map.current.addSource('route', {
                 type: 'geojson',
@@ -628,7 +734,16 @@ const AffiliateDetailTrail: React.FC = () => {
     //     link.download = "qr-code.png"; // File name
     //     link.click();
     // };
-    
+    const downloadQRHitTrail = () => {
+        if (!qrData) return;
+
+        const link = document.createElement("a");
+        link.href = qrData;
+        link.download = "qr-code.png"; // file name
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
     const downloadQR = () => {
        
         const canvas = qrRef.current;
@@ -664,6 +779,34 @@ const AffiliateDetailTrail: React.FC = () => {
         d="M12.6 2.288a9.74 9.74 0 0 0-9.151 14.404l-.794 2.804v.003A1.49 1.49 0 0 0 4.5 21.346l.004-.001 2.804-.794A9.74 9.74 0 1 0 12.6 2.288M6.936 5.501a8.24 8.24 0 1 1 .853 13.598.75.75 0 0 0-.587-.077l-3.103.879.879-3.103a.75.75 0 0 0-.077-.587 8.24 8.24 0 0 1 2.035-10.71"
         fill="currentColor" />
     </svg>
+    );
+    const IconMobile = () => (
+        <svg width="30" height="40" viewBox="0 0 24 24" fill="none" style={{marginLeft: '9px'}}>
+            <rect x="7"y="2" width="10" height="20" rx="2"stroke="currentColor" strokeWidth="1.8"/>
+            <circle cx="12" cy="18" r="1" fill="currentColor" />
+        </svg>
+    ); 
+    const IconExport = () => (
+        <svg width="30" height="40" viewBox="0 0 24 24" fill="none" style={{marginLeft: '9px'}}>
+            <path d="M12 21V11m0 0l-4 4m4-4l4 4M4 3h16" stroke="currentColor"  strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+    );
+    const IconGarmin = () => (
+        <svg width="30" height="40" viewBox="0 0 24 24" fill="none" style={{marginLeft: '9px'}}>
+            <path d="M9 2h6v3H9V2Zm-2 3h10v14a3 3 0 0 1-3 3H10a3 3 0 0 1-3-3V5Zm2 4h6" stroke="currentColor"
+            strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+    );
+    const IconDownload = () => (
+        <svg width="30" height="40" viewBox="0 0 24 24" fill="none" style={{marginLeft: '9px'}}>
+            <path
+            d="M12 3v10m0 0l4-4m-4 4l-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            />
+        </svg>
     );
 
     // const IconEmail = () => (
@@ -726,6 +869,35 @@ const AffiliateDetailTrail: React.FC = () => {
         { label: "QR Code", icon: IconQR, action: () => setShowQR(true) },
     ];
     
+    const options1: ShareOption1[] = [
+        {
+            label: "Download in app",
+            icon: <IconDownload />,
+            action: () => {
+            setShowPopup(false);
+            setShowDownloadApp(true);
+            },
+        },
+        // {
+        //     label: "Send to Garmin",
+        //     icon: <IconGarmin />,
+        //     action: () => {
+        //     setShowQRHitTrail(false);
+        //     setShowDownloadApp(true);
+        //     },
+        // },
+        { label: "Open in app", icon: <IconMobile />, action: () => setShowQRHitTrail(true) },
+        {
+            label: "Export map file",
+            icon: <IconExport />,
+            action: () => {
+            setshowExportFile(true);
+            setShowPopup(false);
+            },
+        },
+        
+        
+    ];
     // const CopyIcon = (
     //     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     //     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -797,6 +969,7 @@ const AffiliateDetailTrail: React.FC = () => {
                         </div>
                     </div>
                 </div>
+                 
                 <div className="row">
                     <div className="col-xl-8 col-lg-7 col-md-12 col-sm-12 col-12">
                         <ul className="d-flex trail-dt-nav list-unstyled pt-3" role="tablist">
@@ -1105,7 +1278,17 @@ const AffiliateDetailTrail: React.FC = () => {
                             </div>
 
                           
-                        <div className="rounded-3 shadow-sm" ref={mapContainer} style={{ height: '400px' }} />
+                        <div className="rounded-3 shadow-sm" ref={mapContainer} style={{ height: '400px' }}  
+                        onClick={() => {
+                            const trailTitle = trailDetail.name || (title ? slugToTitle(title) : "");
+                            localStorage.setItem(
+                                "trailPoints",
+                                JSON.stringify(getmapPoints)
+                            );
+                            localStorage.setItem("trailTitle", trailTitle);
+                            window.open("/trail-map", "_self")
+                        }}
+                        />
                                 
                         
                         <div>
@@ -1305,7 +1488,6 @@ const AffiliateDetailTrail: React.FC = () => {
                                 </div>
                             )}
 
-
                         </div>
                         </div>
                         {/* <div  ref={mapContainer} style={{height: '400px'}} className="rounded-3 shadow-sm"></div> */}
@@ -1371,7 +1553,7 @@ const AffiliateDetailTrail: React.FC = () => {
                              <PlaceOffers getPlaceOffer={getPlaceOffer} />
                             <div className="d-flex flex-wrap align-items-center">
                                 {/* <a href="" className="btn-style-3">Get Directions</a> */}
-                                <a href="" className="btn-style-3" style={{ cursor: "pointer" }}
+                                {/* <a href="" className="btn-style-3" style={{ cursor: "pointer" }}
                                     onClick={() => {
                                         if (!getmapPoints.length) return;
 
@@ -1383,19 +1565,342 @@ const AffiliateDetailTrail: React.FC = () => {
                                         window.open(googleUrl, "_blank");
                                     }}
                                     >Get Directions
+                                </a> */}
+                                <a
+                                    href="#"
+                                    className="btn-style-3"
+                                    style={{ cursor: "pointer" }}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+  
+                                        if (!getmapPoints.length) return;
+
+                                        // Destination (last point)
+                                        const destination = getmapPoints[getmapPoints.length - 1];
+
+                                        // Get current location
+                                        if (!navigator.geolocation) {
+                                            alert("Geolocation is not supported by your browser");
+                                            return;
+                                        }
+
+                                        navigator.geolocation.getCurrentPosition(
+                                            (position) => {
+                                                const { latitude, longitude } = position.coords;
+
+                                                const googleUrl = `https://www.google.com/maps/dir/?api=1&origin=${latitude},${longitude}&destination=${destination.latitude},${destination.longitude}&travelmode=walking`;
+
+                                                window.open(googleUrl, "_blank");
+                                            },
+                                            (error) => {
+                                                alert("Unable to fetch your current location");
+                                                console.error(error);
+                                            },
+                                            {
+                                                enableHighAccuracy: true,
+                                                timeout: 10000,
+                                                maximumAge: 0,
+                                            }
+                                        );
+                                    }}
+                                >
+                                    Get Directions
                                 </a>
+
                                 <a  className="btn-style-1" style={{ cursor: "pointer" }}
-                                    onClick={async () => {
-                                    if (!getmapPoints.length) return;
-                                    const formatted = getmapPoints.map(p => [p.longitude, p.latitude]);
-                                    await updateRoute(formatted);
-                                    }} 
+                                    onClick={() => setShowPopup(true)}
                                     >Hit the Trail
                                 </a>
                                 {/* <a href="" className="btn-style-1">Hit the Trail</a> */}
                             </div>
                         </div>
                     </div>
+                    {/* Show all trails  click Hit the Trail */}
+                    {showPopup && (
+                        <div
+                            style={{
+                                position: "fixed",
+                                top: 20,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                background: "rgba(0,0,0,0.5)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                zIndex: 1000,
+                            }}
+                            onClick={() => setShowPopup(false)}
+                        >
+                            {/* OUTER POPUP */}
+                            <div
+                                style={{
+                                    background: "white",
+                                    borderRadius: "10px",
+                                    width: "450px",
+                                    maxHeight: "80vh",
+                                    marginTop: "50px",
+                                    overflow: "hidden", // ✅ IMPORTANT
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                {/* HEADER */}
+                                <div
+                                    style={{
+                                        padding: "25px",
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                        borderBottom: "1px solid #eee",
+                                    }}
+                                >
+                                    <h3 style={{ margin: 0 }}>Hit the trail</h3>
+                                    
+                                    <button className="btn-cross" onClick={() => setShowPopup(false)}>
+                                        <svg width="20" height="20" viewBox="0 0 20 20" style={{margin:'0px'}}>
+                                            <path
+                                                d="M4 4L16 16M16 4L4 16"
+                                                stroke="#05073D"
+                                                strokeWidth="2"
+                                                strokeLinecap="round"
+                                            />
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                {/* SCROLLABLE CONTENT */}
+                                <div
+                                    style={{
+                                        padding: "15px 25px",
+                                        maxHeight: "calc(80vh - 80px)", // header height
+                                        overflowY: "auto",
+                                    }}
+                                >
+                                    <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                                        {options1.map((opt, idx) => (
+                                            <li
+                                            key={idx}
+                                            style={{
+                                                padding: "15px",
+                                                borderBottom: "1px solid #eee",
+                                                cursor: "pointer",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: "14px",
+                                            }}
+                                            onClick={opt.action}
+                                            >
+                                            <span className="li-style" style={{ display: "inline-flex"}}>
+                                                {typeof opt.icon === "function" ? opt.icon() : opt.icon}
+                                            </span>
+                                            <span>{opt.label}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showQRHitTrail && (
+    
+                        <div
+                            style={{
+                            position: "fixed",
+                            top: 40,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            zIndex: 1000,
+                            }}
+                            onClick={() => setShowQRHitTrail(false)}
+                        >
+                            <div
+                                style={{
+                                    background: "white",
+                                    padding: "25px",
+                                    borderRadius: "10px",
+                                    width: "450px",
+                                    maxHeight: "80vh",
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <div style={{ display: "flex", justifyContent: "space-between",margin:'15px 0px 15px 0px' }}>
+                                    
+                                    <button className="btn-cross"
+                                    onClick={() => {
+                                        setShowQRHitTrail(false);
+                                        setShowPopup(true); // reopen Share modal
+                                    }}
+                                    > 
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M12 4L6 10L12 16" stroke="#05073D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                    </button>
+                                    <button className="btn-cross" onClick={() => setShowQRHitTrail(false)}> 
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M4 4L16 16M16 4L4 16" stroke="#05073D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+
+                                    </button>
+                                </div>
+                                <div style={{ background: "white", padding: "10px", borderRadius: "10px", textAlign: "center" }}>
+                                    <h3>Open in the app</h3>
+                                    <p>Scan the QR code to open this trail in the app</p>
+                                    {qrData && (
+                                    <img src={qrData} alt="QR Code" width={200} />
+                                    )}
+                                    {/* <img src={qrImage} alt="QR Code" style={{ marginBottom: "15px",width:'132px',height:'132px' }} /> */}
+                                    {/* <QRCodeCanvas value="https://example.com" bgColor='#fff' includeMargin={true} fgColor='#000' size={132} ref={qrRef} /> */}
+                                    <div style={{ marginTop: "15px" }}>
+                                        <button className="btn-download"onClick={downloadQRHitTrail}>Download</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {showDownloadApp && (
+    
+                        <div
+                            style={{
+                            position: "fixed",
+                            top: 40,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            zIndex: 1000,
+                            }}
+                            onClick={() => setShowDownloadApp(false)}
+                        >
+                            <div
+                                style={{
+                                    background: "white",
+                                    padding: "25px",
+                                    borderRadius: "10px",
+                                    width: "450px",
+                                    maxHeight: "80vh",
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <div style={{ display: "flex", justifyContent: "space-between",margin:'15px 0px 15px 0px' }}>
+                                    
+                                    <button className="btn-cross"
+                                    onClick={() => {
+                                        setShowPopup(true);
+                                        setShowDownloadApp(false); // reopen Share modal
+                                    }}
+                                    > 
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M12 4L6 10L12 16" stroke="#05073D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                    </button>
+                                    <button className="btn-cross" 
+                                    onClick={() => {
+                                        setShowPopup(true);
+                                        setShowDownloadApp(false); // reopen Share modal
+                                    }}
+                                    > 
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M4 4L16 16M16 4L4 16" stroke="#05073D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+
+                                    </button>
+                                </div>
+                                <div style={{ background: "white", padding: "10px", borderRadius: "10px", textAlign: "center" }}>
+                                    <h3>Download in app</h3>
+                                    
+                                    {/* <img src={qrImage} alt="QR Code" style={{ marginBottom: "15px",width:'132px',height:'132px' }} /> */}
+                                    {/* <QRCodeCanvas value="https://example.com" bgColor='#fff' includeMargin={true} fgColor='#000' size={132} ref={qrRef} /> */}
+                                    <div style={{ marginTop: "15px" }}>
+                                        <button className="btn-download" onClick={fetchDownloadFile}>Download</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showExportFile && (
+                        <div
+                            style={{
+                            position: "fixed",
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            background: "rgba(0,0,0,0.5)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            zIndex: 1000,
+                            }}
+                            onClick={() => setshowExportFile(false)}
+                        >
+                            <div
+                                style={{
+                                    background: "white",
+                                    padding: "25px",
+                                    borderRadius: "10px",
+                                    width: "450px",
+                                    maxHeight: "80vh",
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                >
+                                <div style={{ display: "flex", justifyContent: "space-between",margin:'15px 0px 15px 0px' }}>
+                                    
+                                    <button className="btn-cross"
+                                    onClick={() => {
+                                        setShowPopup(true);
+                                        setshowExportFile(false); // reopen Share modal
+                                    }}
+                                    > 
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M12 4L6 10L12 16" stroke="#05073D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                    </button>
+                                    <button className="btn-cross" 
+                                        onClick={() => {
+                                        setShowPopup(true);
+                                        setshowExportFile(false); // reopen Share modal
+                                    }}
+                                    > 
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M4 4L16 16M16 4L4 16" stroke="#05073D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+
+                                    </button>
+                                </div>
+                                <div>
+                                    <h3>Export map file</h3>
+                                    <p>
+                                        Select file format
+                                    </p>
+                                    
+                                    <select className="form-select"  name="download_file" id="download_file"
+                                        value={selectedFile}
+                                        onChange={(e) => setSelectedFile(e.target.value)}
+                                    style={{ width: "100%", padding: "10px", marginBottom: "15px" }}
+                                    >   {
+                                            exportData.map((item,index)=>(
+                                                <option key={index} value={item.title}>
+                                                    {item.title}
+                                                </option>
+                                            ))
+                                        }
+                                        
+                                        <option value="02">CSV</option>
+                                    </select>
+                                    <button className="btn-send" onClick={fetchExportFile}>Export</button>
+                                </div>
+                            </div>
+                        </div>
+                        )}
+                    
                     <div className="col-xl-8 col-lg-7 col-md-12 col-sm-12 col-12">
                         <div className="weather-section mb-5 pb-2 trail-detail-widget" id="weather">
                             <div className="section-title section-title-md">
@@ -1699,24 +2204,21 @@ const AffiliateDetailTrail: React.FC = () => {
                                     <div className="review-gallery">
                                         <div className="d-flex">
                                             {
-                                                getReviewImages.length > 0 ? (
+                                                getReviewImages.length > 0 && (
                                                     getReviewImages.map((rvImages,index)=>(
-                                                    <a key= {index} href="/assets/images/review-images/r-1.png" data-fancybox="reviewImages">
-                                                        <img
-                                                            src={rvImages.review_img_path || '/assets/images/not-found.jpg'}
-                                                            alt="Top Trail" className="" 
-                                                            onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                                                                const target = e.currentTarget;
-                                                                target.onerror = null; // prevent infinite loop
-                                                                target.src = '/assets/images/not-found.jpg'; // fallback image
-                                                            }}
-                                                        />
-                                                    </a>
-                                                ))
-                                                ):(
-                                                    <p>Review Images not available...</p>
+                                                        <a key= {index} href="/assets/images/review-images/r-1.png" data-fancybox="reviewImages">
+                                                            <img
+                                                                src={rvImages.review_img_path || '/assets/images/not-found.jpg'}
+                                                                alt="Top Trail" className="" 
+                                                                onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                                                    const target = e.currentTarget;
+                                                                    target.onerror = null; // prevent infinite loop
+                                                                    target.src = '/assets/images/not-found.jpg'; // fallback image
+                                                                }}
+                                                            />
+                                                        </a>
+                                                    ))
                                                 )
-
                                             }
                                            
 

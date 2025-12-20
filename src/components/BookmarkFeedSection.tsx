@@ -29,7 +29,7 @@ interface Bookmarked {
     date: number,
     trailId: number
 }
-const BookmarkTrailSection: React.FC = () => {
+const BookmarkFeedSection: React.FC = () => {
     const [loadingBookmark, setloadingBookmark] = useState<boolean>(true);
 
     const [loginId, setLoginId] = useState("");
@@ -190,4 +190,4 @@ const BookmarkTrailSection: React.FC = () => {
     );
 };
 
-export default BookmarkTrailSection;
+export default BookmarkFeedSection;
