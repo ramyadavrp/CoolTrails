@@ -43,7 +43,7 @@ const Banner: React.FC = () => {
                 searchkey: searchTerm,
                 category: ''
             });
-            //console.log("searchkey response", response.data);
+            console.log("searchkey response", response.data);
             setSuggestions(response.data.data);
             // console.log("searchkey response:", {searchkey:searchTerm,category:''} );
             result = response.data.data || [];

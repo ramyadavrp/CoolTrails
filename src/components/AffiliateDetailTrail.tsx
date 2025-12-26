@@ -27,6 +27,7 @@ import "react-phone-input-2/lib/style.css";
 import { useLayoutEffect } from "react";
 import Weathers from './AffiliateDetails/Weathers';
 import  {useAutoClearMessage} from '../utils/useAutoClearMessage';
+import {downloadFile} from '../utils/downloadFile';
 
 // import data from '../data/alltrailDetails.json';
 
@@ -39,6 +40,7 @@ interface TrailGuide {
 interface Itinerary {
     dayTitle: string;
     day_title: string;
+    itinerary_title: string;
     description: string;
 }
 
@@ -59,9 +61,16 @@ interface TrailDetail {
     elevationGain: number;
 }
 interface MapPoint  {
-  latitude: number;
-  longitude: number;
+    lat?: number;
+    lng?: number;
+    lon?: number;
+    elevation?: number;
+    latitude: number;
+    longitude: number;
+    time: number;
 };
+
+  
 interface ReviewsImages {
     review_img_path: string; 
 }
@@ -195,19 +204,26 @@ const AffiliateDetailTrail: React.FC = () => {
             fetchQRCode();
         }
     }, [showQRHitTrail]);
-    useEffect(() => {
-        if (exportData) {
-            fetchExportFile();
-        }
-    }, []);
      useEffect(() => {
-        if (downloadData) {
-            fetchDownloadFile();
+        if (showQR) {
+            fetchQRCode();
         }
-    }, []);
+    }, [showQR]);
+
+    // useEffect(() => {
+    //     if (exportData) {
+    //         fetchExportFile();
+    //     }
+    // }, []);
+
+    // useEffect(() => {
+    //     if (downloadData) {
+    //         fetchDownloadFile();
+    //     }
+    // }, []);
 
     const fetchQRCode = async () => {
-        if (!userId) return; 
+        if (!userId) return;  
         try {
          setQrLoading(true);
         const response = await axios.post(`${BASE_URL}/common/MapQRCode`, {
@@ -225,47 +241,391 @@ const AffiliateDetailTrail: React.FC = () => {
         console.error("Error loading profile:", error);
         }
     };
-    const fetchExportFile = async () => {
-        // if (!selectedFile) {
-        //     alert("Please select a file type");
-        //     return;
-        // }
 
-        // console.log("Exporting:", selectedFile);
-        if (!userId) return; 
+    useEffect(() => {
+        const fetchFileList = async () => {
+        if (!userId) return;
         try {
-         setQrLoading(true);
-        const response = await axios.post(`${BASE_URL}/common/getfilenamefordownloadmap`, {
+            // setQrLoading(true);
+            const response = await axios.post(`${BASE_URL}/common/getfilenamefordownloadmap`, {
             UserId: userId,
             TrailTitle: title,
-        });
-        if (response.data.status === "success") {
-           setExportData(response.data.data);
-        }
+            });
+            if (response.data.status === "success") {
+            setExportData(response.data.data); // expects array of {id, fileName}
+            if (response.data.data.length > 0) {
+                setSelectedFile(response.data.data[0].fileName); // default select first file
+            }
+            }
         } catch (error) {
+            console.error("Error loading files:", error);
+        } finally {
             setQrLoading(false);
-        console.error("Error loading profile:", error);
         }
     };
+
+    fetchFileList();
+  }, [userId, title]);
+    // const fetchExportFile = async () => {
+    //     console.log(getmapPoints);
+    // };
+    
+    // const fetchExportFile = () => {
+    //     if (!getmapPoints || getmapPoints.length === 0) {
+    //         alert("No map points found");
+    //         return;
+    //     }
+
+    //     let csvContent = "Latitude,Longitude\n";
+
+    //     getmapPoints.forEach((point, index) => {
+            
+    //         const lat = point.lat || point.latitude;
+    //         const lng = point.lng || point.lon || point.longitude;
+
+    //         csvContent += `${lat},${lng}\n`;
+    //     });
+
+    //     const blob = new Blob([csvContent], {
+    //         type: "text/csv;charset=utf-8;",
+    //     });
+
+    //     const url = URL.createObjectURL(blob);
+    //     const link = document.createElement("a");
+    //     link.href = url;
+    //     link.download = "all-map-points.csv";
+
+    //     document.body.appendChild(link);
+    //     link.click();
+    //     document.body.removeChild(link);
+    //     URL.revokeObjectURL(url);
+    //     };
+
+    const fetchExportFile = () => {
+        if (!getmapPoints || getmapPoints.length === 0) {
+            useAlertMessage({
+                title: "Failed",
+                html: `<strong style="color:red;">No map points found.</strong>`,
+                icon: "error",
+                width: "350px",
+                confirmButtonText: "OK",
+                confirmButtonColor: "#dc3545",
+                padding: "1rem",
+            });
+            return;
+        }
+        switch (selectedFile) {
+            case "CSV":
+            exportCSV();
+            break;
+
+            case "Fugawi":
+            case "GPX Track":
+            exportGPXTrack();
+            break;
+            case "GPX Route":
+            exportGPXRoute();
+            break;
+            case "Google Earth KML":
+            exportKML();
+            break;
+            
+            case "Google Earth Timeline":
+            exportGoogleEarthTimeline(); // custom function for timeline
+            break;
+
+            // case "Garmin FIT":
+            // exportGarminFIT(); // implement .fit export
+            // break;
+
+            case "Garmin Course TCX":
+            exportTCX(); // implement .tcx export
+            break;
+
+            case "Google Earth Tour":
+            exportGoogleEarthTour(); // implement .kml/.kmz with tour data
+            break;
+
+            case "OVL (ASCII)":
+            exportOVLASCII(); // custom ASCII format
+            break;
+
+            case "PCX5 Track":
+            exportPCX5Track(); // custom PCX 5 track format
+            break;
+            default:
+                useAlertMessage({
+                title: "Info",
+                html: `<strong style="color:orange;">Format not supported yet.</strong>`,
+                icon: "warning",
+                width: "350px",
+                confirmButtonText: "OK",
+                confirmButtonColor: "#ffc107",
+                padding: "1rem",
+            });
+            // alert("Format not supported yet");
+        }
+    };
+    const exportCSV = () => {
+        let csv = "Latitude,Longitude,Elevation\n";
+
+        getmapPoints.forEach((point) => {
+            const lat = point.lat ?? point.latitude;
+            const lon = point.lng ?? point.lon ?? point.longitude;
+            const ele = point.elevation ?? "";
+
+            csv += `${lat},${lon},${ele}\n`;
+        });
+
+        downloadFile(csv, "all-map-points.csv", "text/csv");
+    };
+
+    const exportGPXTrack = () => {
+        const trkpts = getmapPoints
+            .map((point) => {
+            const lat = point.lat ?? point.latitude;
+            const lon = point.lng ?? point.lon ?? point.longitude;
+            const ele = point.elevation;
+
+            return `
+            <trkpt lat="${lat}" lon="${lon}">
+                ${ele ? `<ele>${ele}</ele>` : ""}
+            </trkpt>`;
+            })
+            .join("");
+
+        const gpx = `<?xml version="1.0" encoding="UTF-8"?>
+        <gpx version="1.1" creator="YourApp"
+        xmlns="http://www.topografix.com/GPX/1/1">
+        <trk>
+            <name>Trail Export</name>
+            <trkseg>
+            ${trkpts}
+            </trkseg>
+        </trk>
+        </gpx>`;
+
+        downloadFile(gpx, "trail-fugawi.gpx", "application/gpx+xml");
+    };
+    const exportGPXRoute = () => {
+        const rtepts = getmapPoints
+            .map((point) => {
+            const lat = point.lat ?? point.latitude;
+            const lon = point.lng ?? point.lon ?? point.longitude;
+
+            return `<rtept lat="${lat}" lon="${lon}" />`;
+            })
+            .join("");
+
+        const gpx = `<?xml version="1.0" encoding="UTF-8"?>
+        <gpx version="1.1" creator="YourApp"
+        xmlns="http://www.topografix.com/GPX/1/1">
+        <rte>
+            <name>Trail Route</name>
+            ${rtepts}
+        </rte>
+        </gpx>`;
+
+        downloadFile(gpx, "trail-route.gpx", "application/gpx+xml");
+    };
+    const exportKML = () => {
+        const coords = getmapPoints
+            .map((p) => {
+            const lat = p.lat ?? p.latitude;
+            const lon = p.lng ?? p.lon ?? p.longitude;
+            const ele = p.elevation ?? 0;
+            return `${lon},${lat},${ele}`;
+            })
+            .join(" ");
+
+        const kml = `<?xml version="1.0" encoding="UTF-8"?>
+        <kml xmlns="http://www.opengis.net/kml/2.2">
+        <Placemark>
+            <LineString>
+            <coordinates>${coords}</coordinates>
+            </LineString>
+        </Placemark>
+        </kml>`;
+
+        downloadFile(kml, "trail.kml", "application/vnd.google-earth.kml+xml");
+    };
+    // TCX Export
+    const exportTCX = () => {
+        let tcx = `<?xml version="1.0" encoding="UTF-8"?>
+    <TrainingCenterDatabase xmlns="http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2">
+    <Activities>
+        <Activity Sport="Other">
+        <Id>${new Date().toISOString()}</Id>
+        <Lap StartTime="${getmapPoints[0]?.time ?? new Date().toISOString()}">
+            <Track>
+    `;
+
+        getmapPoints.forEach((pt) => {
+            const lat = pt.lat ?? pt.latitude;
+            const lon = pt.lng ?? pt.lon ?? pt.longitude;
+            const ele = pt.elevation ? `<AltitudeMeters>${pt.elevation}</AltitudeMeters>` : "";
+            const time = pt.time ?? new Date().toISOString();
+
+            tcx += `          <Trackpoint>
+                <Time>${time}</Time>
+                <Position>
+                <LatitudeDegrees>${lat}</LatitudeDegrees>
+                <LongitudeDegrees>${lon}</LongitudeDegrees>
+                </Position>
+                ${ele}
+            </Trackpoint>\n`;
+        });
+
+        tcx += `        </Track>
+        </Lap>
+        </Activity>
+    </Activities>
+    </TrainingCenterDatabase>`;
+
+        downloadFile(tcx, "all-map-points.tcx", "application/xml");
+    };
+
+    // OVL ASCII Export (simple CSV-style ASCII format)
+    const exportOVLASCII = () => {
+        let ascii = "LAT LON ELE TIME\n";
+        getmapPoints.forEach((pt) => {
+            const lat = pt.lat ?? pt.latitude;
+            const lon = pt.lng ?? pt.lon ?? pt.longitude;
+            const ele = pt.elevation ?? 0;
+            const time = pt.time ?? "";
+            ascii += `${lat} ${lon} ${ele} ${time}\n`;
+        });
+        downloadFile(ascii, "all-map-points.ovl", "text/plain");
+    };
+
+    // PCX 5 Track Export (example text-based format)
+    const exportPCX5Track = () => {
+        let pcx = "PCX5 TRACK\nPOINTS\n";
+        getmapPoints.forEach((pt, i) => {
+            const lat = pt.lat ?? pt.latitude;
+            const lon = pt.lng ?? pt.lon ?? pt.longitude;
+            const ele = pt.elevation ?? 0;
+            pcx += `PT${i + 1}: ${lat}, ${lon}, ${ele}\n`;
+        });
+        downloadFile(pcx, "all-map-points.pcx5", "text/plain");
+    };
+
+    // Google Earth Tour Export (simple tour in KML)
+    const exportGoogleEarthTour = () => {
+        let tour = `<?xml version="1.0" encoding="UTF-8"?>
+    <kml xmlns="http://www.opengis.net/kml/2.2">
+    <Document><name>Map Tour</name>
+        <Placemark><name>Tour Path</name>
+        <gx:Tour xmlns:gx="http://www.google.com/kml/ext/2.2">
+            <name>My Tour</name>
+            <gx:Playlist>
+    `;
+        getmapPoints.forEach((pt) => {
+            const lat = pt.lat ?? pt.latitude;
+            const lon = pt.lng ?? pt.lon ?? pt.longitude;
+            tour += `          <gx:FlyTo>
+                <gx:duration>2.0</gx:duration>
+                <gx:flyToMode>smooth</gx:flyToMode>
+                <LookAt>
+                <latitude>${lat}</latitude>
+                <longitude>${lon}</longitude>
+                <altitude>0</altitude>
+                <range>500</range>
+                <tilt>45</tilt>
+                <heading>0</heading>
+                </LookAt>
+            </gx:FlyTo>\n`;
+        });
+        tour += `        </gx:Playlist>
+        </gx:Tour>
+        </Placemark>
+    </Document>
+    </kml>`;
+        downloadFile(tour, "all-map-points-tour.kml", "application/vnd.google-earth.kml+xml");
+    };
+
+    const exportGoogleEarthTimeline = () => {
+        let kml = `<?xml version="1.0" encoding="UTF-8"?>
+    <kml xmlns="http://www.opengis.net/kml/2.2">
+    <Document>
+        <name>Timeline</name>
+    `;
+
+        getmapPoints.forEach((pt) => {
+            const lat = pt.lat ?? pt.latitude;
+            const lon = pt.lng ?? pt.lon ?? pt.longitude;
+            const ele = pt.elevation ?? 0;
+            const time = pt.time ?? new Date().toISOString(); // fallback if time not available
+
+            kml += `    <Placemark>
+        <Point><coordinates>${lon},${lat},${ele}</coordinates></Point>
+        <TimeStamp><when>${time}</when></TimeStamp>
+        </Placemark>\n`;
+        });
+
+        kml += `  </Document>
+    </kml>`;
+
+        downloadFile(kml, "map-timeline.kml", "application/vnd.google-earth.kml+xml");
+    };
+
+
     const fetchDownloadFile = async () => {
-        
-        if (!userId) return; 
+        if (!userId) return;
+
         try {
-         setQrLoading(true);
-        const response = await axios.post(`${BASE_URL}/common/downloadfile`, {
-            id:1,
+            setQrLoading(true);
+
+            const response = await axios.post(`${BASE_URL}/common/downloadfile`, {
+            id: 1,
             UserId: userId,
             TrailTitle: title,
-        });
-        // console.log('setDownloadData',response.data.data);
-        if (response.data.status === "success") {
-           setDownloadData(response.data.data);
-        }
-        } catch (error) {
+            });
+
+            if (response.data.status === "success") {
+            const { base64File, fileName } = response.data.data;
+
+            // Decode Base64 → Binary
+            const byteCharacters = atob(base64File);
+            const byteNumbers = new Array(byteCharacters.length);
+
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+
+            const byteArray = new Uint8Array(byteNumbers);
+
+            // Create GPX Blob
+            const blob = new Blob([byteArray], {
+                type: "application/gpx+xml",
+            });
+
+            // Create download link
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = fileName || "trail.gpx";
+
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            }
+        } catch (error: any) {
+            console.error("Error downloading file:", error);
+
+            // Avoid [object Object] error
+            const message =
+            error?.response?.data?.message ||
+            error?.message ||
+            "Check your internet connection";
+
+            alert(message);
+        } finally {
             setQrLoading(false);
-        console.error("Error loading profile:", error);
         }
     };
+
 
     useEffect(() => {
         if (stateTrailId) {
@@ -289,7 +649,8 @@ const AffiliateDetailTrail: React.FC = () => {
     
     useEffect(() => {
         // Check if token exists in localStorage
-        const token = localStorage.getItem("token");
+        // const token = localStorage.getItem("token");
+        const token = sessionStorage.getItem("token");
         setIsLoggedIn(!!token);
     }, []);
 
@@ -446,7 +807,7 @@ const AffiliateDetailTrail: React.FC = () => {
         }
     };
 
-
+// alert(isLoggedIn);
         // console.log(getUserFavorite);
     const fetchTrailDetail = async (title:String) =>{
         try{
@@ -457,13 +818,13 @@ const AffiliateDetailTrail: React.FC = () => {
             });
             
             setTrailDetail(response.data.data);
-            console.log('traildetail',response.data.data)
+            // console.log('traildetail',response.data.data)
             setNearTrails(response.data.data.nearTrails);
             setWeatherDays(response.data.data.weatherDays);
             setImages(response.data.data.imageUrls);
             setPlaceOffer(response.data.data.placeOffer);
             setItinerary(response.data.data.itinerary);
-            // console.log('setItinerary',response.data.data.itinerary);
+            console.log('nearTrails',response.data.data.nearTrails);
             setReviews(response.data.data.review);
             setReviewImages(response.data.data.reviews_images);
             const points = response.data.data.mapPoints;
@@ -745,18 +1106,28 @@ const AffiliateDetailTrail: React.FC = () => {
         document.body.removeChild(link);
     };
     const downloadQR = () => {
-       
-        const canvas = qrRef.current;
-        if (!canvas) return;
+        if (!qrData) return;
+
         const link = document.createElement("a");
+        link.href = qrData;
         link.download = `my-custom-qr-${Date.now()}.png`; // custom filename
-        link.href = canvas.toDataURL("image/png");
+        document.body.appendChild(link);
         link.click();
-        // const link = document.createElement("a");
-        // link.href = qrImage;
-        // link.download = "qr-code.png";
-        // link.click();
+        document.body.removeChild(link);
     };
+    // const downloadQR = () => {
+       
+    //     const canvas = qrRef.current;
+    //     if (!canvas) return;
+    //     const link = document.createElement("a");
+    //     link.download = `my-custom-qr-${Date.now()}.png`; // custom filename
+    //     link.href = canvas.toDataURL("image/png");
+    //     link.click();
+    //     // const link = document.createElement("a");
+    //     // link.href = qrImage;
+    //     // link.download = "qr-code.png";
+    //     // link.click();
+    // };
 
     // 1) SVG icon components
     const IconCopy = () => (
@@ -809,12 +1180,12 @@ const AffiliateDetailTrail: React.FC = () => {
         </svg>
     );
 
-    // const IconEmail = () => (
-    // <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-    //     <rect x="3" y="5" width="18" height="14" rx="2" stroke="#05073D" strokeWidth="1.8" />
-    //     <path d="M4 7l8 6 8-6" stroke="#05073D" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    // </svg>
-    // );
+    const IconEmail = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <rect x="3" y="5" width="18" height="14" rx="2" stroke="#05073D" strokeWidth="1.8" />
+        <path d="M4 7l8 6 8-6" stroke="#05073D" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+    );
 
     // const IconEmbed = () => (
     // <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -852,13 +1223,13 @@ const AffiliateDetailTrail: React.FC = () => {
             setShowTextModal(true);
             },
         },
-        // {
-        //     label: "Email",
-        //     icon: <IconEmail />,
-        //     action: () => {
-        //     window.open(`mailto:?subject=Check this out&body=${encodeURIComponent(shareUrl)}`);
-        //     },
-        // },
+        {
+            label: "Email",
+            icon: <IconEmail />,
+            action: () => {
+            window.open(`mailto:?subject=Check this out&body=${encodeURIComponent(shareUrl)}`);
+            },
+        },
         // {
         //     label: "Embed",
         //     icon: <IconEmbed />,
@@ -949,7 +1320,7 @@ const AffiliateDetailTrail: React.FC = () => {
 
     const total_reviews = getReviews.length;
 
-    // Sum all ratings (assuming each review has a `review_rate` property)
+    // Sum all ratings (assuming each review has a `review_rate` property) trailDetail.rating
     const total_rating = getReviews.reduce((sum, review) => sum + Number(review.rating || 0), 0);
     const average_rating = total_reviews > 0 ? (total_rating / total_reviews).toFixed(1) : "0.0";
     
@@ -1094,8 +1465,8 @@ const AffiliateDetailTrail: React.FC = () => {
 
                             <div className="tuf-right-content d-flex align-items-center">
                                 <div className="tusc-cn-1 text-center">
-                                    <p className="mb-0">{average_rating}</p>
-                                     <StarRating rating={Number(average_rating)}/>
+                                    <p className="mb-0">{trailDetail.rating}</p>
+                                     <StarRating rating={Number(trailDetail.rating)}/>
                                 </div>
                                 <div className="tusc-cn-2 text-center">
                                     <p className="mb-0 text-midnight-navy">
@@ -1178,7 +1549,7 @@ const AffiliateDetailTrail: React.FC = () => {
                                                 aria-expanded="false"
                                                 aria-controls={collapseId}
                                             >
-                                                <span className="fw-bold me-2">{It.dayTitle} </span> {It.itinerary_title ?? 'N/A'}
+                                                <span className="fw-bold me-2">{It.dayTitle} </span> {It.itinerary_title}
                                             </button>
                                             </h2>
                                             <div
@@ -1246,7 +1617,17 @@ const AffiliateDetailTrail: React.FC = () => {
                         <div className="trail-detail-map position-relative">
                             <div className="trail-detail-map-btn-group d-flex justify-content-xl-end justify-content-lg-end justify-content-md-center justify-content-sm-center justify-content-center">
                                     {/* share */}
-                                <button onClick={() => setIsOpen(true)} className="btn-rounded-white rounded-circle" type="button"  title="Share">
+                                <button 
+                                onClick={() => {
+                                    if(isLoggedIn){
+                                        setIsOpen(true); // show your popup
+                                    } else {
+                                        const currentPath = window.location.pathname + window.location.search;
+                                        window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+                                        // window.location.href = "/login";  // redirect to login
+                                    }
+                                }} 
+                                className="btn-rounded-white rounded-circle" type="button"  title="Share">
                                     <svg width="15" height="18" viewBox="0 0 15 18" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <circle cx="12.125" cy="3.375" r="1.875" stroke="#05073D" strokeWidth="1.125" />
                                         <circle cx="3.125" cy="8.625" r="1.875" stroke="#05073D" strokeWidth="1.125" />
@@ -1478,8 +1859,10 @@ const AffiliateDetailTrail: React.FC = () => {
                                         <div style={{ background: "white", padding: "10px", borderRadius: "10px", textAlign: "center" }}>
                                             <h3>Download QR Code</h3>
                                             <p>Link others to this route with the following QR code</p>
+                                            <img src={qrData} alt="QR Code" width={200} />
+
                                             {/* <img src={qrImage} alt="QR Code" style={{ marginBottom: "15px",width:'132px',height:'132px' }} /> */}
-                                            <QRCodeCanvas value="https://example.com" bgColor='#fff' includeMargin={true} fgColor='#000' size={132} ref={qrRef} />
+                                            {/* <QRCodeCanvas value="https://example.com" bgColor='#fff' includeMargin={true} fgColor='#000' size={132} ref={qrRef} /> */}
                                             <div style={{ marginTop: "15px" }}>
                                                 <button className="btn-download"onClick={downloadQR}>Download</button>
                                             </div>
@@ -1566,13 +1949,15 @@ const AffiliateDetailTrail: React.FC = () => {
                                     }}
                                     >Get Directions
                                 </a> */}
+                                
                                 <a
                                     href="#"
                                     className="btn-style-3"
                                     style={{ cursor: "pointer" }}
                                     onClick={(e) => {
+                                        
                                         e.preventDefault();
-  
+                                    if (isLoggedIn) {
                                         if (!getmapPoints.length) return;
 
                                         // Destination (last point)
@@ -1602,15 +1987,33 @@ const AffiliateDetailTrail: React.FC = () => {
                                                 maximumAge: 0,
                                             }
                                         );
+                                    }else{
+                                        const currentPath = window.location.pathname + window.location.search;
+                                        window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+                                            // window.location.href = "/login"; // redirect to login
+                                        }
                                     }}
                                 >
                                     Get Directions
                                 </a>
-
-                                <a  className="btn-style-1" style={{ cursor: "pointer" }}
-                                    onClick={() => setShowPopup(true)}
-                                    >Hit the Trail
+                                
+                                
+                                <a
+                                    className="btn-style-1"
+                                    style={{ cursor: "pointer" }}
+                                    onClick={() => {
+                                        if (isLoggedIn) {
+                                        setShowPopup(true); // show your popup
+                                        } else {
+                                        const currentPath = window.location.pathname + window.location.search;
+                                        window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+                                        // window.location.href = "/login"; // redirect to login
+                                        }
+                                    }}
+                                    >
+                                    Hit the Trail
                                 </a>
+                               
                                 {/* <a href="" className="btn-style-1">Hit the Trail</a> */}
                             </div>
                         </div>
@@ -1740,7 +2143,12 @@ const AffiliateDetailTrail: React.FC = () => {
                                         <path d="M12 4L6 10L12 16" stroke="#05073D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                     </svg>
                                     </button>
-                                    <button className="btn-cross" onClick={() => setShowQRHitTrail(false)}> 
+                                    <button className="btn-cross" 
+                                    onClick={() => {
+                                        setShowQRHitTrail(false);
+                                        setShowPopup(false); // reopen Share modal
+                                    }}
+                                    > 
                                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M4 4L16 16M16 4L4 16" stroke="#05073D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                     </svg>
@@ -1802,7 +2210,7 @@ const AffiliateDetailTrail: React.FC = () => {
                                     </button>
                                     <button className="btn-cross" 
                                     onClick={() => {
-                                        setShowPopup(true);
+                                        setShowPopup(false);
                                         setShowDownloadApp(false); // reopen Share modal
                                     }}
                                     > 
@@ -1865,7 +2273,7 @@ const AffiliateDetailTrail: React.FC = () => {
                                     </button>
                                     <button className="btn-cross" 
                                         onClick={() => {
-                                        setShowPopup(true);
+                                        setShowPopup(false);
                                         setshowExportFile(false); // reopen Share modal
                                     }}
                                     > 
@@ -1885,15 +2293,17 @@ const AffiliateDetailTrail: React.FC = () => {
                                         value={selectedFile}
                                         onChange={(e) => setSelectedFile(e.target.value)}
                                     style={{ width: "100%", padding: "10px", marginBottom: "15px" }}
-                                    >   {
-                                            exportData.map((item,index)=>(
-                                                <option key={index} value={item.title}>
-                                                    {item.title}
-                                                </option>
-                                            ))
-                                        }
+                                    >   
+                                    <option value="">Please select File</option>
+                                    {
+                                        exportData.map((item,index)=>(
+                                            <option key={index} value={item.title}>
+                                                {item.title}
+                                            </option>
+                                        ))
+                                    }
                                         
-                                        <option value="02">CSV</option>
+                                        {/* <option value="02">CSV</option> */}
                                     </select>
                                     <button className="btn-send" onClick={fetchExportFile}>Export</button>
                                 </div>
@@ -1997,6 +2407,7 @@ const AffiliateDetailTrail: React.FC = () => {
                                 {/* {isLoggedIn ? (
                                     <a href="" className="btn-style-review">Review trail</a>
                                 ):(null )} */}
+                                {isLoggedIn && (
                                     <a href="#"
                                         style={{
                                             background: "#FC673C",
@@ -2023,6 +2434,7 @@ const AffiliateDetailTrail: React.FC = () => {
                                     >
                                     {userReview ? "Review Submitted" : "Add Review"}
                                     </a>
+                                    )}
                             </div>
                         </div>
                     </div>
@@ -2037,7 +2449,7 @@ const AffiliateDetailTrail: React.FC = () => {
                                     <>
                                         {reviewDetails.slice(0, reviewVisibleCount).map((rev:any,index:number) => (
                                         // reviewDetails.map((rev:any,index:number)=>(
-                                            <div key={index} className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
+                                            <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
                                                 <div className="testimonial-single position-relative">
                                                     <div className="testimonial-head d-flex w-100 align-items-center position-relative">
                                                         <div className="test-image">
@@ -2050,14 +2462,16 @@ const AffiliateDetailTrail: React.FC = () => {
                                                                     target.src = '/assets/images/other/testimonial-1.png'; // fallback image
                                                                 }}
                                                             />
-                                                            {/* <img src="/assets/images/other/testimonial-1.png" alt="" className="img-fluid"/> */}
                                                         </div>
                                                         <div className="test-head">
-                                                             <div className="d-flex align-items-center">
-                                                                <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">
-                                                                    {rev.userWithAddress ?? ''}
-                                                                </h3>
-                                                                <a className=" ms-2" title="Edit Review"
+                                                            <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">{rev.userWithAddress ?? ''}</h3>
+                                                            <div className="rating">
+                                                                <StarRating rating={Number(rev?.rating)}/>
+                                                            </div>
+                                                            <p className="mb-0">{rev.ratingOn ?? ''}<span className="d-inline-block mx-1">•</span> Hiking</p>
+                                                        </div>
+                                                        <div className="right-abs">
+                                                            <a className=" ms-2" title="Edit Review"
                                                                 onClick={(e) => {
                                                                 e.preventDefault();
                                                                 // pre-fill if editing
@@ -2075,23 +2489,8 @@ const AffiliateDetailTrail: React.FC = () => {
                                                                         <path d="M10.5137 0.80598C11.5867 -0.268666 13.3274 -0.269589 14.4014 0.804027L16.8936 3.29621C17.958 4.36095 17.9687 6.08414 16.918 7.16243L7.68555 16.6361C6.98003 17.3599 6.01137 17.7679 5.00098 17.7679H2.25C1.05069 17.7678 0.0774547 16.8306 0.00488281 15.6595L0.00292969 15.4232L0.120117 12.6146C0.159615 11.6756 0.550055 10.7843 1.21387 10.1195L10.5137 0.80598ZM17.5146 16.1947C17.9286 16.1947 18.2646 16.5304 18.2646 16.9447C18.2646 17.359 17.9287 17.6947 17.5146 17.6947H11.3936L11.3164 17.6907C10.9386 17.6521 10.6436 17.333 10.6436 16.9447C10.6436 16.5564 10.9386 16.2372 11.3164 16.1986L11.3936 16.1947H17.5146ZM2.27441 11.181C1.87636 11.5798 1.64186 12.1138 1.61816 12.6771L1.50098 15.4857V15.5657C1.52555 15.9556 1.84974 16.2676 2.24902 16.2679H5.00195C5.60809 16.2678 6.18906 16.0225 6.6123 15.5882L13.1436 8.88508L8.85059 4.59309L2.27441 11.181ZM13.3418 1.86555C12.8536 1.37755 12.062 1.37805 11.5742 1.86653L9.91113 3.53157L14.1914 7.81184L15.8447 6.11555C16.3222 5.62547 16.3176 4.84171 15.834 4.35774L13.3418 1.86555Z"
                                                                             fill="#7D7D7D"/>
                                                                     </svg>
-                                                                </a>
-                                                            </div>
-                                                            {/* <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">{rev.userWithAddress ?? ''} </h3> */}
-                                                                <StarRating rating={Number(rev?.rating)}/>
-                                                            {/* <div className="rating">
-                                                                <i className="bi bi-star-fill"></i>
-                                                                <i className="bi bi-star-fill"></i>
-                                                                <i className="bi bi-star-fill"></i>
-                                                                <i className="bi bi-star-fill"></i>
-                                                                <i className="bi bi-star-fill"></i>
-                                                            </div> */}
-                                                            <p className="mb-0">{rev.ratingOn ?? ''} <span className="d-inline-block mx-1">•</span>
-                                                            {rev.category ?? 'N/A'} </p>
+                                                            </a>
                                                         </div>
-                                                        {/* <div className="right-abs">
-                                                            <i className="bi bi-three-dots"></i>
-                                                        </div> */}
                                                     </div>
                                                     <div className="testimonial-body">
                                                         <p className="text-midnight-navy">{rev.decription ?? 'N/A'}</p>
@@ -2119,6 +2518,7 @@ const AffiliateDetailTrail: React.FC = () => {
                         </>
                             )
                         }
+                        
                         {/* <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
                             <div className="testimonial-single position-relative">
                                 <div className="testimonial-head d-flex w-100 align-items-center position-relative">
@@ -2260,13 +2660,19 @@ const AffiliateDetailTrail: React.FC = () => {
                         </div> */}
                     </div>
                     <div className="row">
+                            
                             <div className="col-12 mb-4 text-center">
+                             {/* {isLoggedIn ? (
+                                    <a href="" className="btn-style-review">Review trail</a>
+                                ):(null )} */}
+                            { isLoggedIn && (    
                             <button
                                 className="btn-style-1"
                                 onClick={() => setShowReviews(!showReviews)}
-                            >
+                            >   
                                 {showReviews ? "Hide Reviews" : "Check All Reviews"}
                             </button>
+                            )}
                             </div>
                              {/* <a href="" className="btn-style-1">Check All Reviews</a> */}
                     </div>
@@ -2292,11 +2698,29 @@ const AffiliateDetailTrail: React.FC = () => {
                                 <div className="best-view-slider owl-carousel owl-theme br-20 overflow-hidden" id="bestViewSl">
                                    
                                     {
-                                        nearTrails.map((trail:any,index:number)=>(
+                                        nearTrails.map((trail:any,index:number)=>{
+                                            // const city    = trail.city    ?? null;
+                                            // const state   = trail.state   ?? null;
+                                            // const country = trail.country ?? "India";
+                                            // const slugTitle = trail.urlTitle ?? generateSlug(trail.title);
+                                            // const trailurl = `/${generateSlug(trail.type)}s/${generateSlug(country)}/${generateSlug(state)}/${generateSlug(city)}/${slugTitle}`;
+                                            const type    = generateSlug(trail.type);
+                                            const country = generateSlug(trail.country || "India");
+                                            const state   = trail.state ? generateSlug(trail.state) : null;
+                                            const city    = trail.city ? generateSlug(trail.city) : null;
+                                            const title   = trail.urlTitle ?? generateSlug(trail.title);
+
+                                            let trailurl = `/${type}s/${country}`;
+
+                                            if (state) trailurl += `/${state}`;
+                                            if (city)  trailurl += `/${city}`;
+
+                                            trailurl += `/${title}`;
+                                            return(
                                              <div key={trail.id || index} className="slider-item-single">
                                                 <div className="local-favorite-single">
                                                     <div className="lfc-thumb position-relative">
-                                                        <Link to={`/${trail.urlTitle|| generateSlug(trail.title || '')}`}> 
+                                                        <Link to={trail.type === 'Trail' ? trailurl : "#"} > 
                                                         <img
                                                             src={trail.imagePath || '/assets/images/not-found.jpg'}
                                                             alt="Top Trail" className="img-fluid img-fixed-size" 
@@ -2310,19 +2734,20 @@ const AffiliateDetailTrail: React.FC = () => {
                                                         {/* <a href="#!" className="bookmark-btn" title="Save"><i className="bi bi-bookmark"></i></a> */}
                                                     </div>
                                                     <div className="lfc-content">
-                                                        <Link to={`/${trail.urlTitle|| generateSlug(trail.title || '')}`}> 
+                                                        <Link to={trail.type === 'Trail' ? trailurl : "#"} > 
                                                             <h3 className="lfc-title">{trail.title}</h3>
                                                             <p className="lfc-location mb-1">{trail.address}</p>
                                                             <p className="lfc-tags"><i className="bi bi-star-fill"></i> {trail.rating}· Moderate · {trail.length} · Est. {trail.estimateTime}</p>
                                                         </Link>
                                                         {/* <a href="#!" className="btn-style-1 w-100">Check Details</a> */}
-                                                        <Link to={`/${trail.urlTitle|| generateSlug(trail.title || '')}`} className="btn-style-1 w-100">
+                                                        <Link to={trail.type === 'Trail' ? trailurl : "#"}  className="btn-style-1 w-100">
                                                            Check Details
                                                         </Link>
                                                     </div>
                                                 </div>
                                             </div>
-                                        ))
+                                            )
+                                        })
                                     }
                                 </div>
                             </div>

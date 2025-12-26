@@ -258,12 +258,24 @@ const SearchDiscover: React.FC = () => {
                           id="bestViewSl">
                 
                                 {
-                                    nearbytrails.map((nTrails:any,index:number)=>(
+                                    nearbytrails.map((nTrails:any,index:number)=>{
+                                        const city    = nTrails.city    ?? "Lucknow";
+                                        const state   = nTrails.state   ?? "UTTAR PRADESH";
+                                        const country = nTrails.country ?? "India";
+    
+                                        const slugTitle = nTrails.urlTitle ?? generateSlug(nTrails.title);
+                                        const trailurl = `/${generateSlug(nTrails.type)}s/${generateSlug(country)}/${generateSlug(state)}/${generateSlug(city)}/${slugTitle}`;
+                                        const parkUrl = `/${generateSlug(nTrails.type)}s/${generateSlug(country)}/${generateSlug(state)}/${generateSlug(city)}/${slugTitle}`;
+    
+                                        return (
                                         <div key={index} className="slider-item-single">
                                             {/* <Link to={`/${generateSlug(nTrails.title)}`} state={{ trail: nTrails }}>                                        */}
                                             <div className="local-favorite-single">
                                                 <div className="lfc-thumb position-relative">
-                                                    <Link to={`/${generateSlug(nTrails.title)}`} state={{ trail: nTrails }}>   
+                                                    <Link 
+                                                    to={nTrails.type === 'Trail' ? trailurl : "#"} 
+                                                    // to={`/${generateSlug(nTrails.title)}`} 
+                                                    state={{ trail: nTrails }}>   
                                                         <img
                                                             src={nTrails.imagePath}
                                                             alt="explorer" className="img-fluid img-fixed-size" 
@@ -296,7 +308,9 @@ const SearchDiscover: React.FC = () => {
 
                                                 </div>
                                                 <div className="lfc-content">
-                                                    <Link to={`/${generateSlug(nTrails.title)}`} state={{ trail: nTrails }}>  
+                                                    <Link 
+                                                    to={nTrails.type === 'Trail' ? trailurl : "#"} 
+                                                    state={{ trail: nTrails }}>  
                                                     <h3 className="lfc-title">{nTrails.title ?? 'N/A'}</h3>
                                                     <p className="lfc-location mb-1">{nTrails.address ?? 'N/A'}
                                                     </p>
@@ -304,7 +318,9 @@ const SearchDiscover: React.FC = () => {
                                                         {nTrails.length} · Est. {nTrails.estimateTime}
                                                     </p>
                                                     </Link>
-                                                    <Link to={`/${generateSlug(nTrails.title)}`} state={{ trail: nTrails }} className="btn-style-1 w-100">
+                                                    <Link 
+                                                    to={nTrails.type === 'Trail' ? trailurl : "#"}  
+                                                    state={{ trail: nTrails }} className="btn-style-1 w-100">
                                                         Check Details
                                                     </Link>
                                                     
@@ -312,7 +328,7 @@ const SearchDiscover: React.FC = () => {
                                             </div>
                                              {/* </Link> */}
                                         </div>
-                                    ))   
+                                    )})   
                                 }
                               {/* <div className="slider-item-single">
                                   <div className="local-favorite-single">

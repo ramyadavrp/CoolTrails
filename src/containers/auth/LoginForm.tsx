@@ -1,15 +1,17 @@
 import axios from 'axios';
 import { useState, useEffect } from "react";
-import { Link, useNavigate, } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {validate,LoginFields,ErrorFields } from '../../utils/validation';
 const BASE_URL = import.meta.env.VITE_API_URL;
 
 const LoginForm = () => {
   const navigate = useNavigate();
-
+  const location = useLocation(); 
   // State for password visibility
   const [showPassword, setShowPassword] = useState(false); //
-  
+   // extract redirect URL if any
+  const params = new URLSearchParams(location.search);
+  const redirectUrl = params.get("redirect") || "/profile"; // default to profile
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -68,7 +70,8 @@ const LoginForm = () => {
         sessionStorage.setItem("email", email);
         sessionStorage.setItem("id", data.user.id);
         sessionStorage.setItem("login", data.user.loginid);
-        navigate('/profile');
+        navigate(redirectUrl, { replace: true });
+        // navigate('/profile');
       } else {
         setServerError(data.message || "Login failed");
       }

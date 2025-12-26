@@ -85,8 +85,8 @@ const LocalFavorites: React.FC = () => {
         try {
           const response = await axios.get(`${BASE_URL}/home/toplocaltrail/10/${userId}`);
           const data = response.data.data;
-          console.log('datadata',data);
-          console.log('userIduserId',userId);
+          // console.log('datadata',data);
+          // console.log('userIduserId',userId);
           setTopLocatTrails(data);
           // Extract bookmarked trailIds from response
           const bookmarked = data
@@ -168,7 +168,7 @@ const LocalFavorites: React.FC = () => {
 
 
 
-  // console.log('sss',topLocatTrails);
+  console.log('sss',topLocatTrails);
   // Effect to initialize Owl Carousel
   useEffect(() => {
     // Initialize Owl Carousel only after data is loaded and component has rendered
@@ -262,13 +262,20 @@ if (topLocatTrails.length === 0) return <p>No local favorites found.</p>;
             <div className="custom-slider position-relative">
               <div className="slider-container">
                 <div className="local-favorite-slider owl-carousel owl-theme br-20 overflow-hidden" id="localFavorite">
-                  {topLocatTrails.map((locatTrail: any, index: number) => (
+                  {topLocatTrails.map((locatTrail: any, index: number) => {
+                      const city    = locatTrail.city    ?? "Lucknow";
+                      const state   = locatTrail.state   ?? "UTTAR PRADESH";
+                      const country = locatTrail.country ?? "India";
+                      const type = "trail";
+                      const slugTitle = locatTrail.urltitle ?? generateSlug(locatTrail.title);
+                      const trailurl = `/${generateSlug(type)}s/${generateSlug(country)}/${generateSlug(state)}/${generateSlug(city)}/${slugTitle}`;
+                      // const parkUrl = `/${generateSlug(locatTrail.type)}s/${generateSlug(country)}/${generateSlug(state)}/${generateSlug(city)}/${slugTitle}`;
+
+                    return(
                     <div key={index} className="slider-item-single">
-                      {/* <Link to={`/${locatTrail.urltitle || generateSlug(locatTrail.title || '')}`}> */}
                       <div className="local-favorite-single">
                         <div className="lfc-thumb position-relative">
-                          {/* Fix image source path - add leading slash for public assets */}
-                          {/* <Link to={`/${locatTrail.urltitle || generateSlug(locatTrail.title || '')}`}>  */}
+                          <Link to={trailurl}  >
                           <img
                               src={locatTrail.image || '/assets/images/not-found.jpg'}
                               alt="locat Trail" className="img-fluid img-fixed-size" 
@@ -278,7 +285,8 @@ if (topLocatTrails.length === 0) return <p>No local favorites found.</p>;
                                   target.src = '/assets/images/not-found.jpg'; // fallback image
                               }}
                           />
-                          {/* </Link> */}
+                          </Link>
+
                          <a
                           href="#!"
                           className="bookmark-btn"
@@ -299,30 +307,22 @@ if (topLocatTrails.length === 0) return <p>No local favorites found.</p>;
                         </div>
                          
                         <div className="lfc-content">
-                          <Link to={`/${locatTrail.urltitle || generateSlug(locatTrail.title || '')}`}>
+                          <Link to={trailurl}  >
                             <h3 className="lfc-title">{locatTrail.title}</h3>
                             <p className="lfc-location mb-1">{locatTrail.address} </p>
                             <p className="lfc-tags">
                               <i className="bi bi-star-fill"></i> 4.6 · Moderate · {locatTrail.distance} · Est. {locatTrail.time_duration || 'N/A'} {locatTrail.trailid}
                             </p>
                           </Link>
-                          {/* <Link to={`/affiliate-details/${locatTrail.trailId}/${generateSlug(locatTrail.title)}`} className="btn-style-1 w-100">
-                              Check Details
-                          </Link> */}
-                          {/* <Link to={`/affiliate-details/${locatTrail.urltitle}`} className="btn-style-1 w-100">
-                              Check Details
-                          </Link> */}
-                          <Link to={`/${locatTrail.urltitle || generateSlug(locatTrail.title || '')}`}
+                          <Link to={trailurl} 
                             className="btn-style-1 w-100"
                           >
                             Check Details
                           </Link>
-                          {/* <a href="#!" className="btn-style-1 w-100"></a> */}
                         </div>
                       </div>
-                      {/* </Link> */}
                     </div>
-                  ))}
+                    )})}
                 </div>
               </div>
 
