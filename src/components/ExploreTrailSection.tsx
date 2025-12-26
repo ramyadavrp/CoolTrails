@@ -9,11 +9,10 @@ import data from '../data/explorealltrails.json';
 import { SquareLoader } from "react-spinners";
 import Select from "react-select";
 import mapboxgl from "mapbox-gl";
-import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
-import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 import "mapbox-gl/dist/mapbox-gl.css";
 
-mapboxgl.accessToken = "pk.eyJ1IjoiMTExMnZpcmVuZHJhIiwiYSI6ImNtYmE0emNyNjBwbHMyanNibHBpZHgxMjUifQ.5FSp2VZ1T1kXcGV38bC5jA";
+mapboxgl.accessToken ="pk.eyJ1IjoiMTExMnZpcmVuZHJhIiwiYSI6ImNtYmE0emNyNjBwbHMyanNibHBpZHgxMjUifQ.5FSp2VZ1T1kXcGV38bC5jA";
+
 
 
 const BASE_URL = import.meta.env.VITE_API_URL;
@@ -70,7 +69,28 @@ function ExploreTrailSection() {
     const [latitude, setLatitude] = useState<number | null>(null);
     const [longitude, setLongitude] = useState<number | null>(null);
 
-  
+    const mapContainer = useRef<HTMLDivElement | null>(null);
+    const mapRef = useRef<mapboxgl.Map | null>(null);
+
+    useEffect(() => {
+        if (loadingExplore) return;
+        if (!mapContainer.current || mapRef.current) return;
+
+        mapRef.current = new mapboxgl.Map({
+            container: mapContainer.current,
+            style: "mapbox://styles/mapbox/streets-v12",
+            center: [80.9462, 26.8467],
+            zoom: 10,
+            attributionControl: false // remove © Mapbox © OpenStreetMap Improve this map
+        });
+
+        mapRef.current.addControl(new mapboxgl.NavigationControl()); // zoom icon ( + / -)
+
+        return () => {
+            mapRef.current?.remove();
+            mapRef.current = null;
+        };
+    }, [loadingExplore]);
 
      usePageTitle("Cooltrails | Explore ");
     const [filters, setFilters] = useState({
@@ -80,12 +100,18 @@ function ExploreTrailSection() {
         length: [],      // e.g., ["short", "long"]
     });
     const totalTrails = getTrails.length
-    window.scrollTo(0, 0);
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
+
     useEffect(() => {
         const timer = setTimeout(() =>
             setloadingExplore(false), 3000);
         return () => clearTimeout(timer);
     }, []);
+    
+
+    
 
     
     const postLocation = async () => {
@@ -101,7 +127,7 @@ function ExploreTrailSection() {
             });
             
             setTrails(response.data.data);
-            console.log('Server response:', response.data.data);
+            // console.log('Server response setTrails:', response.data.data);
         } catch (err) {
             console.error('Failed your location:', err);
         } finally {
@@ -272,14 +298,14 @@ function ExploreTrailSection() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    zIndex: 9999,
+                    // zIndex: 9999,
                 }}
             >
                 <SquareLoader color="#FC673C" size={80} speedMultiplier={1.5} />
             </div>
         );
     }
-    
+   
     return (
         <main className="mainContent">
             <section className="section-explore-trails position-relative default-padding">
@@ -320,7 +346,7 @@ function ExploreTrailSection() {
                                                 <select name="activity"
                                                     id="runningFilter"
                                                     className="form-select advance-select"
-                                                    value={title} // auto-selects based on URL
+                                                    value={title ?? ""}// auto-selects based on URL
                                                     // onChange={(e) => console.log("Selected:", e.target.value)}
                                                     onChange={(e) => (e.target.value)}
                                                 >
@@ -386,10 +412,14 @@ function ExploreTrailSection() {
                                             />
                                         </svg>
                                         <div>
+                                            {/* <select name="" 
+                                                value={sortType}
+                                                onChange={handleMatchChange} 
+                                                id="" className="form-select advance-select" defaultValue=""></select> */}
                                             <select name="" 
                                                 value={sortType}
                                                 onChange={handleMatchChange} 
-                                                id="" className="form-select advance-select" defaultValue="">
+                                                id="" className="form-select advance-select" >
                                                 {/* <option value="" disabled hidden>Select</option> */}
                                                 <option value="Best">Best Matches</option>
                                                 <option value="popular">Most Popular</option>
@@ -414,13 +444,27 @@ function ExploreTrailSection() {
                                                 <SyncLoader color="#FC673C" size={20} />
                                             </div>
                                         ) : sortedData.length > 0 ? (
-                                            sortedData.map((trail: any, index: number) => (
+                                            sortedData.map((trail: any, index: number) => {
+                                                const type    = generateSlug(trail.type);
+                                                const country = generateSlug(trail.country || "India");
+                                                const state   = trail.state ? generateSlug(trail.state) : null;
+                                                const city    = trail.city ? generateSlug(trail.city) : null;
+                                                const title   = trail.urlTitle ?? generateSlug(trail.title);
+    
+                                                let trailurl = `/${type}s/${country}`;
+    
+                                                if (state) trailurl += `/${state}`;
+                                                if (city)  trailurl += `/${city}`;
+    
+                                                trailurl += `/${title}`;
+                                                return(
                                                 <div
                                                     key={index} // always add a key in map
                                                     className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12"
                                                 >
                                                     <div className="local-favorite-single mb-4">
                                                         <div className="lfc-thumb position-relative">
+                                                            <Link to={trail.type === 'Trail' ? trailurl : "#"} > 
                                                             <img
                                                                 src={trail.imagePath || '/assets/images/not-found.jpg'}
                                                                 alt="local Trail"
@@ -431,112 +475,47 @@ function ExploreTrailSection() {
                                                                     target.src = '/assets/images/not-found.jpg';
                                                                 }}
                                                             />
+                                                            </Link>
                                                             {/* <a href="#!" className="bookmark-btn" role="button" title="Save">
                                                                 <i className="bi bi-bookmark"></i>
                                                             </a> */}
                                                         </div>
                                                         <div className="lfc-content">
+                                                            <Link to={trail.type === 'Trail' ? trailurl : "#"} > 
                                                             <h3 className="lfc-title">{trail.title}</h3>
                                                             <p className="lfc-location mb-1">{trail.address}</p>
                                                             <p className="lfc-tags">
                                                                 <i className="bi bi-star-fill"></i> {trail.rating.toFixed(1)} · Moderate · {trail.length} km · Est. {trail.estimateTime}
                                                             </p>
-                                                            <Link to={`/${trail.urlTitle|| generateSlug(trail.title || '')}`} className="btn-style-1 w-100">
+                                                            </Link>
+                                                        <Link to={trail.type === 'Trail' ? trailurl : "#"} className="btn-style-1 w-100">
                                                            Check Details
                                                         </Link>
                                                             {/* <a href="#!" className="btn-style-1 w-100">Check Details</a> */}
                                                         </div>
                                                     </div>
                                                 </div>
-                                            ))
+                                                )
+                                            })
                                         ) : (
                                             <p>Trails are not available!</p>
                                     )}
 
-                                    {/* <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
-                                        <div className="local-favorite-single mb-4">
-                                            <div className="lfc-thumb position-relative">
-                                                <img src="assets/images/local-favorites/img-2.jpg" alt="" className="img-fluid" />
-                                                <a href="#!" className="bookmark-btn" role="button" title="Save"><i className="bi bi-bookmark"></i></a>
-                                            </div>
-                                            <div className="lfc-content">
-                                                <h3 className="lfc-title">Samar Trail: Jabal Jais</h3>
-                                                <p className="lfc-location mb-1">Al Fujayrah, Fujairah, United Arab Emirates</p>
-                                                <p className="lfc-tags"><i className="bi bi-star-fill"></i> 4.6 · Moderate · 9.3km · Est. 2h 45m</p>
-                                                <a href="#!" className="btn-style-1 w-100">Check Details</a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
-                                        <div className="local-favorite-single mb-4">
-                                            <div className="lfc-thumb position-relative">
-                                                <img src="assets/images/local-favorites/img-3.jpg" alt="" className="img-fluid" />
-                                                <a href="#!" className="bookmark-btn" role="button" title="Save"><i className="bi bi-bookmark"></i></a>
-                                            </div>
-                                            <div className="lfc-content">
-                                                <h3 className="lfc-title">Shawka Dam Mountain Trail</h3>
-                                                <p className="lfc-location mb-1">Al Fujayrah, Fujairah, United Arab Emirates</p>
-                                                <p className="lfc-tags"><i className="bi bi-star-fill"></i> 4.6 · Moderate · 9.3km · Est. 2h 45m</p>
-                                                <a href="#!" className="btn-style-1 w-100">Check Details</a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
-                                        <div className="local-favorite-single mb-4">
-                                            <div className="lfc-thumb position-relative">
-                                                <img src="assets/images/local-favorites/img-4.jpg" alt="" className="img-fluid" />
-                                                <a href="#!" className="bookmark-btn" role="button" title="Save"><i className="bi bi-bookmark"></i></a>
-                                            </div>
-                                            <div className="lfc-content">
-                                                <h3 className="lfc-title">Sheri Village Trail</h3>
-                                                <p className="lfc-location mb-1">Al Fujayrah, Fujairah, United Arab Emirates</p>
-                                                <p className="lfc-tags"><i className="bi bi-star-fill"></i> 4.6 · Moderate · 9.3km · Est. 2h 45m</p>
-                                                <a href="#!" className="btn-style-1 w-100">Check Details</a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
-                                        <div className="local-favorite-single mb-4">
-                                            <div className="lfc-thumb position-relative">
-                                                <img src="assets/images/local-favorites/img-1.jpg" alt="" className="img-fluid" />
-                                                <a href="#!" className="bookmark-btn" role="button" title="Save"><i className="bi bi-bookmark"></i></a>
-                                            </div>
-                                            <div className="lfc-content">
-                                                <h3 className="lfc-title">Wadi Sahem - Al Hayl Fort - Water Springs</h3>
-                                                <p className="lfc-location mb-1">Al Fujayrah, Fujairah, United Arab Emirates</p>
-                                                <p className="lfc-tags"><i className="bi bi-star-fill"></i> 4.6 · Moderate · 9.3km · Est. 2h 45m</p>
-                                                <a href="#!" className="btn-style-1 w-100">Check Details</a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
-                                        <div className="local-favorite-single mb-4">
-                                            <div className="lfc-thumb position-relative">
-                                                <img src="assets/images/local-favorites/img-2.jpg" alt="" className="img-fluid" />
-                                                <a href="#!" className="bookmark-btn" role="button" title="Save"><i className="bi bi-bookmark"></i></a>
-                                            </div>
-                                            <div className="lfc-content">
-                                                <h3 className="lfc-title">Samar Trail: Jabal Jais</h3>
-                                                <p className="lfc-location mb-1">Al Fujayrah, Fujairah, United Arab Emirates</p>
-                                                <p className="lfc-tags"><i className="bi bi-star-fill"></i> 4.6 · Moderate · 9.3km · Est. 2h 45m</p>
-                                                <a href="#!" className="btn-style-1 w-100">Check Details</a>
-                                            </div>
-                                        </div>
-                                    </div> */}
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+                
                 <div className="explore-trail-abs-map">
                    
-                   {/* <div ref={mapContainer} style={{ width: "100%", height: "500px" }}/> */}
-                    <iframe
+                    <div ref={mapContainer} id="map" style={{position: "relative", width: "100%",height: "100vh",zIndex: 1,borderRadius:'10px'}}/>
+                    {/* <iframe
                         src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d623465.506385643!2d3.1753929462417525!3d50.71315181250765!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47c3a4ed73c76867%3A0xc18b3a66787302a7!2sBrussels%2C%20Belgium!5e0!3m2!1sen!2sin!4v1749977024534!5m2!1sen!2sin"
                         allowFullScreen
                         loading="lazy"
                         referrerPolicy="no-referrer-when-downgrade"
-                    ></iframe>
+                    ></iframe> */}
                 </div>
             </section>
         </main>

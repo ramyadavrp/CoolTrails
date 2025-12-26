@@ -57,7 +57,7 @@ const AppRoute = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} /> 
         <Route path="/affiliates" element={<Affiliate />} />
-        <Route path="/Trails/:country/:state/:city/:title" element={<AffiliateDetails />} />
+        <Route path="/Trails/:country/:state?/:city?/:title" element={<AffiliateDetails />} />
         <Route path="/:title" element={<AffiliateDetails />} />
         <Route path="/Parks/:country/:state/:city/:title" element={<ExploreTrail />} /> 
         <Route path="/explore/:title" element={<ExploreTrail />} /> 

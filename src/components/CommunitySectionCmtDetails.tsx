@@ -2186,9 +2186,10 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                 {message && <div style={{color:'#FC673C' , textAlign:'left',margin:'0px'}}>{message}</div>}
                                 {reviewDetails.length > 0 ? (
                                     <>
+                                        <div class="row review-row g-3">
                                         {reviewDetails.slice(0, reviewVisibleCount).map((rev:any,index:number) => (
                                         // reviewDetails.map((rev:any,index:number)=>(
-                                            <div key={index} className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
+                                            <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
                                                 <div className="testimonial-single position-relative">
                                                     <div className="testimonial-head d-flex w-100 align-items-center position-relative">
                                                         <div className="test-image">
@@ -2201,14 +2202,16 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                                     target.src = '/assets/images/other/testimonial-1.png'; // fallback image
                                                                 }}
                                                             />
-                                                            {/* <img src="/assets/images/other/testimonial-1.png" alt="" className="img-fluid"/> */}
                                                         </div>
                                                         <div className="test-head">
-                                                                <div className="d-flex align-items-center">
-                                                                <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">
-                                                                    {rev.userWithAddress ?? ''}
-                                                                </h3>
-                                                                <a className=" ms-2" title="Edit Review"
+                                                            <h3 className="reviewer-name fw-normal text-midnight-navy mb-0"> {rev.userWithAddress ?? ''}</h3>
+                                                            <div className="rating">
+                                                                <StarRating rating={Number(rev?.rating)}/>
+                                                            </div>
+                                                            <p className="mb-0">{rev.ratingOn ?? ''} <span className="d-inline-block mx-1">•</span> Hiking</p>
+                                                        </div>
+                                                        <div className="right-abs">
+                                                            <a className=" ms-2" title="Edit Review"
                                                                 onClick={(e) => {
                                                                 e.preventDefault();
                                                                 // pre-fill if editing
@@ -2227,29 +2230,15 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                                             fill="#7D7D7D"/>
                                                                     </svg>
                                                                 </a>
-                                                            </div>
-                                                            {/* <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">{rev.userWithAddress ?? ''} </h3> */}
-                                                                <StarRating rating={Number(rev?.rating)}/>
-                                                            {/* <div className="rating">
-                                                                <i className="bi bi-star-fill"></i>
-                                                                <i className="bi bi-star-fill"></i>
-                                                                <i className="bi bi-star-fill"></i>
-                                                                <i className="bi bi-star-fill"></i>
-                                                                <i className="bi bi-star-fill"></i>
-                                                            </div> */}
-                                                            <p className="mb-0">{rev.ratingOn ?? ''} <span className="d-inline-block mx-1">•</span>
-                                                            {rev.category ?? 'N/A'} </p>
                                                         </div>
-                                                        {/* <div className="right-abs">
-                                                            <i className="bi bi-three-dots"></i>
-                                                        </div> */}
                                                     </div>
                                                     <div className="testimonial-body">
                                                         <p className="text-midnight-navy">{rev.decription ?? 'N/A'}</p>
                                                     </div>
                                                 </div>
-                                            </div>
+                                            </div> 
                                         ))}
+                                        </div>
                                         {reviewVisibleCount < reviewDetails.length && (
                                             <div className="row">
                                                 <div className="col-12 text-end">
