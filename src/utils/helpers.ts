@@ -18,11 +18,19 @@ export const generateSlug = (title: string): string => {
 };
 
 // Generate slug to title(lucknow-janesh convert to lucknow janesh)
-export const slugToTitle = (slug: string): string => { 
+// export const slugToTitle = (slug: string): string => { 
+//   return slug
+//     .split('-')
+//     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+//     .join(' ');
+// };
+export const slugToTitle = (slug?: string): string => {
+  if (!slug) return ""; // or "N/A"
+
   return slug
-    .split('-')
+    .split("-")
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+    .join(" ");
 };
 
 export const  timeAgo = (dateString: string) =>{

@@ -704,6 +704,10 @@ const AffiliateDetailTrail: React.FC = () => {
             setUserReview(myReview || null);
         }
     }, [reviewDetails, userId]);
+    
+    const finalReviews = userId
+        ? reviewDetails.filter((rev) => rev.userId === userId)
+        : reviewDetails;
     // Add rating // 27-11-25
     // console.log('tariliddd',trailId);
     const addReviewAPI = async () => {
@@ -824,8 +828,9 @@ const AffiliateDetailTrail: React.FC = () => {
             setImages(response.data.data.imageUrls);
             setPlaceOffer(response.data.data.placeOffer);
             setItinerary(response.data.data.itinerary);
-            console.log('nearTrails',response.data.data.nearTrails);
+            // console.log('nearTrails',response.data.data.nearTrails);
             setReviews(response.data.data.review);
+            console.log('review',response.data.data.review);
             setReviewImages(response.data.data.reviews_images);
             const points = response.data.data.mapPoints;
             setMapPoints(points);
@@ -2441,162 +2446,180 @@ const AffiliateDetailTrail: React.FC = () => {
 
                     <div className="row review-row g-3">
                         
-                        	{
-                            showReviews &&(
-                            <>
-                                {message && <div style={{color:'#FC673C' , textAlign:'left',margin:'0px'}}>{message}</div>}
-                                {reviewDetails.length > 0 ? (
-                                    <>
-                                        {reviewDetails.slice(0, reviewVisibleCount).map((rev:any,index:number) => (
-                                        // reviewDetails.map((rev:any,index:number)=>(
-                                            <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
-                                                <div className="testimonial-single position-relative">
-                                                    <div className="testimonial-head d-flex w-100 align-items-center position-relative">
-                                                        <div className="test-image">
-                                                            <img
-                                                                src={rev.userImage || '/assets/images/other/testimonial-1.png'}
-                                                                alt="Top Trail" className="img-fluid" 
-                                                                onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                                                                    const target = e.currentTarget;
-                                                                    target.onerror = null; // prevent infinite loop
-                                                                    target.src = '/assets/images/other/testimonial-1.png'; // fallback image
-                                                                }}
-                                                            />
-                                                        </div>
-                                                        <div className="test-head">
-                                                            <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">{rev.userWithAddress ?? ''}</h3>
-                                                            <div className="rating">
-                                                                <StarRating rating={Number(rev?.rating)}/>
+                        	
+                        
+                        {/* Review show */}
+                        <>
+                        {isLoggedIn ? (
+                            showReviews && (
+                                <>
+                                    {message && (
+                                        <div style={{ color: '#FC673C', textAlign: 'left', margin: '0px' }}>
+                                            {message}
+                                        </div>
+                                    )}
+
+                                    {reviewDetails.length > 0 ? (
+                                        <>
+                                            {reviewDetails
+                                                .slice(0, reviewVisibleCount)
+                                                .map((rev: any, index: number) => (
+                                                    <div
+                                                        key={index}
+                                                        className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12"
+                                                    >
+                                                        <div className="testimonial-single position-relative">
+                                                            <div className="testimonial-head d-flex w-100 align-items-center position-relative">
+                                                                <div className="test-image">
+                                                                    <img
+                                                                        src={rev.userImage || '/assets/images/other/testimonial-1.png'}
+                                                                        alt="Top Trail"
+                                                                        className="img-fluid"
+                                                                        onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                                                                            e.currentTarget.src =
+                                                                                '/assets/images/other/testimonial-1.png';
+                                                                        }}
+                                                                    />
+                                                                </div>
+
+                                                                <div className="test-head">
+                                                                    <h3 className="reviewer-name fw-normal mb-0">
+                                                                        {rev.userWithAddress ?? ''}
+                                                                    </h3>
+                                                                    <div className="rating">
+                                                                        <StarRating rating={Number(rev?.rating)} />
+                                                                    </div>
+                                                                    <p className="mb-0">
+                                                                        {rev.ratingOn ?? ''} • Hiking
+                                                                    </p>
+                                                                </div>
+
+                                                                {/* EDIT – ONLY LOGGED IN USER */}
+                                                                <div className="right-abs">
+                                                                    <a className=" ms-2" title="Edit Review"
+                                                                        onClick={(e) => {
+                                                                        e.preventDefault();
+                                                                        if (userReview) {
+                                                                            setRating(userReview.rating);
+                                                                            setReview(userReview.decription);}
+                                                                        
+                                                                        setIsReviewOpen(true);
+                                                                        }}
+                                                                        >
+                                                                            <svg width="19" height="18" viewBox="0 0 19 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                                <path d="M10.5137 0.80598C11.5867 -0.268666 13.3274 -0.269589 14.4014 0.804027L16.8936 3.29621C17.958 4.36095 17.9687 6.08414 16.918 7.16243L7.68555 16.6361C6.98003 17.3599 6.01137 17.7679 5.00098 17.7679H2.25C1.05069 17.7678 0.0774547 16.8306 0.00488281 15.6595L0.00292969 15.4232L0.120117 12.6146C0.159615 11.6756 0.550055 10.7843 1.21387 10.1195L10.5137 0.80598ZM17.5146 16.1947C17.9286 16.1947 18.2646 16.5304 18.2646 16.9447C18.2646 17.359 17.9287 17.6947 17.5146 17.6947H11.3936L11.3164 17.6907C10.9386 17.6521 10.6436 17.333 10.6436 16.9447C10.6436 16.5564 10.9386 16.2372 11.3164 16.1986L11.3936 16.1947H17.5146ZM2.27441 11.181C1.87636 11.5798 1.64186 12.1138 1.61816 12.6771L1.50098 15.4857V15.5657C1.52555 15.9556 1.84974 16.2676 2.24902 16.2679H5.00195C5.60809 16.2678 6.18906 16.0225 6.6123 15.5882L13.1436 8.88508L8.85059 4.59309L2.27441 11.181ZM13.3418 1.86555C12.8536 1.37755 12.062 1.37805 11.5742 1.86653L9.91113 3.53157L14.1914 7.81184L15.8447 6.11555C16.3222 5.62547 16.3176 4.84171 15.834 4.35774L13.3418 1.86555Z"
+                                                                                    fill="#7D7D7D"/>
+                                                                            </svg>
+                                                                    </a>
+                                                                </div>
                                                             </div>
-                                                            <p className="mb-0">{rev.ratingOn ?? ''}<span className="d-inline-block mx-1">•</span> Hiking</p>
-                                                        </div>
-                                                        <div className="right-abs">
-                                                            <a className=" ms-2" title="Edit Review"
-                                                                onClick={(e) => {
-                                                                e.preventDefault();
-                                                                // pre-fill if editing
-                                                                if (userReview) {
-                                                                    setRating(userReview.rating);
-                                                                    setReview(userReview.decription);}
-                                                                // } else {
-                                                                //     setRating(0);
-                                                                //     setReview("");
-                                                                // }
-                                                                setIsReviewOpen(true);
-                                                                }}
-                                                                >
-                                                                    <svg width="19" height="18" viewBox="0 0 19 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                        <path d="M10.5137 0.80598C11.5867 -0.268666 13.3274 -0.269589 14.4014 0.804027L16.8936 3.29621C17.958 4.36095 17.9687 6.08414 16.918 7.16243L7.68555 16.6361C6.98003 17.3599 6.01137 17.7679 5.00098 17.7679H2.25C1.05069 17.7678 0.0774547 16.8306 0.00488281 15.6595L0.00292969 15.4232L0.120117 12.6146C0.159615 11.6756 0.550055 10.7843 1.21387 10.1195L10.5137 0.80598ZM17.5146 16.1947C17.9286 16.1947 18.2646 16.5304 18.2646 16.9447C18.2646 17.359 17.9287 17.6947 17.5146 17.6947H11.3936L11.3164 17.6907C10.9386 17.6521 10.6436 17.333 10.6436 16.9447C10.6436 16.5564 10.9386 16.2372 11.3164 16.1986L11.3936 16.1947H17.5146ZM2.27441 11.181C1.87636 11.5798 1.64186 12.1138 1.61816 12.6771L1.50098 15.4857V15.5657C1.52555 15.9556 1.84974 16.2676 2.24902 16.2679H5.00195C5.60809 16.2678 6.18906 16.0225 6.6123 15.5882L13.1436 8.88508L8.85059 4.59309L2.27441 11.181ZM13.3418 1.86555C12.8536 1.37755 12.062 1.37805 11.5742 1.86653L9.91113 3.53157L14.1914 7.81184L15.8447 6.11555C16.3222 5.62547 16.3176 4.84171 15.834 4.35774L13.3418 1.86555Z"
-                                                                            fill="#7D7D7D"/>
-                                                                    </svg>
-                                                            </a>
+
+                                                            <div className="testimonial-body">
+                                                                <p className="text-midnight-navy">
+                                                                    {rev.decription ?? 'N/A'}
+                                                                </p>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                    <div className="testimonial-body">
-                                                        <p className="text-midnight-navy">{rev.decription ?? 'N/A'}</p>
+                                                ))}
+
+                                            {reviewVisibleCount < reviewDetails.length && (
+                                                <div className="row">
+                                                    <div className="col-12">
+                                                        <button
+                                                            className="btn btn-link text-orange fw-bold ms-1"
+                                                            onClick={handleShowReviewMore}
+                                                        >
+                                                            Show more...
+                                                        </button>
                                                     </div>
+                                                </div>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <p>Not Found Review</p>
+                                    )}
+                                </>
+                            )
+                        ) : (
+                            <>
+                            {getReviews 
+                                .slice(0, reviewVisibleCount)
+                                .map((rev: any, index: number) => (
+                                    <div
+                                        key={index}
+                                        className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12"
+                                    >
+                                        <div className="testimonial-single position-relative">
+                                            <div className="testimonial-head d-flex w-100 align-items-center position-relative">
+                                                <div className="test-image">
+                                                    <img
+                                                        src={rev.userImage || '/assets/images/other/testimonial-1.png'}
+                                                        alt="Top Trail"
+                                                        className="img-fluid"
+                                                        onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                                                            e.currentTarget.src =
+                                                                '/assets/images/other/testimonial-1.png';
+                                                        }}
+                                                    />
+                                                </div>
+
+                                                <div className="test-head">
+                                                    <h3 className="reviewer-name fw-normal mb-0">
+                                                        {rev.userWithAddress ?? ''}
+                                                    </h3>
+                                                    <div className="rating">
+                                                        <StarRating rating={Number(rev?.rating)} />
+                                                    </div>
+                                                    <p className="mb-0">
+                                                        {rev.ratingOn ?? ''} • Hiking
+                                                    </p>
+                                                </div>
+
+                                                {/* EDIT – ONLY LOGGED IN USER */}
+                                                <div className="right-abs">
+                                                    <a
+                                                        className="ms-2"
+                                                        title="Edit Review"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            if (userReview) {
+                                                                setRating(userReview.rating);
+                                                                setReview(userReview.decription);
+                                                            }
+                                                            setIsReviewOpen(true);
+                                                        }}
+                                                    >
+                                                        {/* SVG */}
+                                                    </a>
                                                 </div>
                                             </div>
-                                        ))}
-                                        {reviewVisibleCount < reviewDetails.length && (
-                                            <div className="row">
-                                                <div className="col-12 text-end">
-                                                    <button
-                                                    style={{textDecoration:'none', marginBottom:'10px',float:'left'}}
-                                                    className="btn btn-link text-orange fw-bold ms-1"
-                                                    onClick={handleShowReviewMore}
-                                                    >
-                                                    Show more... 
-                                                    </button>
-                                                </div>
-                                            </div>   
-                                        )}
-                                    </>
-                                ):(
-                                    <p>Not Found Review </p>
-                                )}
+
+                                            <div className="testimonial-body">
+                                                <p className="text-midnight-navy">
+                                                    {rev.decription ?? 'N/A'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+
+                            {reviewVisibleCount < getReviews .length && (
+                                <div className="row">
+                                    <div className="col-12">
+                                        <button
+                                            className="btn btn-link text-orange fw-bold ms-1"
+                                            onClick={handleShowReviewMore}
+                                        >
+                                            Show more...
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </>
-                            )
-                        }
-                        
-                        {/* <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
-                            <div className="testimonial-single position-relative">
-                                <div className="testimonial-head d-flex w-100 align-items-center position-relative">
-                                    <div className="test-image">
-                                        <img src="/assets/images/other/testimonial-1.png" alt="" className="img-fluid" />
-                                    </div>
-                                    <div className="test-head">
-                                        <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">Emily R. – Denver, CO</h3>
-                                        <div className="rating">
-                                            <i className="bi bi-star-fill"></i>
-                                            <i className="bi bi-star-fill"></i>
-                                            <i className="bi bi-star-fill"></i>
-                                            <i className="bi bi-star-fill"></i>
-                                            <i className="bi bi-star-fill"></i>
-                                        </div>
-                                        <p className="mb-0">Apr 1, 2025 <span className="d-inline-block mx-1">•</span> Hiking</p>
-                                    </div>
-                                    <div className="right-abs">
-                                        <i className="bi bi-three-dots"></i>
-                                    </div>
-                                </div>
-                                <div className="testimonial-body">
-                                    <p className="text-midnight-navy">CoolTrails helped me discover hidden gems right in my backyard. The trail difficulty ratings were spot on, and the user tips saved me big time!</p>
-                                </div>
-                            </div>
-                        </div> */}
-                        {/* <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
-                            <div className="testimonial-single position-relative">
-                                <div className="testimonial-head d-flex w-100 align-items-center position-relative">
-                                    <div className="test-image">
-                                        <img src="/assets/images/other/testimonial-1.png" alt="" className="img-fluid" />
-                                    </div>
-                                    <div className="test-head">
-                                        <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">Emily R. – Denver, CO</h3>
-                                        <div className="rating">
-                                            <i className="bi bi-star-fill"></i>
-                                            <i className="bi bi-star-fill"></i>
-                                            <i className="bi bi-star-fill"></i>
-                                            <i className="bi bi-star-fill"></i>
-                                            <i className="bi bi-star-fill"></i>
-                                        </div>
-                                        <p className="mb-0">Apr 1, 2025 <span className="d-inline-block mx-1">•</span> Hiking</p>
-                                    </div>
-                                    <div className="right-abs">
-                                        <i className="bi bi-three-dots"></i>
-                                    </div>
-                                </div>
-                                <div className="testimonial-body">
-                                    <p className="text-midnight-navy">CoolTrails helped me discover hidden gems right in my backyard. The trail difficulty ratings were spot on, and the user tips saved me big time!</p>
-                                </div>
-                            </div>
-                        </div> */}
-                        {/* <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
-                            <div className="testimonial-single position-relative">
-                                <div className="testimonial-head d-flex w-100 align-items-center position-relative">
-                                    <div className="test-image">
-                                        <img src="/assets/images/other/testimonial-1.png" alt="" className="img-fluid" />
-                                    </div>
-                                    <div className="test-head">
-                                        <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">Emily R. – Denver, CO</h3>
-                                        <div className="rating">
-                                            <i className="bi bi-star-fill"></i>
-                                            <i className="bi bi-star-fill"></i>
-                                            <i className="bi bi-star-fill"></i>
-                                            <i className="bi bi-star-fill"></i>
-                                            <i className="bi bi-star-fill"></i>
-                                        </div>
-                                        <p className="mb-0">Apr 1, 2025 <span className="d-inline-block mx-1">•</span> Hiking</p>
-                                    </div>
-                                    <div className="right-abs">
-                                        <i className="bi bi-three-dots"></i>
-                                    </div>
-                                </div>
-                                <div className="testimonial-body">
-                                    <p className="text-midnight-navy">CoolTrails helped me discover hidden gems right in my backyard. The trail difficulty ratings were spot on, and the user tips saved me big time!</p>
-                                </div>
-                            </div>
-                        </div> */}
+                        )}
+                    </>
+                       
                         <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
                             <div className="testimonial-single position-relative ">
                                 {/* <div className="testimonial-body review_style" style={{paddingTop:'0px'}}> */}
@@ -2632,32 +2655,7 @@ const AffiliateDetailTrail: React.FC = () => {
                                 {/* </div> */}
                             </div>
                         </div>
-                        {/* <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
-                            <div className="testimonial-single position-relative">
-                                <div className="testimonial-head d-flex w-100 align-items-center position-relative">
-                                    <div className="test-image">
-                                        <img src="/assets/images/other/testimonial-1.png" alt="" className="img-fluid" />
-                                    </div>
-                                    <div className="test-head">
-                                        <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">Emily R. – Denver, CO</h3>
-                                        <div className="rating">
-                                            <i className="bi bi-star-fill"></i>
-                                            <i className="bi bi-star-fill"></i>
-                                            <i className="bi bi-star-fill"></i>
-                                            <i className="bi bi-star-fill"></i>
-                                            <i className="bi bi-star-fill"></i>
-                                        </div>
-                                        <p className="mb-0">Apr 1, 2025 <span className="d-inline-block mx-1">•</span> Hiking</p>
-                                    </div>
-                                    <div className="right-abs">
-                                        <i className="bi bi-three-dots"></i>
-                                    </div>
-                                </div>
-                                <div className="testimonial-body">
-                                    <p className="text-midnight-navy">CoolTrails helped me discover hidden gems right in my backyard. The trail difficulty ratings were spot on, and the user tips saved me big time!</p>
-                                </div>
-                            </div>
-                        </div> */}
+                        
                     </div>
                     <div className="row">
                             

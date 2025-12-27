@@ -43,7 +43,7 @@ const Banner: React.FC = () => {
                 searchkey: searchTerm,
                 category: ''
             });
-            console.log("searchkey response", response.data);
+            console.log("searchkeyss response", response.data);
             setSuggestions(response.data.data);
             // console.log("searchkey response:", {searchkey:searchTerm,category:''} );
             result = response.data.data || [];
@@ -80,7 +80,7 @@ const Banner: React.FC = () => {
         setSuggestions([]);
     }
    
- console.log(suggestions);
+//  console.log(suggestions);
     return (
       <section className="home-hero-section">
         <div className="container-fluid  bg-image">
