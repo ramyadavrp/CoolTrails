@@ -115,7 +115,9 @@ function ExploreTrailSection() {
 
     
     const postLocation = async () => {
+        
         try {
+            setloadingExplore(true);
             const response = await axios.post(`${BASE_URL}/trail/NearTrailsByLatAndLan`, {
                 take: take,
                 skip: skip,
@@ -167,7 +169,9 @@ function ExploreTrailSection() {
 
     useEffect(() => {
         const fetchActivity = async () => {
+             
             try {
+                 setloadingExplore(true);
                 const response = await axios.get(`${BASE_URL}/home/topcategory/10`);
                 setActivity(response.data.data);
                 // console.log('topcategory',response.data.data);
@@ -305,7 +309,6 @@ function ExploreTrailSection() {
             </div>
         );
     }
-   
     return (
         <main className="mainContent">
             <section className="section-explore-trails position-relative default-padding">
@@ -314,8 +317,40 @@ function ExploreTrailSection() {
                         <div className="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
                             <div className="explore-trail-container position-relative z-1">
                                 <div className="section-title mb-3">
-                                    <h2 className="title title-md">Explore trails</h2>
+                                    <h2 className="title title-md"> {title ? slugToTitle(title) : ""}</h2>
+                                    {/* <h2 className="title title-md">Explore trails</h2> */}
                                 </div>
+                                <div className="trail-cover position-relative" id="overviewData">
+                                
+                                <img src="/assets/images/trails/trail-1.jpg" alt="" className="w-100 br-20 coverImage"/>
+                                <div
+                                    className="cover-overlay h-100 w-100 d-flex justify-content-between align-items-end br-20">
+                                    <a href="/assets/images/trails/trail-1.jpg" className="btn-style-4"
+                                        data-fancybox="MoreImages">
+                                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"
+                                            xmlns="http://www.w3.org/2000/svg" className="me-2">
+                                            <rect x="1.5" y="1.5" width="15" height="15" rx="3.75" stroke="#05073D"
+                                                stroke-width="1.125" />
+                                            <path
+                                                d="M1.875 13.125L3.5694 11.9147C4.10641 11.5311 4.84202 11.592 5.30866 12.0587L6.1136 12.8636C6.46508 13.2151 7.03492 13.2151 7.3864 12.8636L11.1283 9.12175C11.622 8.62803 12.4107 8.59225 12.9471 9.03924L16.5 12"
+                                                stroke="#05073D" stroke-width="1.125" stroke-linecap="round" />
+                                            <circle cx="1.5" cy="1.5" r="1.5" transform="matrix(-1 0 0 1 7.5 4.5)"
+                                                stroke="#05073D" stroke-width="1.125" />
+                                        </svg>
+                                        150+ Photos</a>
+                                    <a href="/assets/images/trails/trail-1-gallery-1.jpg" data-fancybox="MoreImages"></a>
+                                    <a href="/assets/images/trails/trail-1-gallery-2.jpg" data-fancybox="MoreImages"></a>
+                                    <a href="/assets/images/trails/trail-1-gallery-3.jpg" data-fancybox="MoreImages"></a>
+                                    <a href=""
+                                        className="arrow-btn d-flex align-items-center justify-content-center rounded-circle"><svg
+                                            width="18" height="16" viewBox="0 0 18 16" fill="none"
+                                            xmlns="http://www.w3.org/2000/svg">
+                                            <path
+                                                d="M10.6188 15L16.4788 9.23744C17.1737 8.55402 17.1737 7.44598 16.4788 6.76256L10.6188 0.999999M15.9575 8L1 8"
+                                                stroke="#C6C6D1" stroke-width="1.5" stroke-linecap="round" />
+                                        </svg></a>
+                                </div>
+                            </div>
                                 <div className="inner-filter sticky-top">
                                     <div className="search-filter">
                                         <form action="" className="bg-almost-white searchForm position-relative">
