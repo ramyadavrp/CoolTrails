@@ -253,7 +253,7 @@ if (topLocatTrails.length === 0) return <p>No local favorites found.</p>;
         <div className="row">
           <div className="col-12">
             <div className="cooltrails-title text-center">
-              <h2 className="title">Local Favorites near <span>Dubai</span></h2>
+              <h2 className="title">Local Favorites near <span>India</span></h2>
             </div>
           </div>
         </div>

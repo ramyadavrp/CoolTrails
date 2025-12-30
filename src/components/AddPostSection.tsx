@@ -42,6 +42,7 @@ interface ProfileData {
     TrailType: string;
     favorite_activities: FavoriteActivity[];
     showStateCity:boolean;
+    points: Point[];
 }
 interface Categorylist{
     id:string,
@@ -103,6 +104,7 @@ const AddPostSection: React.FC = () => {
         TrailType: "",
         favorite_activities: [],
         showStateCity: true,
+        points:[],
     });
      const [loadingMap,setLoadingMap] = useState(true);
      // map state
@@ -213,7 +215,7 @@ const AddPostSection: React.FC = () => {
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-
+ 
     const handleClick = (e: mapboxgl.MapMouseEvent) => {
       if (loopClosed) return alert("Loop already closed.");
 
@@ -230,7 +232,7 @@ const AddPostSection: React.FC = () => {
           setPoints((prev) => {
             const newPoints = [...prev, coords];
             updateRoute(newPoints);
-            handleAddMapPoints(newPoints);
+            // handleAddMapPoints(newPoints);
             return newPoints;
           });
           return;
@@ -257,7 +259,7 @@ const AddPostSection: React.FC = () => {
             const updatedPoints = [...prev];
             updatedPoints[index] = [lngLat.lng, lngLat.lat];
             updateRoute(updatedPoints);
-            handleAddMapPoints(updatedPoints);
+            // handleAddMapPoints(updatedPoints); // 30-12-25
             return updatedPoints;
           });
         });
@@ -451,30 +453,47 @@ const AddPostSection: React.FC = () => {
     };
  
   // End map creation
-    // API call
-  const handleAddMapPoints = async (pointsWithCoords: [number, number][]) => {
-    console.log("pointsWithCoords", pointsWithCoords);
-
-    const payload = {
-      UserId: "20c8a597-25b7-414d-8b9c-c9575f40b9fc",
-      feedId: 1,
-      points: pointsWithCoords.map((p) => ({
-        Latitude: p[1].toString(),
-        Longitude: p[0].toString(),
-      })),
+    const handleAddMapPoints = (pointsArray: [number, number][]) => {
+        console.log("pointsWithCoords", pointsArray);  
+        setProfileData(prev => ({
+            ...prev,
+            points: [
+            ...prev.points,
+            ...pointsArray.map((coords, index) => ({
+                title: `Point ${prev.points.length + index + 1}`,
+                latitude: coords[1],
+                longitude: coords[0],
+                pointOrder: prev.points.length + index + 1
+            }))
+            ]
+        }));
     };
+ 
 
-    console.log("Payload to send:", payload);
+    // API call
+//   const handleAddMapPoints = async (pointsWithCoords: [number, number][]) => {
+//     console.log("pointsWithCoords", pointsWithCoords);
 
-    try {
-      const res = await axios.post(`${BASE_URL}/feed/addmap`, payload);
-      console.log("API response:", res.data);
-      if (res.data.success) alert("Points saved successfully!");
-    } catch (err) {
-      console.error("API error:", err);
-      alert("Failed to save points.");
-    }
-  };
+//     const payload = {
+//       UserId: "20c8a597-25b7-414d-8b9c-c9575f40b9fc",
+//       feedId: 1,
+//       points: pointsWithCoords.map((p) => ({
+//         Latitude: p[1].toString(),
+//         Longitude: p[0].toString(),
+//       })),
+//     };
+
+//     console.log("Payload to send:", payload);
+
+//     try {
+//       const res = await axios.post(`${BASE_URL}/feed/addmap`, payload);
+//       console.log("API response:", res.data);
+//       if (res.data.success) alert("Points saved successfully!");
+//     } catch (err) {
+//       console.error("API error:", err);
+//       alert("Failed to save points.");
+//     }
+//   };
 
 
 
@@ -536,7 +555,7 @@ const AddPostSection: React.FC = () => {
 
             return updatedData;
         });
-    };
+    }; 
 
     const handleActivityToggle = (activity: string) => {
         setProfileData((prev) => {
@@ -562,6 +581,9 @@ const AddPostSection: React.FC = () => {
         formData.append("CountryId", profileData.CountryId);
         formData.append("StateId", profileData.StateId);
         formData.append("CityId", profileData.CityId);
+        formData.append("TrailType", profileData.TrailType);
+        formData.append("TrailLevel", profileData.TrailLevel);
+        formData.append("points", JSON.stringify(profileData.points));
         formData.append("UserFavorite", JSON.stringify(profileData.favorite_activities));
         // if (file) formData.append("MediaFiles", file);
          // Add all selected images
@@ -595,6 +617,7 @@ const AddPostSection: React.FC = () => {
                     TrailLevel: "",
                     favorite_activities: [],
                     showStateCity: true,
+                    points: [],   
                 });
             } else {
                 //alert(response.data.message || "Unexpected response from server");

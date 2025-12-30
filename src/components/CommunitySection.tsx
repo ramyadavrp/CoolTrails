@@ -118,7 +118,7 @@ const CommunitySection: React.FC = () => {
                 UserId: userId,
             });
 
-            console.log("Profile Data:", response.data);
+            // console.log("Profile Data:", response.data);
 
             if (response.data.status === "success") {
                 const data = response.data.data;
@@ -139,8 +139,8 @@ const CommunitySection: React.FC = () => {
     // };
     // console.log("nsme:", postSelectedname);
      const handleTextareaChange = (postId: string, value: string) => {
-        console.log("Post ID:", postId);
-        console.log("Value:", value);
+        // console.log("Post ID:", postId);
+        // console.log("Value:", value);
 
         setReasonValue((prev) => ({
             ...prev,
@@ -282,7 +282,7 @@ const CommunitySection: React.FC = () => {
 
             // console.log('community',response.data.data.suggested_members);
             const apidata = response.data.data;
-            console.log(apidata);
+            // console.log(apidata);
             const members = response.data.data.suggested_members || []
             setCommunity(response.data.data.suggested_members || []);
             // console.log('Suggested members',response.data.data.suggested_members);

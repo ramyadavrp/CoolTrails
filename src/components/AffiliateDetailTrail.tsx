@@ -822,7 +822,7 @@ const AffiliateDetailTrail: React.FC = () => {
             });
             
             setTrailDetail(response.data.data);
-            // console.log('traildetail',response.data.data)
+            console.log('traildetail',response.data)
             setNearTrails(response.data.data.nearTrails);
             setWeatherDays(response.data.data.weatherDays);
             setImages(response.data.data.imageUrls);
@@ -830,11 +830,11 @@ const AffiliateDetailTrail: React.FC = () => {
             setItinerary(response.data.data.itinerary);
             // console.log('nearTrails',response.data.data.nearTrails);
             setReviews(response.data.data.review);
-            console.log('review',response.data.data.review);
+            // console.log('review',response.data.data.review);
             setReviewImages(response.data.data.reviews_images);
             const points = response.data.data.mapPoints;
             setMapPoints(points);
-            
+             console.log('points',points);
             
         }catch(err){
             console.error('API Error:', err);
@@ -872,7 +872,7 @@ const AffiliateDetailTrail: React.FC = () => {
         map.current.on('load', async () => {
             //  setloading(true);
             const formattedPoints = getmapPoints.map(p => [p.longitude, p.latitude]);
-            console.log('map',formattedPoints);
+            // console.log('map',formattedPoints);
             setPoints(formattedPoints);
 
             const bounds = new mapboxgl.LngLatBounds();
@@ -2048,7 +2048,7 @@ const AffiliateDetailTrail: React.FC = () => {
                                     width: "450px",
                                     maxHeight: "80vh",
                                     marginTop: "50px",
-                                    overflow: "hidden", // ✅ IMPORTANT
+                                    overflow: "hidden", // IMPORTANT
                                 }}
                                 onClick={(e) => e.stopPropagation()}
                             >
@@ -2446,10 +2446,92 @@ const AffiliateDetailTrail: React.FC = () => {
 
                     <div className="row review-row g-3">
                         
-                        	
-                        
-                        {/* Review show */}
+                        {/* Review show 30-12-25*/}
                         <>
+                            {showReviews && (
+                                <>
+                                {getReviews
+                                    .slice(0, reviewVisibleCount)
+                                    .map((rev: any, index: number) => (
+                                    <div
+                                        key={index}
+                                        className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12"
+                                    >
+                                        <div className="testimonial-single position-relative">
+                                        <div className="testimonial-head d-flex w-100 align-items-center position-relative">
+                                            <div className="test-image">
+                                            <img
+                                                src={rev.userImage || "/assets/images/other/testimonial-1.png"}
+                                                alt="Top Trail"
+                                                className="img-fluid"
+                                                onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                                                e.currentTarget.src =
+                                                    "/assets/images/other/testimonial-1.png";
+                                                }}
+                                            />
+                                            </div>
+
+                                            <div className="test-head">
+                                            <h3 className="reviewer-name fw-normal mb-0">
+                                                {rev.userWithAddress ?? ""}
+                                            </h3>
+
+                                            <div className="rating">
+                                                <StarRating rating={Number(rev?.rating)} />
+                                            </div>
+
+                                            <p className="mb-0">
+                                                {rev.ratingOn ?? ""} • Hiking
+                                            </p>
+                                            </div>
+
+                                            {/* EDIT – ONLY LOGGED IN USER */}
+                                            <div className="right-abs">
+                                            <a
+                                                className="ms-2"
+                                                title="Edit Review"
+                                                onClick={(e) => {
+                                                e.preventDefault();
+                                                if (userReview) {
+                                                    setRating(userReview.rating);
+                                                    setReview(userReview.decription);
+                                                }
+                                                setIsReviewOpen(true);
+                                                }}
+                                            >
+                                                {/* SVG */}
+                                            </a>
+                                            </div>
+                                        </div>
+
+                                        <div className="testimonial-body">
+                                            <p className="text-midnight-navy">
+                                            {rev.decription ?? "N/A"}
+                                            </p>
+                                        </div>
+                                        </div>
+                                    </div>
+                                    ))}
+
+                                {reviewVisibleCount < getReviews.length && (
+                                    <div className="row">
+                                    <div className="col-12">
+                                        <button
+                                        className="btn btn-link text-orange fw-bold ms-1"
+                                        onClick={handleShowReviewMore}
+                                        >
+                                        Show more...
+                                        </button>
+                                    </div>
+                                    </div>
+                                )}
+                                </>
+                            )}
+                        </>
+                        {/* Review show end 30-12-25*/}
+
+                        {/* Review show before 30-12-25*/}
+                        {/* <>
                         {isLoggedIn ? (
                             showReviews && (
                                 <>
@@ -2494,7 +2576,7 @@ const AffiliateDetailTrail: React.FC = () => {
                                                                     </p>
                                                                 </div>
 
-                                                                {/* EDIT – ONLY LOGGED IN USER */}
+                                                                
                                                                 <div className="right-abs">
                                                                     <a className=" ms-2" title="Edit Review"
                                                                         onClick={(e) => {
@@ -2576,7 +2658,7 @@ const AffiliateDetailTrail: React.FC = () => {
                                                     </p>
                                                 </div>
 
-                                                {/* EDIT – ONLY LOGGED IN USER */}
+                                                
                                                 <div className="right-abs">
                                                     <a
                                                         className="ms-2"
@@ -2590,7 +2672,6 @@ const AffiliateDetailTrail: React.FC = () => {
                                                             setIsReviewOpen(true);
                                                         }}
                                                     >
-                                                        {/* SVG */}
                                                     </a>
                                                 </div>
                                             </div>
@@ -2604,21 +2685,21 @@ const AffiliateDetailTrail: React.FC = () => {
                                     </div>
                                 ))}
 
-                            {reviewVisibleCount < getReviews .length && (
-                                <div className="row">
-                                    <div className="col-12">
-                                        <button
-                                            className="btn btn-link text-orange fw-bold ms-1"
-                                            onClick={handleShowReviewMore}
-                                        >
-                                            Show more...
-                                        </button>
+                                {reviewVisibleCount < getReviews .length && (
+                                    <div className="row">
+                                        <div className="col-12">
+                                            <button
+                                                className="btn btn-link text-orange fw-bold ms-1"
+                                                onClick={handleShowReviewMore}
+                                            >
+                                                Show more...
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
-                        </>
+                                )}
+                            </>
                         )}
-                    </>
+                    </> */}
                        
                         <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
                             <div className="testimonial-single position-relative ">
@@ -2660,17 +2741,14 @@ const AffiliateDetailTrail: React.FC = () => {
                     <div className="row">
                             
                             <div className="col-12 mb-4 text-center">
-                             {/* {isLoggedIn ? (
-                                    <a href="" className="btn-style-review">Review trail</a>
-                                ):(null )} */}
-                            { isLoggedIn && (    
-                            <button
-                                className="btn-style-1"
-                                onClick={() => setShowReviews(!showReviews)}
-                            >   
-                                {showReviews ? "Hide Reviews" : "Check All Reviews"}
-                            </button>
-                            )}
+                                {isLoggedIn && getReviews?.length > 0 && (
+                                    <button
+                                        className="btn-style-1"
+                                        onClick={() => setShowReviews(!showReviews)}
+                                    >   
+                                        {showReviews ? "Hide Reviews" : "Check All Reviews"}
+                                    </button>
+                                )}
                             </div>
                              {/* <a href="" className="btn-style-1">Check All Reviews</a> */}
                     </div>

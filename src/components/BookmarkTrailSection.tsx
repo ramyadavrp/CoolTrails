@@ -55,7 +55,7 @@ const BookmarkTrailSection: React.FC = () => {
                 take: 20
             });
 
-                // console.log("Blocked Data:", response.data);
+                console.log("bookmark-trail Data:", response.data);
 
             if (response.data.status === "success") {
                 setBookmark(response.data.data);
@@ -80,44 +80,47 @@ const BookmarkTrailSection: React.FC = () => {
                                 <div className="row">
 
                                     {/* dynamic data */}
-                                    {/* <div className="col-md-4">
+                                    
                                         {getBookmark.length > 0 &&(
                                             getBookmark.map((item:any,index:number)=>(
-                                                <div key={index} className="local-favorite-single">
-                                                    <div className="lfc-thumb position-relative">
-                                                        <a href="/Triund-Trek-via-Gallu-Devi-Temple" data-discover="true">
-                                                            <img
-                                                                src={item.imagePath || '/assets/images/not-found.jpg'}
-                                                                alt="local Trail"
-                                                                className="img-fluid img-fixed-size"
-                                                                onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                                                                    const target = e.currentTarget;
-                                                                    target.onerror = null;
-                                                                    target.src = '/assets/images/not-found.jpg';
-                                                                }}
-                                                            />
-                                                        </a>
-                                                    </div>
-                                                    <div className="lfc-content">
-                                                        <a href="/Triund-Trek-via-Gallu-Devi-Temple" data-discover="true">
-                                                            <h3 className="lfc-title">{item.title}</h3>
-                                                            <p className="lfc-location mb-1">
-                                                                {item.address}
-                                                            </p>
-                                                            <p className="lfc-tags">
-                                                                <i className="bi bi-star-fill"></i> {item.rating.toFixed(1)} · Moderate · {item.length} km · Est. {item.estimateTime}
-                                                            </p>
-                                                        </a>
-                                                        <Link to={`/${item.urlTitle|| generateSlug(item.title || '')}`} className="btn-style-1 w-100">Check Details</Link>
+                                                <div className="col-md-4" key={index}>
+                                                    <div  className="local-favorite-single">
+                                                        <div className="lfc-thumb position-relative">
+                                                            <a href="#" data-discover="true">
+                                                                <img
+                                                                    src={item.imagePath || '/assets/images/not-found.jpg'}
+                                                                    alt="local Trail"
+                                                                    className="img-fluid img-fixed-size"
+                                                                    onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                                                        const target = e.currentTarget;
+                                                                        target.onerror = null;
+                                                                        target.src = '/assets/images/not-found.jpg';
+                                                                    }}
+                                                                />
+                                                            </a>
+                                                        </div>
+                                                        <div className="lfc-content">
+                                                            <a href="#" data-discover="true">
+                                                                <h3 className="lfc-title">{item.trails.name}</h3>
+                                                                <p className="lfc-location mb-1">
+                                                                    {item.trails.address}
+                                                                </p>
+                                                                <p className="lfc-tags">
+                                                                    <i className="bi bi-star-fill"></i> {item.trails.rating} · Moderate ·{item.trails.lengthKm}  km · Est. {item.trails.estimateTime}
+                                                                </p>
+                                                            </a>
+                                                            <a className="btn-style-1 w-100">Check Details</a>
+                                                            {/* <Link to={`/${item.urlTitle|| generateSlug(item.title || '')}`} className="btn-style-1 w-100">Check Details</Link> */}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             ))
                                         )}
-                                    </div> */}
+                                    
 
 
 
-                                    <div className="col-md-4">
+                                    {/* <div className="col-md-4">
                                         <div className="local-favorite-single">
                                             <div className="lfc-thumb position-relative"><a href="/Triund-Trek-via-Gallu-Devi-Temple" data-discover="true">
                                                 <img src="https://purchaseitnow.shop/Upload/Trails/Triund-Trek-via-Gallu-Devi-Temple/1.webp" alt="Top Trail" className="img-fluid img-fixed-size" /></a>
@@ -179,7 +182,7 @@ const BookmarkTrailSection: React.FC = () => {
                                                 </a><a className="btn-style-1 w-100" href="/Triund-Trek-via-Gallu-Devi-Temple" data-discover="true">Check Details</a>
                                             </div>
                                         </div>
-                                    </div>
+                                    </div> */}
                                 </div>
                             </div>
                         </div>

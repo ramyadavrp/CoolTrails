@@ -151,7 +151,15 @@ const ProfileSection: React.FC = () => {
                     <div className="profile-inner-card bg-almost-white br-20 profile-card-feed">
                         {postDetails.length > 0 ? (
                             <>
-                                {postDetails.slice(0, visibleCount).map((post: any, index: number) => (
+                                {postDetails.slice(0, visibleCount).map((post: any, index: number) => {
+                                    const mediaUrl = post.media && post.media.length > 0 
+                                    ? post.media[0].mediaUrl 
+                                    : '/assets/images/not-found.jpg';
+                                    const thumbnailUrl = post.media && post.media.length > 0 
+                                    ? post.media[0].thumbnailUrl 
+                                    : '/assets/images/not-found.jpg';
+                                    
+                                    return(
                                 // postDetails.map((post:any,index:number)=>(
                                     <div className="single-feed position-relative" key={index}>
                                         <div className="feed-head d-flex justify-content-between">
@@ -161,7 +169,8 @@ const ProfileSection: React.FC = () => {
                                                 state={{ postId: post.id }}  
                                                 >
                                                     <img
-                                                    src={post.media[0].thumbnailUrl  || '/assets/images/not-found.jpg'}
+                                                    src={thumbnailUrl}
+                                                    // src={post.media[0].thumbnailUrl  || '/assets/images/not-found.jpg'}
                                                     alt="Com" className="profile-sm rounded-circle"  
                                                     onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                                                         const target = e.currentTarget;
@@ -199,7 +208,8 @@ const ProfileSection: React.FC = () => {
                                             {/* <a href="" className="d-block"> */}
                                             <Link to={`/explore/recording/${post.slug}`} className="d-block" state={{ postId: post.id }} >
                                                 <img
-                                                    src={post.media[0].mediaUrl  || '/assets/images/not-found.jpg'}
+                                                    src={mediaUrl}
+                                                    // src={post.media[0].mediaUrl  || '/assets/images/not-found.jpg'}
                                                     alt="Com" className="w-100 br-20"  
                                                     onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                                                         const target = e.currentTarget;
@@ -236,7 +246,7 @@ const ProfileSection: React.FC = () => {
                                                 {post.shareCount || 0} Share</button>
                                         </div>
                                     </div>
-                                ))}
+                                )})}
                                 {visibleCount < postDetails.length && (
 
                                     <div className="row">

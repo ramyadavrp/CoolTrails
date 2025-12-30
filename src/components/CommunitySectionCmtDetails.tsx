@@ -1700,13 +1700,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                     <div className="tusc-cn-1 text-center">
                                         <p className="mb-0">{getfollowingBy?.rating ? (Math.round(getfollowingBy.rating * 100) / 100).toFixed(2) : "0.00" } </p>
                                         <StarRating rating={Number(getfollowingBy?.rating)}/>
-                                        {/* <div className="rating">
-                                            <i className="bi bi-star-fill"></i>
-                                            <i className="bi bi-star-fill"></i>
-                                            <i className="bi bi-star-fill"></i>
-                                            <i className="bi bi-star-fill"></i>
-                                            <i className="bi bi-star-fill"></i>
-                                         </div> */}
                                     </div>
                                     <div className="tusc-cn-2 text-center">
                                         
@@ -2186,7 +2179,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                 {message && <div style={{color:'#FC673C' , textAlign:'left',margin:'0px'}}>{message}</div>}
                                 {reviewDetails.length > 0 ? (
                                     <>
-                                        <div class="row review-row g-3">
+                                        <div className="row review-row g-3">
                                         {reviewDetails.slice(0, reviewVisibleCount).map((rev:any,index:number) => (
                                         // reviewDetails.map((rev:any,index:number)=>(
                                             <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
