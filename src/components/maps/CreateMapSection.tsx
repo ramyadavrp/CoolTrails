@@ -6,16 +6,17 @@ import { Link } from 'react-router-dom';
 // import StarRating from './AffiliateDetails/StarRating';
 import { useLocation, useParams } from 'react-router-dom';
 import { decodeId,encodeId, generateSlug ,slugToTitle,timeAgo} from '../../utils/helpers';
-const BASE_URL = import.meta.env.VITE_API_URL;
+
 import axios from 'axios';
 import { SquareLoader } from "react-spinners"; 
-
+// import {getAuth} from '../utils/storage';
+import {getAuth} from '../../utils/storage';
 import mapboxgl from "mapbox-gl";
 // import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 import "mapbox-gl/dist/mapbox-gl.css";
-
+const BASE_URL = import.meta.env.VITE_API_URL;
 mapboxgl.accessToken = "pk.eyJ1IjoiMTExMnZpcmVuZHJhIiwiYSI6ImNtYmE0emNyNjBwbHMyanNibHBpZHgxMjUifQ.5FSp2VZ1T1kXcGV38bC5jA";
 
 interface Point {
@@ -39,6 +40,7 @@ const CreateMapSection: React.FC = () => {
     const [message, setMessage] = useState<string | null>(null);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [loadingMap,setLoadingMap] = useState(true);
+    const [userId, setUserId] = useState<string>("");
     // map state
     const mapContainer = useRef<HTMLDivElement | null>(null);
     const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -57,6 +59,11 @@ const CreateMapSection: React.FC = () => {
 
 
     const shareUrl = window.location.href;
+    useEffect(() => {
+        const { userId, token ,login} = getAuth();
+            if (userId) setUserId(userId);
+    }, []);
+    // console.log('userIduserId',userId);
     // Function you will call instead of prompt()
     const openCustomPrompt = (callback: (value: string | null) => void) => {
         setPromptCallback(() => callback);
@@ -391,7 +398,7 @@ const CreateMapSection: React.FC = () => {
     console.log("pointsWithCoords", pointsWithCoords);
 
     const payload = {
-      UserId: "20c8a597-25b7-414d-8b9c-c9575f40b9fc",
+      UserId: userId,
       feedId: 1,
       points: pointsWithCoords.map((p) => ({
         Latitude: p[1].toString(),

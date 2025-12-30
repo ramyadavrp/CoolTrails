@@ -7,20 +7,12 @@ const BASE_URL = import.meta.env.VITE_API_URL;
 const SignupForm = () => {
     const navigate = useNavigate();
     //const [isSignUp, setIsSignUp] = useState();
-
-    useEffect(() => {
-        const token = localStorage.getItem("token");
-        if (token) {
-        navigate("/");
-        }
-    }, [navigate]);
-
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [successMsg, setSuccessMsg] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
-
+     const [showPassword, setShowPassword] = useState(false); 
     const [formData, setFormData] = useState({
         // firstName: "",
         // lastName: "",
@@ -30,6 +22,16 @@ const SignupForm = () => {
         signupPassword: ""
     });
 
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        if (token) {
+        navigate("/");
+        }
+    }, [navigate]);
+    const togglePasswordVisibility = () => {
+        alert();
+        setShowPassword(prevShowPassword => !prevShowPassword);
+    };
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -168,9 +170,11 @@ const SignupForm = () => {
                                     {errors.mobile && <p className="text-red-500 text-xs">{errors.mobile}</p>}
                                 </div> */}
                                 <div className="form-floating">
-                                    <input type="password" name="signupPassword" className="form-control form-control-password"
+                                    <input type={showPassword ? "text" : "password"} name="signupPassword" className="form-control form-control-password"
                                         id="password" placeholder="Password" value={formData.signupPassword} onChange={handleChange} />
                                     <label htmlFor="password">Password</label>
+                                    <i className={`toggle-password bi ${showPassword ? "bi-eye-slash" : "bi-eye"}`}
+                                      onClick={togglePasswordVisibility} ></i>
                                     <i className="toggle-password bi bi-eye"></i>
                                     {errors.signupPassword && <p className="text-red-500 text-xs">{errors.signupPassword}</p>}
                                 </div>

@@ -44,6 +44,7 @@ import BookmarkFeed from '../containers/BookmarkFeed';
 import BlockedComment from '../containers/BlockedComment';
 import ReportAnIssueComment from '../containers/ReportAnIssueComment';
 import FullTrailMapSection from '../components/FullTrailMapSection';
+import ExploreNearByTrails from '../containers/ExploreNearByTrails';
 
 const AppRoute = () => {
   
@@ -59,9 +60,11 @@ const AppRoute = () => {
         <Route path="/affiliates" element={<Affiliate />} />
         <Route path="/Trails/:country/:state?/:city?/:title" element={<AffiliateDetails />} />
         {/* <Route path="/:title" element={<AffiliateDetails />} /> */}
-        <Route path="/Parks/:country/:state?/:city?/:title" element={<ExploreTrail />} /> 
-        <Route path="/explore/:title" element={<ExploreTrail />} /> 
-        <Route path="/explore/" element={<ExploreTrail />} /> 
+        <Route path="/Parks/:country/:state?/:city?/:title" element={<ExploreTrail />} /> {/* search and national park */}
+        {/* <Route path="/explore/:title" element={<ExploreTrail />} />  */}
+        {/* <Route path="/explore/" element={<ExploreTrail />} />  */}
+        <Route path="/explore/" element={<ExploreNearByTrails />} />   {/* menu */}
+        <Route path="/explore/:title" element={<ExploreNearByTrails />} />  {/* Home page category */}
         <Route path="/national-park-guide" element={<NationalParkGuide />} /> 
         <Route path="/gift-membership" element={<GiftMembership />} /> 
         <Route path="/plans" element={<Plan />} /> 

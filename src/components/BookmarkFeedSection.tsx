@@ -49,13 +49,14 @@ const BookmarkFeedSection: React.FC = () => {
         const loadBookmark = async () => {
             // setloadingBlockedUser(true);
             try {
-            const response = await axios.post(`${BASE_URL}/common/bookmark-trail`, {
+               
+            const response = await axios.post(`${BASE_URL}/common/bookmark-feed`, {
                 userid: userId,
                 skip: 0,
                 take: 20
             });
 
-                // console.log("Blocked Data:", response.data);
+                console.log("bookmark feed Data:", response.data);
 
             if (response.data.status === "success") {
                 setBookmark(response.data.data);
@@ -114,9 +115,6 @@ const BookmarkFeedSection: React.FC = () => {
                                             ))
                                         )}
                                     </div> */}
-
-
-
                                     <div className="col-md-4">
                                         <div className="local-favorite-single">
                                             <div className="lfc-thumb position-relative"><a href="/Triund-Trek-via-Gallu-Devi-Temple" data-discover="true">
