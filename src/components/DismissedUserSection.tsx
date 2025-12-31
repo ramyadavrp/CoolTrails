@@ -29,11 +29,12 @@ interface DismissedUser {
 
 const DismissedUserSection: React.FC = () => {
     const [loadingDismissedUser, setloadingDismissedUser] = useState<boolean>(true);
-    
+    const [errorsDismissedUser,setErrorsDismissedUser] = useState('');
+    const [getDismissedUser, setDismissedUser] = useState<DismissedUser[]>([]);
     const [loginId, setLoginId] = useState("");
     const [userId, setUserId] = useState<string>("");
     const [token, setToken] = useState<string>("");
-    const [getDismissedUser, setDismissedUser] = useState<DismissedUser[]>([]);
+    
     useEffect(() => {
         const { userId, token ,login} = getAuth();
             if (userId) setUserId(userId);
@@ -44,27 +45,54 @@ const DismissedUserSection: React.FC = () => {
         if (!userId) return; // wait until userId is available
 
         const loadDismissedUser = async () => {
-            // setloadingBlockedUser(true);
             try {
+            setloadingDismissedUser(true); // show loader every time fetch starts
+            setErrorsDismissedUser("");
             const response = await axios.post(`${BASE_URL}/common/dismisseduser`, {
                 userid: userId,
                 skip: 0,
                 take: 20
             });
 
-                console.log("dismisseduser Data:", response.data.data);
+                // console.log("dismisseduser Data:", response.data.data);
 
             if (response.data.status === "success") {
                 setDismissedUser(response.data.data);
             }
             } catch (error) {
-                // setloadingBlockedUser(false);
+                setErrorsDismissedUser('Unable to fetch bookmark feed');
                 console.error("Error loading profile:", error);
+            }finally{
+                setloadingDismissedUser(false);
             }
         };
 
         loadDismissedUser();
     }, [userId]);
+    if (loadingDismissedUser) {
+            return (
+                <div
+                    style={{
+                    position: "fixed",
+                    top: 0,
+                    left: 0,
+                    width: "100vw",
+                    height: "100vh",
+                    background: "#FFF5E9",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    zIndex: 9999,
+                    }}
+                >
+                    <SquareLoader color="#FC673C" size={80} speedMultiplier={1.5} />
+                </div>
+            );
+        }
+    if (errorsDismissedUser) return <p>{errorsDismissedUser}</p>;
+    
+    if (getDismissedUser.length === 0) return <p>NO Bookmarked Feed found.</p>;
+
     return (
         <main className="mainContent">
            <section className="section-profile-feed inner-dashboard position-relative py-3">

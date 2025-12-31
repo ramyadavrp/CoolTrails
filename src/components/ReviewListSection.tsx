@@ -9,7 +9,7 @@ import { SquareLoader } from "react-spinners";
 import { SyncLoader } from "react-spinners";
 import { encodeId, generateSlug ,slugToTitle,usePageTitle} from '../utils/helpers';
 import Select from "react-select";
-
+import {getAuth} from '../utils/storage';
 const BASE_URL = import.meta.env.VITE_API_URL;
 
 interface Park{
@@ -17,7 +17,12 @@ interface Park{
     description:string
 
 }
-
+interface Review {
+  userName: string;
+  userId: string;
+  title: string;
+  descriptions: string;
+}
 interface Profile {
   fullName: string;
   address: string;
@@ -27,8 +32,44 @@ interface Profile {
   totalFollowing: number;
 }
 const ReviewListSection: React.FC = () => {
-    
+    const [userId, setUserId] = useState<string>("");
+    const [loginIdBased, setLoginIdBased] = useState("");
+    const [reviewDetails, setReviewdetails] = useState<Review[]>([]);
+    const [loadingReview,setLoadingReview] = useState(true);
+    const [errorsReview,setErrorsReview] = useState('');
+    useEffect(() => {
+        const { userId, token ,login,email} = getAuth();
+            if (userId) setUserId(userId);
+            if (login) setLoginIdBased(login);
+    }, []);
+    //  List review by userid based
 
+    
+    const loadReviewPost = async () => {
+        if (!userId) return; // wait until userId is available
+        try {
+        setLoadingReview(true); // show loader every time fetch starts
+        setErrorsReview("");
+        const response = await axios.post(`${BASE_URL}/feed/user/Review/${userId}`, {
+            LoginId: loginIdBased,
+        });
+
+        console.log("REvi sssss:", response.data);
+            if (response.data.status === "success") {
+                const data = response.data.data;
+                setReviewdetails(data); //reviewDetails
+            }
+        }catch(err){
+                // console.error('API Error:', err);
+                setErrorsReview('Unable to fetch National Parks');
+        } finally{
+            setLoadingReview(false);
+        }
+    };
+    useEffect(() => {
+            loadReviewPost();
+    }, [userId]);
+    
     return (
         <main className="mainContent">
            <section className="section-profile-feed inner-dashboard position-relative py-3">
@@ -48,18 +89,48 @@ const ReviewListSection: React.FC = () => {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <tr>
-                                                <td><div className="profile-img"><img src="assets/images/profile/profile-md.png" alt=""/></div></td>
-                                                <td>User 1</td>
-                                                <td>text Blocked</td>
-                                                <td>10 Oct,2025</td>
-                                            </tr>
-                                            <tr>
-                                                <td><div className="profile-img"><img src="assets/images/profile/profile-md.png" alt=""/></div></td>
-                                                <td>User 1</td>
-                                                <td>text Blocked</td>
-                                                <td>10 Oct,2025</td>
-                                            </tr>
+                                            {
+                                                loadingReview ?(
+                                                    <tr>
+                                                        <td colSpan={4} className="text-center py-4">
+                                                             <div
+                                                                style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", background: "#FFF5E9",
+                                                                display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999,
+                                                                }} >
+                                                                <SquareLoader color="#FC673C" size={80} speedMultiplier={1.5} />
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ):reviewDetails.length > 0 ? (
+                                                    reviewDetails.map((rev:any,index:number)=>(
+                                                        <tr key={index}>
+                                                            <td>
+                                                                <div className="profile-img">
+                                                                    <img
+                                                                        src={rev.userImage || '/assets/images/profile/profile-md.png'}
+                                                                        alt={rev.userWithAddress} 
+                                                                        onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                                                            const target = e.currentTarget;
+                                                                            target.onerror = null; // prevent infinite loop
+                                                                            target.src = '/asssets/images/profile/profile-md.png'; // fallback image
+                                                                        }}
+                                                                    />
+                                                                    {/* <img src="assets/images/profile/profile-md.png" alt=""/> */}
+                                                                </div>
+                                                            </td>
+                                                            <td>{rev.userWithAddress || ''}</td>
+                                                            <td>{rev.decription || ''}</td>
+                                                            <td>{rev.ratingOn || ''}</td>
+                                                        </tr>
+                                                    ))
+                                               ):(
+                                                    <tr>
+                                                        <td colSpan={4} className="text-center text-muted py-4">
+                                                            No reviews found
+                                                        </td>
+                                                    </tr>
+                                               )
+                                            }
                                         </tbody>
                                     </table>
                                 </div>

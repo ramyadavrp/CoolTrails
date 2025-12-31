@@ -28,7 +28,8 @@ interface BlockedUser {
 }
 const BlockedCommentSection: React.FC = () => {
     const [loadingBlockedComment, setloadingBlockedComment] = useState<boolean>(true);
-
+    const [errorsBlockedComment,setErrorsBlockedComment] = useState('');
+    
     const [loginId, setLoginId] = useState("");
     const [userId, setUserId] = useState<string>("");
     const [token, setToken] = useState<string>("");
@@ -46,6 +47,8 @@ const BlockedCommentSection: React.FC = () => {
         const loadBlockedComment = async () => {
             // setloadingBlockedUser(true);
             try {
+            setloadingBlockedComment(true);
+            setErrorsBlockedComment('');
             const response = await axios.post(`${BASE_URL}/common/blockedcommentbyuser`, {
                 userid: userId,
                 skip: 0,
@@ -58,33 +61,38 @@ const BlockedCommentSection: React.FC = () => {
                 setBlockedComment(response.data.data);
             }
             } catch (error) {
-                // setloadingBlockedUser(false);
+                setErrorsBlockedComment('Unable to fetch bookmark feed');
                 console.error("Error loading profile:", error);
+            }finally{
+                setloadingBlockedComment(false);
             }
         };
 
         loadBlockedComment();
     }, [userId]);
-    // if (loadingBlockedUser) {
-    //     return (
-    //         <div
-    //             style={{
-    //             position: "fixed",
-    //             top: 0,
-    //             left: 0,
-    //             width: "100vw",
-    //             height: "100vh",
-    //             background: "#FFF5E9",
-    //             display: "flex",
-    //             alignItems: "center",
-    //             justifyContent: "center",
-    //             zIndex: 9999,
-    //             }}
-    //         >
-    //             <SquareLoader color="#FC673C" size={80} speedMultiplier={1.5} />
-    //         </div>
-    //     );
-    // }
+    if (loadingBlockedComment) {
+        return (
+            <div
+                style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                width: "100vw",
+                height: "100vh",
+                background: "#FFF5E9",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 9999,
+                }}
+            >
+                <SquareLoader color="#FC673C" size={80} speedMultiplier={1.5} />
+            </div>
+        );
+    }
+if (errorsBlockedComment) return <p>{errorsBlockedComment}</p>;
+
+if (getBlockedComment.length === 0) return <p>NO Report found.</p>;
     return (
         <main className="mainContent">
            <section className="section-profile-feed inner-dashboard position-relative py-3">

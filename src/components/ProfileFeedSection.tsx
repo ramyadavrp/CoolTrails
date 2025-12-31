@@ -439,64 +439,7 @@ const ProfileFeedSection: React.FC = () => {
                                         </div>
                                     </div>
                                     <ProfileLeftSection/>
-                                    {/* <div className="col-xl-3 col-lg-5 col-md-6 col-sm-12 col-12 order-xl-last order-lg-last order-md-last order-sm-first order-first"> */}
-                                        {/* <aside className="profile-sidebar sticky-top" id="profile-sidebar-community"> */}
-                                        {/* <aside className="profile-sidebar" id="profile-sidebar-community"> */}
-                                            {/* <div className="profile-sidebar-top  bg-almost-white">
-                                                <div className="sidebar-profile">
-                                                    <div className="profile-img">
-                                                        <img
-                                                            src={profile?.picturePath || '/assets/images/not-found.jpg'}
-                                                            alt="locat not"  
-                                                            onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                                                                const target = e.currentTarget;
-                                                                target.onerror = null; // prevent infinite loop
-                                                                target.src = '/assets/images/not-found.jpg'; // fallback image
-                                                            }}
-                                                        />
-                                                    </div>
-
-                                                    <div className="profile-dt">
-                                                        <h4 className="profile-username text-midnight-navy">{profile?.fullName ?? ''}</h4>
-                                                        <h5 className="profile-address text-midnight-navy">{profile?.address ?? ''}</h5>
-                                                        <p className="membership-info text-grey">Member since {profile?.registeredOn ?? ''}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="followings d-flex justify-content-between position-relative">
-                                                    <div className="follower">
-                                                        <h6 className="fl-count text-midnight-navy mb-0">{profile?.totalFollowers ?? ''}</h6>
-                                                        <p className="text-grey mb-0">Followers</p>
-                                                    </div>
-                                                    <div className="following">
-                                                        <h6 className="fl-count text-midnight-navy mb-0">{profile?.totalFollowing ?? ''}</h6>
-                                                        <p className="text-grey mb-0">Following</p>
-                                                    </div>
-                                                </div>
-                                            </div> */}
-                                            
-                                            {/* <div className="profile-sidebar-menu  bg-almost-white">
-                                                <ul className="list-unstyled profile-menu">
-                                                    <li className="active">
-                                                        <Link to={'/profile-feed'}>
-                                                            Feed
-                                                        </Link>
-                                                    </li>
-                                                    <li>
-                                                        <Link  to={'/profile-photo'}>
-                                                            Photos
-                                                        </Link>
-                                                    </li>
-                                                    <li>
-                                                        <Link   to={'/report-an-issue'}>
-                                                            Reported an issue
-                                                        </Link>
-                                                    </li>
-                                                </ul>
-                                                <button className="btn-style-1" ><Link  style={{color:'#fff'}}  to={'/add-post'}> Share a Post</Link></button>
-                                            </div> */}
-                                           
-                                        {/* </aside>
-                                    </div> */}
+                                    
                                 </div>
                             </div>
                         </div>

@@ -38,7 +38,7 @@ interface suggestedNearby{
     rating:number,
     description?:string
 }
-interface FollowingBy {
+interface FollowingBy { 
     id: number;
     title: string;
     image_near: string;
@@ -58,24 +58,30 @@ type ShareOption = {
 //   icon: JSX.Element | (() => JSX.Element);
    action: (cmt: any) => void
 };
+interface ReviewUser {
+  id: string;
+  name: string;
+  profile_pic?: string;
+}
 interface Review {
   userName: string;
   userId: string;
   title: string;
   descriptions: string;
+  user:ReviewUser;
 }
 
 const CommunitySectionCmtDetails: React.FC = () => {
     const { slug } = useParams();
     const location = useLocation();
     const statePostId = location.state?.postId;
-    console.log('gettt',statePostId);
+    // console.log('gettt',statePostId);
     // const [postId, setPostId] = useState(statePostId || localStorage.getItem("postId"));
     const [postId, setPostId] = useState(() => {
         // initialize from location.state or localStorage
         return statePostId || localStorage.getItem("postId") || null;
     });
-    console.log('postIdss',postId);
+    // console.log('postIdss',postId);
     const [activeTab, setActiveTab] = useState('');
     const [CommunityLoading,setCommunityLoading] = useState(true);
     const [getprofileCommunity, setProfileCommunity ]= useState<any[]>([]);
@@ -117,6 +123,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
     const [hover, setHover] = useState(0);
     const [review, setReview] = useState("");
     const [reviewDetails, setReviewdetails] = useState<Review[]>([]);
+    const [reviewListing, setReviewListing] = useState<Review[]>([]);
     const [userReview, setUserReview] = useState<any | null>(null); 
     const [getImagesArray, setImagesArray] = useState([]);    
     // start message show state define
@@ -172,13 +179,25 @@ const CommunitySectionCmtDetails: React.FC = () => {
             if (login) setLoginIdBased(login);
             if (email) setLoginId(email);
     }, []);
-    // review details
+    // review details 31-12-25 old code
+    // useEffect(() => {
+    //     if (reviewDetails.length > 0 && userId) {
+    //         const myReview = reviewDetails.find(r => r.userId === userId);
+    //         setUserReview(myReview || null);
+    //     }
+    // }, [reviewDetails, userId]);
+
+    // review details 31 -12-25
     useEffect(() => {
-        if (reviewDetails.length > 0 && userId) {
-            const myReview = reviewDetails.find(r => r.userId === userId);
-            setUserReview(myReview || null);
-        }
-    }, [reviewDetails, userId]);
+    if (Array.isArray(reviewListing) && reviewListing.length > 0 && userId) {
+        const myReview = reviewListing.find(
+        r => r.user?.id === userId
+        );
+
+        setUserReview(myReview || null);
+    }
+    }, [reviewListing, userId]);
+
     useEffect(() => {
         // Check if token exists in localStorage
         // const token = localStorage.getItem("token");
@@ -360,118 +379,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
             });
         }
     }
-    // Add rating // 27-11-25
-    const addReviewAPI = async () => {
-        return axios.post(`${BASE_URL}/feed/addrating`, {
-            FeedId: postId,
-            UserId: userId,
-            Rating: rating,
-            Review: review,
-        });
-    };
-
-    const updateReviewAPI = async () => {
-        return axios.post(`${BASE_URL}/feed/updaterating`, {
-            // Id:1   optional check
-            feedId: postId,
-            UserId: userId,
-            Rating: rating,
-            Review: review,
-        });
-    };
-    // console.log('PostId  handle',postId);
-    const handleSubmitReview = async () => {
-        if (!userId || !postId) {
-            Swal.fire({
-                icon: "error",
-                title: "Missing Information",
-                text: "Missing user or post ID",
-                showConfirmButton: false,
-                width: "350px",
-                timer: 2500,
-            });
-            return;
-        }
-
-        try {
-            let response;
-
-            if (userReview) {
-            // UPDATE existing review
-            response = await updateReviewAPI();
-            // console.log(response.data.data);
-                if (response.data.status === "success") {
-                    useAlertMessage({
-                        icon: "success",
-                        title: "Done!",
-                        html: "<strong>Review updated successfully!</strong>",
-                        confirmButtonText: "Ok!",
-                        width: "350px",
-                        confirmButtonColor: "#fc673c",
-                        padding: "1rem",
-                    });
-                } else {
-                    useAlertMessage({
-                        title: "Failed",
-                        html: `<strong style="color:red;">${response.data.message || "Something went wrong."}</strong>`,
-                        icon: "error",
-                        width: "350px",
-                        confirmButtonText: "OK",
-                        confirmButtonColor: "#dc3545",
-                        padding: "1rem",
-                    });
-                }
-            
-            loadReviewPost();
-            } else {
-            // ADD new review
-            response = await addReviewAPI();
-                if (response.data.status === "success") {
-                    useAlertMessage({
-                        icon: "success",
-                        title: "Done!",
-                        html: "<strong>Review Added successfully!</strong>",
-                        confirmButtonText: "Ok!",
-                        width: "350px",
-                        confirmButtonColor: "#fc673c",
-                        padding: "1rem",
-                    });
-                } else{
-                    useAlertMessage({
-                        title: "Failed",
-                        html: `<strong style="color:red;">${response.data.message || "Something went wrong."}</strong>`,
-                        icon: "error",
-                        width: "350px",
-                        confirmButtonText: "OK",
-                        confirmButtonColor: "#dc3545",
-                        padding: "1rem",
-                    });
-                   
-                }
-            loadReviewPost();
-            }
-
-            if (response?.data?.status === "success") {
-                setUserReview({
-                    UserId: userId,
-                    Rating: rating,
-                    Review: review,
-                });
-            }
-
-            setIsReviewOpen(false);
-        } catch (error:any) {
-            useAlertMessage({
-                title: "Upload Failed",
-                html: "<strong>Error. Please try again.</strong>",
-                icon: "error",
-                width: "350px",
-                confirmButtonText: "OK",
-                confirmButtonColor: "#dc3545",
-            });
-            
-        }
-    };
+    
     const fetchUserImages = async () => {
         if (!userId) return; 
 
@@ -483,7 +391,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                 }
             );
 
-            console.log("Images:", response.data.data);
+            // console.log("Images:", response.data.data);
             if (Array.isArray(response.data?.data)) {
                 setPreviewUrls(response.data.data); // this is your images array
             }
@@ -542,40 +450,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
     //     }
     // };
 
-
-    
-    //  List review
-    const loadReviewPost = async () => {
-        if (!userId) return; // wait until userId is available
-        try {
-        const response = await axios.post(`${BASE_URL}/feed/user/Review/${userId}`, {
-            LoginId: loginIdBased,
-            // LoginId: '1112VIRENDRA',
-        });
-
-        console.log("REvi Data:", response.data);
-
-        if (response.data.status === "success") {
-            const data = response.data.data;
-            setReviewdetails(data); //reviewDetails
-        }
-        } catch (error:any) {
-            useAlertMessage({
-                title: "Failed",
-                html: `<strong style="color:red;">${error.response?.data || "Something went wrong."}</strong>`,
-                icon: "error",
-                width: "350px",
-                confirmButtonText: "OK",
-                confirmButtonColor: "#dc3545",
-                padding: "1rem",
-            });
-            // console.error("Error loading profile:", error);
-            // alert("Failed to load profile");
-        }
-    };
-    useEffect(() => {
-            loadReviewPost();
-    }, [userId]);
     // Start map creation
     // Initialize map
     useEffect(() => {
@@ -1030,16 +904,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
                 UserId: getBlockedUserId,
                 Remark:reason ?? '',
                 isBlocked:getCheckblock
-                // PostId: 2,
-                // issueRaisedBy: '360ccff6-2f3b-4f27-9d06-692ca03657c3',
-                // UserId: '9458d7d7-9268-457c-b27a-3011976bb2e4',
-                // CommentId: 2,
-                // issueRaisedBy: userId,
-                // UserId: getBlockedUserId,
-                // BlockedReason: "This is test"
-                // Remark: reason,
-                // isBlocked:true
-                // BlockedReason: reason
             });
         // alert("Report submitted successfully!");
             console.log('blocked',response.data);
@@ -1182,76 +1046,270 @@ const CommunitySectionCmtDetails: React.FC = () => {
                 });
             }
         };  
-        console.log(slug);
+        // console.log(slug);
+    //  List review by userid based
+    const loadReviewPost = async () => {
+        if (!userId) return; // wait until userId is available
+        try {
+        const response = await axios.post(`${BASE_URL}/feed/user/Review/${userId}`, {
+            LoginId: loginIdBased,
+            // LoginId: '1112VIRENDRA',
+        });
+
+        // console.log("REvi Data:", response.data);
+
+        if (response.data.status === "success") {
+            const data = response.data.data;
+            setReviewdetails(data); //reviewDetails
+        }
+        } catch (error:any) {
+            useAlertMessage({
+                title: "Failed",
+                html: `<strong style="color:red;">${error.response?.data || "Something went wrong."}</strong>`,
+                icon: "error",
+                width: "350px",
+                confirmButtonText: "OK",
+                confirmButtonColor: "#dc3545",
+                padding: "1rem",
+            });
+            // console.error("Error loading profile:", error);
+            // alert("Failed to load profile");
+        }
+    };
+    useEffect(() => {
+            loadReviewPost();
+    }, [userId]);
     //  call api all single page data  
         // const fetchData= async (title:String) => {
-        useEffect(() => {
-            if (!loginId || !slug) {
-                return;
+    // useEffect(() => {
+    //     if (!loginId || !slug) {
+    //         return;
+    //     }
+    //     const fetchPostDetail = async (slug:any) => {
+    //         try {
+    //         const response = await axios.post(
+    //             `${BASE_URL}/user/community/${slug}`,
+    //             {
+    //             LoginId: loginId,
+    //             slug: slug,
+    //             },
+    //             {
+    //             headers: {
+    //                 "Content-Type": "application/json",
+    //                 Accept: "application/json",
+    //             },
+    //             }
+    //         );
+    
+    //         console.log('community/1',response.data.data);
+    //         setProfileCommunity(response.data?.data?.profile_Community || []);
+    //         const followingBy = response.data?.data?.following_by;
+    //         const images = response.data?.data?.following_by.images || [];
+    //         //  setImages(response.data.data.imageUrls);
+    //             setImagesArray(response.data.data.following_by.images);
+    //         // console.log('images from API:', images);
+    //         // setImagesArray(images);
+    //         setFollowingBy(followingBy || []);
+    //         setReviewListing(response.data.data.reviews);
+    //         setComments(response.data.data.following_by.comments);
+    //         let postDats = [];
+
+    //         if (Array.isArray(followingBy)) {
+    //         followingBy.forEach(item => {
+    //             if (!item) return;
+
+    //             if (Array.isArray(item.comments)) {
+    //             item.comments.forEach(c => c?.postDto && postDats.push(c.postDto));
+    //             } else if (item.comments?.postDto) {
+    //             postDats.push(item.comments.postDto);
+    //             } else if (item.postDto) {
+    //             postDats.push(item.postDto);
+    //             }
+    //         });
+    //         } else if (followingBy && typeof followingBy === "object") {
+    //             if (Array.isArray(followingBy.comments)) {
+    //                 postDats = followingBy.comments.map(c => c?.postDto).filter(Boolean);
+    //             } else if (followingBy.comments?.postDto) {
+    //                 postDats = [followingBy.comments.postDto];
+    //             } else if (followingBy.postDto) {
+    //                 postDats = [followingBy.postDto];
+    //             }       
+    //         }
+    //         // console.log("postDats", postDats);
+    //         setPostdata(postDats);
+
+    //         } catch (error) {
+    //         console.error("Error fetching community data", error);
+    //         } finally {
+    //         setCommunityLoading(false);
+    //         }
+    //     };
+
+    //     fetchPostDetail(slug);
+    // }, [loginId,slug]); 
+
+    const fetchPostDetail = async (slug: any) => {
+        if (!loginId || !slug) return;
+
+        try {
+            const response = await axios.post(
+            `${BASE_URL}/user/community/${slug}`,
+            {
+                LoginId: loginId,
+                slug: slug,
+            },
+            {
+                headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+                },
             }
-            const fetchPostDetail = async (slug:any) => {
-                try {
-                const response = await axios.post(
-                    `${BASE_URL}/user/community/${slug}`,
-                    {
-                    LoginId: loginId,
-                    // LoginId: "1113virendra@gmail.com",
-                    slug: slug,
-                    },
-                    {
-                    headers: {
-                        "Content-Type": "application/json",
-                        Accept: "application/json",
-                    },
-                    }
-                );
-     
-                console.log('community/1',response.data);
-                setProfileCommunity(response.data?.data?.profile_Community || []);
-                const followingBy = response.data?.data?.following_by;
-                const images = response.data?.data?.following_by.images || [];
-                //  setImages(response.data.data.imageUrls);
-                 setImagesArray(response.data.data.following_by.images);
-                // console.log('images from API:', images);
-                // setImagesArray(images);
-                setFollowingBy(followingBy || []);
-                setComments(response.data.data.following_by.comments);
-                let postDats = [];
+            );
 
-                if (Array.isArray(followingBy)) {
-                followingBy.forEach(item => {
-                    if (!item) return;
+            const data = response.data?.data;
+            console.log('community/1',data);
+            setProfileCommunity(data?.profile_Community || []);
+            setImagesArray(data?.following_by?.images || []);
+            setFollowingBy(data?.following_by || []);
+            setReviewListing(data?.reviews || []);
+            setComments(data?.following_by?.comments || []);
 
-                    if (Array.isArray(item.comments)) {
-                    item.comments.forEach(c => c?.postDto && postDats.push(c.postDto));
-                    } else if (item.comments?.postDto) {
-                    postDats.push(item.comments.postDto);
-                    } else if (item.postDto) {
-                    postDats.push(item.postDto);
-                    }
-                });
-                } else if (followingBy && typeof followingBy === "object") {
-                    if (Array.isArray(followingBy.comments)) {
-                        postDats = followingBy.comments.map(c => c?.postDto).filter(Boolean);
-                    } else if (followingBy.comments?.postDto) {
-                        postDats = [followingBy.comments.postDto];
-                    } else if (followingBy.postDto) {
-                        postDats = [followingBy.postDto];
-                    }       
-                }
-                // console.log("postDats", postDats);
-                setPostdata(postDats);
+            let postDats: any[] = [];
+            const followingBy = data?.following_by;
 
-                } catch (error) {
-                console.error("Error fetching community data", error);
-                } finally {
-                setCommunityLoading(false);
-                }
-            };
+            if (Array.isArray(followingBy)) {
+            followingBy.forEach(item => {
+                item?.comments?.forEach(c => c?.postDto && postDats.push(c.postDto));
+            });
+            }
 
+            setPostdata(postDats);
+        } catch (error) {
+            console.error("Error fetching community data", error);
+        } finally {
+            setCommunityLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (loginId && slug) {
             fetchPostDetail(slug);
-        }, [loginId,slug]); 
+        }
+    }, [loginId, slug]);
 
+    // Add rating // 27-11-25
+    const addReviewAPI = async () => {
+        return axios.post(`${BASE_URL}/feed/addrating`, {
+            FeedId: postId,
+            UserId: userId,
+            Rating: rating,
+            Review: review,
+        });
+    };
+
+    const updateReviewAPI = async () => {
+        return axios.post(`${BASE_URL}/feed/updaterating`, {
+            // Id:1   optional check
+            feedId: postId,
+            UserId: userId,
+            Rating: rating,
+            Review: review,
+        });
+    };
+    // console.log('PostId  handle',postId);
+    const handleSubmitReview = async () => {
+        if (!userId || !postId) {
+            Swal.fire({
+                icon: "error",
+                title: "Missing Information",
+                text: "Missing user or post ID",
+                showConfirmButton: false,
+                width: "350px",
+                timer: 2500,
+            });
+            return;
+        }
+
+        try {
+            let response;
+
+            if (userReview) {
+            // UPDATE existing review
+            response = await updateReviewAPI();
+            // console.log(response.data.data);
+                if (response.data.status === "success") {
+                    useAlertMessage({
+                        icon: "success",
+                        title: "Done!",
+                        html: "<strong>Review updated successfully!</strong>",
+                        confirmButtonText: "Ok!",
+                        width: "350px",
+                        confirmButtonColor: "#fc673c",
+                        padding: "1rem",
+                    });
+                } else {
+                    useAlertMessage({
+                        title: "Failed",
+                        html: `<strong style="color:red;">${response.data.message || "Something went wrong."}</strong>`,
+                        icon: "error",
+                        width: "350px",
+                        confirmButtonText: "OK",
+                        confirmButtonColor: "#dc3545",
+                        padding: "1rem",
+                    });
+                }
+            fetchPostDetail(slug);
+            // loadReviewPost();
+            } else {
+            // ADD new review
+            response = await addReviewAPI();
+                if (response.data.status === "success") {
+                    useAlertMessage({
+                        icon: "success",
+                        title: "Done!",
+                        html: "<strong>Review Added successfully!</strong>",
+                        confirmButtonText: "Ok!",
+                        width: "350px",
+                        confirmButtonColor: "#fc673c",
+                        padding: "1rem",
+                    });
+                } else{
+                    useAlertMessage({
+                        title: "Failed",
+                        html: `<strong style="color:red;">${response.data.message || "Something went wrong."}</strong>`,
+                        icon: "error",
+                        width: "350px",
+                        confirmButtonText: "OK",
+                        confirmButtonColor: "#dc3545",
+                        padding: "1rem",
+                    });
+                   
+                }
+           fetchPostDetail(slug);
+            // loadReviewPost();
+            }
+
+            if (response?.data?.status === "success") {
+                setUserReview({
+                    UserId: userId,
+                    Rating: rating,
+                    Review: review,
+                });
+            }
+
+            setIsReviewOpen(false);
+        } catch (error:any) {
+            useAlertMessage({
+                title: "Upload Failed",
+                html: "<strong>Error. Please try again.</strong>",
+                icon: "error",
+                width: "350px",
+                confirmButtonText: "OK",
+                confirmButtonColor: "#dc3545",
+            });
+            
+        }
+    };
 
         // console.log( 'dsklfas',getComments);
     if (CommunityLoading) {
@@ -1295,7 +1353,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                         <div className="col-xl-12">
                             <div className="trail-dt-top">
                                 <h1 className="trail-dt-title">{getfollowingBy?.title ?? ''}</h1>
-                                <p className="trail-dt-address text-grey mb-0">{getfollowingBy?.address ?? 'N/A'}<span className="tdt-add"> | <i className="bi bi-star-fill"></i> {getfollowingBy?.rating ? (Math.round(getfollowingBy.rating * 100) / 100).toFixed(2) : "0.00" } Moderate </span> <span className="tdt-separator">|</span> {getfollowingBy?.date??''}<span className="t-dt-r-and-o"></span></p>
+                                <p className="trail-dt-address text-grey mb-0">{getfollowingBy?.address ?? 'N/A'}<span className="tdt-add"> | <i className="bi bi-star-fill"></i> {getfollowingBy?.rating ? (Math.round(getfollowingBy.rating * 100) / 100).toFixed(1) : "0.00" } Moderate </span> <span className="tdt-separator">|</span> {getfollowingBy?.date??''}<span className="t-dt-r-and-o"></span></p>
                                 
                             </div>
                         </div>
@@ -1641,28 +1699,37 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                         
                                 }
                                 <div className="cover-overlay h-100 w-100 d-flex justify-content-between align-items-end br-20">
-                                        <a
-                                            href={
-                                                getImagesArray.length > 0
-                                                ? getImagesArray[0] 
-                                                : "/assets/images/not-found.jpg"
-                                            }
-                                            className="btn-style-4"
-                                            // data-fancybox="MoreImages"
-                                            data-fancybox-trigger="MoreImages"
-                                        >
-                                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" className="me-2">
-                                            <rect x="1.5" y="1.5" width="15" height="15" rx="3.75" stroke="#05073D" strokeWidth="1.125" />
-                                            <path
-                                                d="M1.875 13.125L3.5694 11.9147C4.10641 11.5311 4.84202 11.592 5.30866 12.0587L6.1136 12.8636C6.46508 13.2151 7.03492 13.2151 7.3864 12.8636L11.1283 9.12175C11.622 8.62803 12.4107 8.59225 12.9471 9.03924L16.5 12"
-                                                stroke="#05073D"
-                                                strokeWidth="1.125"
-                                                strokeLinecap="round"
-                                            />
-                                            <circle cx="1.5" cy="1.5" r="1.5" transform="matrix(-1 0 0 1 7.5 4.5)" stroke="#05073D" strokeWidth="1.125" />
-                                        </svg>
-                                        {getImagesArray.length} + Photos
+                                    <a
+                                        href={
+                                            getImagesArray.length > 0
+                                            ? getImagesArray[0] 
+                                            : "/assets/images/not-found.jpg"
+                                        }
+                                        className="btn-style-4"
+                                        // data-fancybox="MoreImages"
+                                        data-fancybox-trigger="MoreImages"
+                                    >
+                                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" className="me-2">
+                                        <rect x="1.5" y="1.5" width="15" height="15" rx="3.75" stroke="#05073D" strokeWidth="1.125" />
+                                        <path
+                                            d="M1.875 13.125L3.5694 11.9147C4.10641 11.5311 4.84202 11.592 5.30866 12.0587L6.1136 12.8636C6.46508 13.2151 7.03492 13.2151 7.3864 12.8636L11.1283 9.12175C11.622 8.62803 12.4107 8.59225 12.9471 9.03924L16.5 12"
+                                            stroke="#05073D"
+                                            strokeWidth="1.125"
+                                            strokeLinecap="round"
+                                        />
+                                        <circle cx="1.5" cy="1.5" r="1.5" transform="matrix(-1 0 0 1 7.5 4.5)" stroke="#05073D" strokeWidth="1.125" />
+                                    </svg>
+                                    {getImagesArray.length} + Photos 
+                                        
                                     </a>
+                                    <label htmlFor="imageInput"
+                                    style={{background: "#FC673C", border: "none",borderRadius: "50px", padding: "10px"}}
+                                        className="btn btn-sm btn-primary ms-2"
+                                    >Add Image</label>
+                                    <input id="imageInput" type="file" accept="image/*" multiple
+                                    onChange={handleImageChange}
+                                    style={{ display: "none" }}
+                                    />
                                     <a href="#"
                                         onClick={(e) => {
                                             e.preventDefault();
@@ -1691,14 +1758,14 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                         <p className="mb-0">Users Favorite </p>
                                     </div>
                                     <div className="tusc-cn-2">
-                                        <p className="mb-0 text-midnight-navy">N/A</p>
+                                        <p className="mb-0 text-midnight-navy">{getfollowingBy?.user_favorite}</p>
                                     </div>
                                 </div>
 
                                 <div className="tuf-right-content d-flex align-items-center">
                                    
                                     <div className="tusc-cn-1 text-center">
-                                        <p className="mb-0">{getfollowingBy?.rating ? (Math.round(getfollowingBy.rating * 100) / 100).toFixed(2) : "0.00" } </p>
+                                        <p className="mb-0">{getfollowingBy?.rating ? (Math.round(getfollowingBy.rating * 100) / 100).toFixed(1) : "0.00" } </p>
                                         <StarRating rating={Number(getfollowingBy?.rating)}/>
                                     </div>
                                     <div className="tusc-cn-2 text-center">
@@ -2118,16 +2185,16 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                         }}  
                                     >Add Review</a> 
                                 )} */}
-                                {isLoggedIn && (
+                                {isLoggedIn && !userReview && (
                                     <a href="#"
                                         style={{
                                             background: "#FC673C",
                                             border: "none",
                                             borderRadius: "50px",
                                             padding: "10px",
-                                            opacity: userReview ? 0.5 : 1,
-                                            pointerEvents: userReview ? "none" : "auto",
-                                            cursor: userReview ? "not-allowed" : "pointer",
+                                            // opacity: userReview ? 0.5 : 1,
+                                            // pointerEvents: userReview ? "none" : "auto",
+                                            // cursor: userReview ? "not-allowed" : "pointer",
                                         }}
                                         className="btn btn-sm btn-primary ms-2"
                                         onClick={(e) => {
@@ -2143,7 +2210,8 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                             setIsReviewOpen(true);
                                         }}
                                     >
-                                    {userReview ? "Review Submitted" : "Add Review"}
+                                        
+                                     Add Review
                                     </a>
 
                                     // <a
@@ -2177,17 +2245,17 @@ const CommunitySectionCmtDetails: React.FC = () => {
                             showReviews &&(
                             <>
                                 {message && <div style={{color:'#FC673C' , textAlign:'left',margin:'0px'}}>{message}</div>}
-                                {reviewDetails.length > 0 ? (
+                                {reviewListing.length > 0 ? (
                                     <>
                                         <div className="row review-row g-3">
-                                        {reviewDetails.slice(0, reviewVisibleCount).map((rev:any,index:number) => (
+                                        {reviewListing.slice(0, reviewVisibleCount).map((rev:any,index:number) => (
                                         // reviewDetails.map((rev:any,index:number)=>(
-                                            <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
+                                            <div key={index} className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
                                                 <div className="testimonial-single position-relative">
                                                     <div className="testimonial-head d-flex w-100 align-items-center position-relative">
                                                         <div className="test-image">
                                                             <img
-                                                                src={rev.userImage || '/assets/images/other/testimonial-1.png'}
+                                                                src={rev.user.profile_pic || '/assets/images/other/testimonial-1.png'}
                                                                 alt="Top Trail" className="img-fluid" 
                                                                 onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                                                                     const target = e.currentTarget;
@@ -2197,42 +2265,49 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                             />
                                                         </div>
                                                         <div className="test-head">
-                                                            <h3 className="reviewer-name fw-normal text-midnight-navy mb-0"> {rev.userWithAddress ?? ''}</h3>
+                                                            <h3 className="reviewer-name fw-normal text-midnight-navy mb-0"> {rev.user.name ?? ''}</h3>
                                                             <div className="rating">
-                                                                <StarRating rating={Number(rev?.rating)}/>
+                                                                <StarRating rating={Number(5)}/>
+                                                                {/* <StarRating rating={Number(rev?.rating)}/> */}
                                                             </div>
-                                                            <p className="mb-0">{rev.ratingOn ?? ''} <span className="d-inline-block mx-1">•</span> Hiking</p>
+                                                            <p className="mb-0">{rev.date ?? ''} <span className="d-inline-block mx-1">•</span>{String(rev?.activity || '').trim() || 'Hiking'}</p>
                                                         </div>
                                                         <div className="right-abs">
-                                                            <a className=" ms-2" title="Edit Review"
-                                                                onClick={(e) => {
-                                                                e.preventDefault();
-                                                                // pre-fill if editing
-                                                                if (userReview) {
-                                                                    setRating(userReview.rating);
-                                                                    setReview(userReview.decription);}
-                                                                // } else {
-                                                                //     setRating(0);
-                                                                //     setReview("");
-                                                                // }
-                                                                setIsReviewOpen(true);
-                                                                }}
-                                                                >
-                                                                    <svg width="19" height="18" viewBox="0 0 19 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                        <path d="M10.5137 0.80598C11.5867 -0.268666 13.3274 -0.269589 14.4014 0.804027L16.8936 3.29621C17.958 4.36095 17.9687 6.08414 16.918 7.16243L7.68555 16.6361C6.98003 17.3599 6.01137 17.7679 5.00098 17.7679H2.25C1.05069 17.7678 0.0774547 16.8306 0.00488281 15.6595L0.00292969 15.4232L0.120117 12.6146C0.159615 11.6756 0.550055 10.7843 1.21387 10.1195L10.5137 0.80598ZM17.5146 16.1947C17.9286 16.1947 18.2646 16.5304 18.2646 16.9447C18.2646 17.359 17.9287 17.6947 17.5146 17.6947H11.3936L11.3164 17.6907C10.9386 17.6521 10.6436 17.333 10.6436 16.9447C10.6436 16.5564 10.9386 16.2372 11.3164 16.1986L11.3936 16.1947H17.5146ZM2.27441 11.181C1.87636 11.5798 1.64186 12.1138 1.61816 12.6771L1.50098 15.4857V15.5657C1.52555 15.9556 1.84974 16.2676 2.24902 16.2679H5.00195C5.60809 16.2678 6.18906 16.0225 6.6123 15.5882L13.1436 8.88508L8.85059 4.59309L2.27441 11.181ZM13.3418 1.86555C12.8536 1.37755 12.062 1.37805 11.5742 1.86653L9.91113 3.53157L14.1914 7.81184L15.8447 6.11555C16.3222 5.62547 16.3176 4.84171 15.834 4.35774L13.3418 1.86555Z"
-                                                                            fill="#7D7D7D"/>
-                                                                    </svg>
-                                                                </a>
+                                                            {
+                                                                rev?.user?.id === userId &&(
+                                                                    <a className=" ms-2" title="Edit Review"
+                                                                    onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    // pre-fill if editing
+                                                                    if (userReview) {
+                                                                        // setRating(userReview.rating);
+                                                                        setRating(userReview.rating);
+                                                                        setReview(userReview.comment);}
+                                                                    // } else {
+                                                                    //     setRating(0);
+                                                                    //     setReview("");
+                                                                    // }
+                                                                    setIsReviewOpen(true);
+                                                                    }}
+                                                                    >
+                                                                        <svg width="19" height="18" viewBox="0 0 19 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                                            <path d="M10.5137 0.80598C11.5867 -0.268666 13.3274 -0.269589 14.4014 0.804027L16.8936 3.29621C17.958 4.36095 17.9687 6.08414 16.918 7.16243L7.68555 16.6361C6.98003 17.3599 6.01137 17.7679 5.00098 17.7679H2.25C1.05069 17.7678 0.0774547 16.8306 0.00488281 15.6595L0.00292969 15.4232L0.120117 12.6146C0.159615 11.6756 0.550055 10.7843 1.21387 10.1195L10.5137 0.80598ZM17.5146 16.1947C17.9286 16.1947 18.2646 16.5304 18.2646 16.9447C18.2646 17.359 17.9287 17.6947 17.5146 17.6947H11.3936L11.3164 17.6907C10.9386 17.6521 10.6436 17.333 10.6436 16.9447C10.6436 16.5564 10.9386 16.2372 11.3164 16.1986L11.3936 16.1947H17.5146ZM2.27441 11.181C1.87636 11.5798 1.64186 12.1138 1.61816 12.6771L1.50098 15.4857V15.5657C1.52555 15.9556 1.84974 16.2676 2.24902 16.2679H5.00195C5.60809 16.2678 6.18906 16.0225 6.6123 15.5882L13.1436 8.88508L8.85059 4.59309L2.27441 11.181ZM13.3418 1.86555C12.8536 1.37755 12.062 1.37805 11.5742 1.86653L9.91113 3.53157L14.1914 7.81184L15.8447 6.11555C16.3222 5.62547 16.3176 4.84171 15.834 4.35774L13.3418 1.86555Z"
+                                                                                fill="#7D7D7D"/>
+                                                                        </svg>
+                                                                    </a>
+                                                                )
+                                                            }
+                                                            
                                                         </div>
                                                     </div>
                                                     <div className="testimonial-body">
-                                                        <p className="text-midnight-navy">{rev.decription ?? 'N/A'}</p>
+                                                        <p className="text-midnight-navy">{rev.comment ?? 'N/A'}</p>
                                                     </div>
                                                 </div>
                                             </div> 
                                         ))}
                                         </div>
-                                        {reviewVisibleCount < reviewDetails.length && (
+                                        {reviewVisibleCount < reviewListing.length && (
                                             <div className="row">
                                                 <div className="col-12 text-end">
                                                     <button
@@ -2252,20 +2327,10 @@ const CommunitySectionCmtDetails: React.FC = () => {
                         </>
                             )
                         }
-                        <div className="row">
+                        {/* <div className="row">
                             <div className="col-12">
                                 <div className="section-title d-flex align-items-center">   
                                     <h2 className="title">Images</h2>
-                                     
-
-                                {/* {isLoggedIn &&(
-                                    <a href="#" style={{background:'#FC673C',border:'none',borderRadius:'50px',padding:'10px'}} className="btn btn-sm btn-primary ms-2"  
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            setIsReviewOpen(true);
-                                        }}  
-                                    >Add Review</a> 
-                                )} */}
                                 {isLoggedIn && (
                                     <div className="d-flex justify-content-between align-items-center">
 
@@ -2289,19 +2354,15 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                 )}
 
                                 </div>
-                                
                             </div>
-
-                        </div>
+                        </div> */}
                         {messageUpload && <div style={{color:'#FC673C' ,padding: '10px',marginBottom:'10px'}}>{messageUpload}</div>}
                         {messageUploadError && <div style={{color:'#dc3545' ,padding: '10px',marginBottom:'10px'}}>{messageUploadError}</div>}
-                        <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
+                        {/* <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12">
                             <div className="testimonial-single position-relative ">
-                                {/* <div className="testimonial-body review_style" style={{paddingTop:'0px'}}> */}
-                                    {/* <p className="text-midnight-navy">CoolTrails helped me discover hidden gems right in my backyard. The trail difficulty ratings were spot on, and the user tips saved me big time!</p> */}
-                                    <div className="review-gallery" style={{overflow: 'visible'}}>
+                                <div className="review-gallery" style={{overflow: 'visible'}}>
                                         <div className="d-flex flex-wrap gap-2">
-                                            {previewUrls.length > 0 ? (
+                                            {previewUrls.length > 0 && (
                                                 <>
                                                     {
                                                         previewUrls.slice(0, postVisibleCount).map((imgUrl:any,index:number) => (
@@ -2333,7 +2394,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                                 />
                                                             </a>
 
-                                                            {/* Delete Button */}
                                                             <button
                                                                 type="button"
                                                                 className="btn btn-sm btn-danger position-absolute"
@@ -2345,7 +2405,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                                 fontSize: "12px",
                                                                 lineHeight: "12px",
                                                                 }}
-                                                                // onClick={() => handleRemoveImage(index)}
+                                                                
                                                             >
                                                                 ×
                                                             </button>
@@ -2367,16 +2427,13 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                     )}
                                                 </>
                                                 
-                                            ) : (
-                                                <p>Review Images not available...</p>
-                                            )}
+                                            ) }
                                         </div>
                                         {isUploading && <p style={{color:'#fc673c'}} className="text-info">Uploading...</p>}
                                 </div>
 
-                                {/* </div> */}
                             </div>
-                        </div>
+                        </div> */}
                         {/* <div className="row">
                             <div className="col-12 mb-4 text-center">
                                 <a href="" className="btn-style-1">Check All Reviews</a>

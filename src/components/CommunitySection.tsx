@@ -282,7 +282,7 @@ const CommunitySection: React.FC = () => {
 
             // console.log('community',response.data.data.suggested_members);
             const apidata = response.data.data;
-            // console.log(apidata);
+             console.log('community',apidata);
             const members = response.data.data.suggested_members || []
             setCommunity(response.data.data.suggested_members || []);
             // console.log('Suggested members',response.data.data.suggested_members);
@@ -1406,7 +1406,7 @@ const CommunitySection: React.FC = () => {
                                     {/* <ProfileLeftSection/> */}
                                     <div className="col-xl-3 col-lg-5 col-md-6 col-sm-12 col-12 order-xl-last order-lg-last order-md-last order-sm-first order-first">
                                         {/* <aside className="profile-sidebar sticky-top" id="profile-sidebar-community"> */}
-                                        <aside className="profile-sidebar" id="profile-sidebar-community">
+                                        <aside className="profile-sidebar sticky-top" id="profile-sidebar-community">
                                             <div className="profile-sidebar-top  bg-almost-white">
                                                 <div className="sidebar-profile">
                                                     <div className="profile-img">

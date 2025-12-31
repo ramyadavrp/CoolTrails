@@ -27,6 +27,7 @@ interface ReportIssueFeed {
 }
 const ReportAnIssueCommentSection: React.FC = () => {
     const [loadingReportIssueFeed, setloadingReportIssueFeed] = useState<boolean>(true);
+    const [errorsReportIssueFeed,setErrorsReportIssueFeed] = useState('');
     const [loginId, setLoginId] = useState("");
     const [userId, setUserId] = useState<string>("");
     const [token, setToken] = useState<string>("");
@@ -41,27 +42,50 @@ const ReportAnIssueCommentSection: React.FC = () => {
         if (!userId) return; // wait until userId is available
 
         const loadReportIssueFeed = async () => {
-            // setloadingBlockedUser(true);
             try {
+            setloadingReportIssueFeed(true);
+            setErrorsReportIssueFeed('');
             const response = await axios.post(`${BASE_URL}/common/reportanissue-comment`, {
                 userid: userId,
                 skip: 0,
                 take: 20
             });
-
-                // console.log("ReportIssueFeed Data:", response.data);
-
             if (response.data.status === "success") {
                 setReportIssueFeed(response.data.data);
             }
             } catch (error) {
-                // setloadingBlockedUser(false);
+                setErrorsReportIssueFeed('Unable to fetch bookmark feed');
                 console.error("Error loading profile:", error);
+            }finally{
+                setloadingReportIssueFeed(false);
             }
         };
 
         loadReportIssueFeed();
     }, [userId]);
+    if (loadingReportIssueFeed) {
+                return (
+                    <div
+                        style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        width: "100vw",
+                        height: "100vh",
+                        background: "#FFF5E9",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 9999,
+                        }}
+                    >
+                        <SquareLoader color="#FC673C" size={80} speedMultiplier={1.5} />
+                    </div>
+                );
+            }
+        if (errorsReportIssueFeed) return <p>{errorsReportIssueFeed}</p>;
+        
+        if (getReportIssueFeed.length === 0) return <p>NO Report found.</p>;
     return (
         <main className="mainContent">
            <section className="section-profile-feed inner-dashboard position-relative py-3">
