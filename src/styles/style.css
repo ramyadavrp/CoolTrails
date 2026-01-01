@@ -4525,4 +4525,28 @@ input[type="radio"]:checked::after {
 .pt20 {
     padding-top: 20px;
 }
-    
+
+
+.section-activity {
+  overflow-x: clip; /* prevents horizontal scroll */
+}
+
+.activity-wrapper {
+  position: relative;
+}
+
+.activity-slider-controls .btn-previous {
+  position: absolute;
+  left: 0px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+}
+
+.activity-slider-controls .btn-next {
+  position: absolute;
+  right: 0px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+}
