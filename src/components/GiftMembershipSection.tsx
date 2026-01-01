@@ -142,9 +142,9 @@ const GiftMembershipSection: React.FC = () => {
                             }
                             
                             <div className="annp-ctrl">
-                                <Link className="btn-style-1" to={'/gift/customize'}>
+                                {/* <Link className="btn-style-1" to={'/gift/customize'}>
                                     Buy Gift                                                                   
-                                </Link>
+                                </Link> */}
                                 {/* <a href="" className="btn-style-1">Buy Gift</a> */}
                             </div>
                         </div>

@@ -160,7 +160,7 @@ const AffiliateDetailTrail: React.FC = () => {
     const [rating, setRating] = useState(0);
     const [hover, setHover] = useState(0);
     const [review, setReview] = useState("");
-        const [reviewVisibleCount, setReviewVisibleCount] = useState(4);
+    const [reviewVisibleCount, setReviewVisibleCount] = useState(4);
     
     const [userReview, setUserReview] = useState<any | null>(null); 
     const [token, setToken] = useState<string>("");
@@ -209,7 +209,7 @@ const AffiliateDetailTrail: React.FC = () => {
             fetchQRCode();
         }
     }, [showQR]);
-
+    
     // useEffect(() => {
     //     if (exportData) {
     //         fetchExportFile();
@@ -659,17 +659,22 @@ const AffiliateDetailTrail: React.FC = () => {
         setCurrentIndex(i => (i + 1) % getImages.length);
     }, [getImages.length]);
 
-    useEffect(() => {
-        // console.log(title);
-    if (title) {
-        try {
-        // const trailId = Number(decodeId(encodedId)); // safely decode
-        fetchTrailDetail(title);
-        } catch (err) {
-        console.error('Failed to decode ID:', err);
-        }
-    }
-    }, [title]);
+    // useEffect(() => {
+    //     if (loginId && title) {
+    //         fetchTrailDetail(title);
+    //     }
+    // }, [loginId, title]);
+    // useEffect(() => {
+    //     // console.log(title);
+    // if (title) {
+    //     try {
+    //     // const trailId = Number(decodeId(encodedId)); // safely decode
+    //     fetchTrailDetail(title);
+    //     } catch (err) {
+    //     console.error('Failed to decode ID:', err);
+    //     }
+    // }
+    // }, [title]);
      // Show review 
         const handleShowReviewMore = () => {
             setReviewVisibleCount((prev) => prev + 2); // Show 2 more each time
@@ -697,17 +702,28 @@ const AffiliateDetailTrail: React.FC = () => {
     useEffect(() => {
         loadReviewPost();
     }, [userId]);
+
      // review details
+    //  useEffect(() => {
+    //     if (Array.isArray(reviewListing) && reviewListing.length > 0 && userId) {
+    //         const myReview = reviewListing.find(
+    //         r => r.user?.id === userId
+    //         );
+    
+    //         setUserReview(myReview || null);
+    //     }
+    //     }, [reviewListing, userId]);
+
     useEffect(() => {
-        if (reviewDetails.length > 0 && userId) {
-            const myReview = reviewDetails.find(r => r.userId === userId);
+        if (getReviews.length > 0 && userId) {
+            const myReview = getReviews.find(r => r.userId === userId);
             setUserReview(myReview || null);
         }
-    }, [reviewDetails, userId]);
+    }, [getReviews, userId]);
     
-    const finalReviews = userId
-        ? reviewDetails.filter((rev) => rev.userId === userId)
-        : reviewDetails;
+    // const finalReviews = userId
+    //     ? reviewDetails.filter((rev) => rev.userId === userId)
+    //     : reviewDetails;
     // Add rating // 27-11-25
     // console.log('tariliddd',trailId);
     const addReviewAPI = async () => {
@@ -721,16 +737,26 @@ const AffiliateDetailTrail: React.FC = () => {
         };
 
     const updateReviewAPI = async () => {
+        // console.log('trailIdtrailId',trailId);
+        // console.log('userId',userId);
+        // console.log('rating',rating);
+        // console.log('review',review);
         return axios.post(`${BASE_URL}/trail/updaterating`, {
             TrailId: trailId,
             UserId: userId,
+            // TrailId: 1,
             // UserId: "e08ee354-20e2-4af6-a37f-c30127cf322d",
             Rating: rating,
             Review: review,
+            // "TrailId": 1,
+            // "UserId": "e08ee354-20e2-4af6-a37f-c30127cf322d",
+            // "Rating": 4.5,
+            // "Review": "this is trail review"
         });
     };
         // console.log('PostId  handle',postId);
     const handleSubmitReview = async () => {
+        
         if (!userId || !trailId ) {
             //alert("Login required to add review!");
             window.location.href = "/login";
@@ -765,7 +791,8 @@ const AffiliateDetailTrail: React.FC = () => {
                         padding: "1rem",
                     });
                 }
-                loadReviewPost();
+                fetchTrailDetail(title);
+                // loadReviewPost();
                 // setMessage("Review updated successfully!");
             } else {
                 // ADD review
@@ -792,7 +819,9 @@ const AffiliateDetailTrail: React.FC = () => {
                     });
                     
                 }
-                loadReviewPost();
+                
+                fetchTrailDetail(title);
+                // loadReviewPost();
                 // setMessage("Review added successfully!");
             }
 
@@ -813,7 +842,7 @@ const AffiliateDetailTrail: React.FC = () => {
 
 // alert(isLoggedIn);
         // console.log(getUserFavorite);
-    const fetchTrailDetail = async (title:String) =>{
+    const fetchTrailDetail = async (title?:String) =>{
         try{
              setLoadingDetailTrails(true);
             const response = await axios.post(`${BASE_URL}/Trail/traildetail`, {
@@ -845,7 +874,11 @@ const AffiliateDetailTrail: React.FC = () => {
         }
          
     }
-
+    useEffect(() => {
+        if (loginId && title) {
+            fetchTrailDetail(title);
+        }
+    }, [loginId, title]);
     useEffect(() => {
         if (!getmapPoints.length || map.current) return;
         // console.log(getmapPoints);
@@ -2396,7 +2429,7 @@ const AffiliateDetailTrail: React.FC = () => {
                                     handleSubmitReview(),
                                     setIsReviewOpen(false)
                                 }}
-                                disabled={!review.trim()}>
+                                disabled={!review}>
                                {userReview ? "Update" : "Add"}  
                             </button>
                             </div>
@@ -2412,16 +2445,16 @@ const AffiliateDetailTrail: React.FC = () => {
                                 {/* {isLoggedIn ? (
                                     <a href="" className="btn-style-review">Review trail</a>
                                 ):(null )} */}
-                                {isLoggedIn && (
+                                {isLoggedIn && !userReview &&(
                                     <a href="#"
                                         style={{
                                             background: "#FC673C",
                                             border: "none",
                                             borderRadius: "50px",
                                             padding: "10px",
-                                            opacity: userReview ? 0.5 : 1,
-                                            pointerEvents: userReview ? "none" : "auto",
-                                            cursor: userReview ? "not-allowed" : "pointer",
+                                            // opacity: userReview ? 0.5 : 1,
+                                            // pointerEvents: userReview ? "none" : "auto",
+                                            // cursor: userReview ? "not-allowed" : "pointer",
                                         }}
                                         className="btn btn-sm btn-primary ms-2"
                                         onClick={(e) => {
@@ -2429,16 +2462,43 @@ const AffiliateDetailTrail: React.FC = () => {
 
                                             if (userReview) {
                                             setRating(userReview.rating);
-                                            setReview(userReview.decription);}
-                                            // } else {
-                                            // setRating(0);
-                                            // setReview("");
-                                            // }
+                                            setReview(userReview.decription);
+                                            } else {
+                                            setRating(0);
+                                            setReview("");
+                                            }
                                             setIsReviewOpen(true);
                                         }}
                                     >
-                                    {userReview ? "Review Submitted" : "Add Review"}
+                                        
+                                     Add Review
                                     </a>
+                                    // <a href="#"
+                                    //     style={{
+                                    //         background: "#FC673C",
+                                    //         border: "none",
+                                    //         borderRadius: "50px",
+                                    //         padding: "10px",
+                                    //         opacity: userReview ? 0.5 : 1,
+                                    //         pointerEvents: userReview ? "none" : "auto",
+                                    //         cursor: userReview ? "not-allowed" : "pointer",
+                                    //     }}
+                                    //     className="btn btn-sm btn-primary ms-2"
+                                    //     onClick={(e) => {
+                                    //         e.preventDefault();
+
+                                    //         if (userReview) {
+                                    //         setRating(userReview.rating);
+                                    //         setReview(userReview.decription);}
+                                    //         // } else {
+                                    //         // setRating(0);
+                                    //         // setReview("");
+                                    //         // }
+                                    //         setIsReviewOpen(true);
+                                    //     }}
+                                    // >
+                                    // {userReview ? "Review Submitted" : "Add Review"}
+                                    // </a>
                                     )}
                             </div>
                         </div>
@@ -2487,7 +2547,31 @@ const AffiliateDetailTrail: React.FC = () => {
 
                                             {/* EDIT – ONLY LOGGED IN USER */}
                                             <div className="right-abs">
-                                            <a
+                                            {
+                                                rev?.userId === userId &&(
+                                                    <a className=" ms-2" title="Edit Review"
+                                                    onClick={(e) => {
+                                                    e.preventDefault();
+                                                    // pre-fill if editing
+                                                    if (userReview) {
+                                                        // setRating(userReview.rating);
+                                                        setRating(userReview.rating);
+                                                        setReview(userReview.decription);}
+                                                    // } else {
+                                                    //     setRating(0);
+                                                    //     setReview("");
+                                                    // }
+                                                    setIsReviewOpen(true);
+                                                    }}
+                                                    >
+                                                        <svg width="19" height="18" viewBox="0 0 19 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                            <path d="M10.5137 0.80598C11.5867 -0.268666 13.3274 -0.269589 14.4014 0.804027L16.8936 3.29621C17.958 4.36095 17.9687 6.08414 16.918 7.16243L7.68555 16.6361C6.98003 17.3599 6.01137 17.7679 5.00098 17.7679H2.25C1.05069 17.7678 0.0774547 16.8306 0.00488281 15.6595L0.00292969 15.4232L0.120117 12.6146C0.159615 11.6756 0.550055 10.7843 1.21387 10.1195L10.5137 0.80598ZM17.5146 16.1947C17.9286 16.1947 18.2646 16.5304 18.2646 16.9447C18.2646 17.359 17.9287 17.6947 17.5146 17.6947H11.3936L11.3164 17.6907C10.9386 17.6521 10.6436 17.333 10.6436 16.9447C10.6436 16.5564 10.9386 16.2372 11.3164 16.1986L11.3936 16.1947H17.5146ZM2.27441 11.181C1.87636 11.5798 1.64186 12.1138 1.61816 12.6771L1.50098 15.4857V15.5657C1.52555 15.9556 1.84974 16.2676 2.24902 16.2679H5.00195C5.60809 16.2678 6.18906 16.0225 6.6123 15.5882L13.1436 8.88508L8.85059 4.59309L2.27441 11.181ZM13.3418 1.86555C12.8536 1.37755 12.062 1.37805 11.5742 1.86653L9.91113 3.53157L14.1914 7.81184L15.8447 6.11555C16.3222 5.62547 16.3176 4.84171 15.834 4.35774L13.3418 1.86555Z"
+                                                                fill="#7D7D7D"/>
+                                                        </svg>
+                                                    </a>
+                                                )
+                                            }
+                                            {/* <a
                                                 className="ms-2"
                                                 title="Edit Review"
                                                 onClick={(e) => {
@@ -2499,8 +2583,11 @@ const AffiliateDetailTrail: React.FC = () => {
                                                 setIsReviewOpen(true);
                                                 }}
                                             >
-                                                {/* SVG */}
-                                            </a>
+                                                 <svg width="19" height="18" viewBox="0 0 19 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M10.5137 0.80598C11.5867 -0.268666 13.3274 -0.269589 14.4014 0.804027L16.8936 3.29621C17.958 4.36095 17.9687 6.08414 16.918 7.16243L7.68555 16.6361C6.98003 17.3599 6.01137 17.7679 5.00098 17.7679H2.25C1.05069 17.7678 0.0774547 16.8306 0.00488281 15.6595L0.00292969 15.4232L0.120117 12.6146C0.159615 11.6756 0.550055 10.7843 1.21387 10.1195L10.5137 0.80598ZM17.5146 16.1947C17.9286 16.1947 18.2646 16.5304 18.2646 16.9447C18.2646 17.359 17.9287 17.6947 17.5146 17.6947H11.3936L11.3164 17.6907C10.9386 17.6521 10.6436 17.333 10.6436 16.9447C10.6436 16.5564 10.9386 16.2372 11.3164 16.1986L11.3936 16.1947H17.5146ZM2.27441 11.181C1.87636 11.5798 1.64186 12.1138 1.61816 12.6771L1.50098 15.4857V15.5657C1.52555 15.9556 1.84974 16.2676 2.24902 16.2679H5.00195C5.60809 16.2678 6.18906 16.0225 6.6123 15.5882L13.1436 8.88508L8.85059 4.59309L2.27441 11.181ZM13.3418 1.86555C12.8536 1.37755 12.062 1.37805 11.5742 1.86653L9.91113 3.53157L14.1914 7.81184L15.8447 6.11555C16.3222 5.62547 16.3176 4.84171 15.834 4.35774L13.3418 1.86555Z"
+                                                        fill="#7D7D7D"/>
+                                                </svg>
+                                            </a> */}
                                             </div>
                                         </div>
 

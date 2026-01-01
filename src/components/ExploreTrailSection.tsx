@@ -20,6 +20,7 @@ interface TrailDetail {
     id: number;
     title: string;
     name: string;
+    address: string;
     slug: string;
     latitude: number;
     longitude: number;
@@ -44,6 +45,10 @@ interface Activity {
     explore_time_duration: number,
     date: number
 }
+interface Faq {
+    answer: string,
+    question: string
+}
 
 // const options = [
 //     { value: "Best", label: "Best Matches" },
@@ -61,6 +66,7 @@ function ExploreTrailSection() {
     const [currentIndex, setCurrentIndex] = useState(0); // image arrow
     
     const [getActivity, setActivity] = useState<Activity[]>([]);
+    const [getFaq, setFaq] = useState<Faq[]>([]);
     const [loadingExplore, setloadingExplore] = useState(true);
     const [loading, setloading] = useState(false);
     const [sortType, setSortType] = useState("Best");
@@ -182,6 +188,7 @@ function ExploreTrailSection() {
             setTrails(response.data.data?.trails || []);
             setTrailDetail(response.data.data);
             setImages(response.data.data?.imageUrls || []);
+            setFaq(response.data.data?.faq || []);
             }
         } catch (error) {
             console.error("Error loading profile:", error);
@@ -390,7 +397,7 @@ function ExploreTrailSection() {
                         <div className="col-xl-12">
                             <div className="trail-dt-top">
                                 <h1 className="trail-dt-title">{getTrailDetail?.name || ''}</h1>
-                                <p className="trail-dt-address text-grey mb-0"><span className="tdt-add">Al Fujayrah, Fujairah, United Arab Emirates</span> <span class="tdt-separator">|</span> <span class="t-dt-r-and-o"><i class="bi bi-star-fill"></i> 4.6 · Moderate · 9.3km · Est. 2h 45m</span></p>
+                                <p className="trail-dt-address text-grey mb-0"><span className="tdt-add">{getTrailDetail?.address || ''}</span> </p>
 
                             </div>
                         </div>
@@ -674,16 +681,25 @@ function ExploreTrailSection() {
                     <div className="row justify-content-center">
                         <div className="col-xl-10 col-lg-10 col-md-11 col-sm-12 col-12">
                             <div className="accordion accordion-flush faq-accordion" id="faqToggle">
-                                <div className="accordion-item">
-                                    <h2 className="accordion-header">
-                                        <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1" aria-expanded="false" aria-controls="faq1">
-                                            How do I redeem my subscription?
-                                        </button>
-                                    </h2>
-                                    <div id="faq1" className="accordion-collapse collapse" data-bs-parent="#faqToggle">
-                                        <div className="accordion-body">If you don't want your gift delivered by email, you'll have the option to print instead. Then you can deliver your gift by hand or by mail and the PDF will include all the information your recipient needs to redeem it.</div>
-                                    </div>
-                                </div>
+                                {getFaq.length > 0 &&(
+                                    getFaq.map((item:any,index:number)=>{
+                                        const collapseId = `faq-${index}`;
+                                        const headingId = `faq-heading-${index}`;
+                                        return(
+                                            <div className="accordion-item" key={index}>
+                                                <h2 className="accordion-header" id={headingId}>
+                                                    <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target={`#${collapseId}`} aria-expanded="false" aria-controls={collapseId}>
+                                                    {item.question ||''}
+                                                    </button>
+                                                </h2>
+                                                <div id={collapseId}  aria-labelledby={headingId} className="accordion-collapse collapse" data-bs-parent="#faqToggle">
+                                                    <div className="accordion-body">{item.answer ||''}</div>
+                                                </div>
+                                            </div>
+                                        )
+                                    })
+                                )}
+                               
                             </div>
                         </div>
                     </div>
