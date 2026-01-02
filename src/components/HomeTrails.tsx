@@ -121,7 +121,7 @@ const HomeTrails: React.FC = () => {
                       xmlns="http://www.w3.org/2000/svg">
                       <path
                           d="M7.38118 15L1.52122 9.23744C0.826258 8.55402 0.826258 7.44598 1.52122 6.76256L7.38118 0.999999M2.04246 8L17 8"
-                          stroke="#C6C6D1" stroke-width="1.5" stroke-linecap="round" />
+                          stroke="#C6C6D1" strokeWidth="1.5" strokeLinecap="round" />
 
                   </svg>
                 </button>
@@ -135,7 +135,7 @@ const HomeTrails: React.FC = () => {
                                 xmlns="http://www.w3.org/2000/svg">
                                 <path
                                     d="M10.6188 15L16.4788 9.23744C17.1737 8.55402 17.1737 7.44598 16.4788 6.76256L10.6188 0.999999M15.9575 8L1 8"
-                                    stroke="#C6C6D1" stroke-width="1.5" stroke-linecap="round" />
+                                    stroke="#C6C6D1" strokeWidth="1.5" strokeLinecap="round" />
                             </svg>
                 </button>
               </div>

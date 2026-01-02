@@ -1720,7 +1720,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                         <circle cx="1.5" cy="1.5" r="1.5" transform="matrix(-1 0 0 1 7.5 4.5)" stroke="#05073D" strokeWidth="1.125" />
                                     </svg>
                                     {getImagesArray.length} + Photos 
-                                        
+                                          
                                     </a>
                                     <label htmlFor="imageInput"
                                     style={{background: "#FC673C", border: "none",borderRadius: "50px", padding: "10px"}}

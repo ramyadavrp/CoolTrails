@@ -145,147 +145,226 @@ const AddPostSection: React.FC = () => {
     // Map
     // Start map creation 
     // Initialize map
+    // useEffect(() => {
+    //     if (mapRef.current) return;
+
+    //     const timeoutId = setTimeout(() => {
+    //         if (!mapContainer.current || mapRef.current) return;
+
+    //         const map = new mapboxgl.Map({
+    //         container: mapContainer.current,
+    //         style: "mapbox://styles/mapbox/streets-v12",
+    //         center: [78.0421, 27.1751],
+    //         zoom: 16,
+    //         pitch: 0,
+    //         bearing: 0,
+    //         antialias: true,
+    //         attributionControl: false,
+    //         });
+
+    //         mapRef.current = map;
+
+    //         const geocoder = new MapboxGeocoder({
+    //         accessToken: mapboxgl.accessToken,
+    //         mapboxgl,
+    //         marker: false,
+    //         placeholder: "Search location",
+    //         });
+
+    //         map.addControl(geocoder);
+
+    //         const onLoad = () => {
+    //         map.addSource("route", {
+    //             type: "geojson",
+    //             data: {
+    //             type: "Feature",
+    //             geometry: { type: "LineString", coordinates: [] },
+    //             },
+    //         });
+
+    //         map.addLayer({
+    //             id: "route-layer",
+    //             type: "line",
+    //             source: "route",
+    //             paint: { "line-color": "#3b9ddd", "line-width": 5 },
+    //         });
+
+    //         const el = document.createElement("div");
+    //         el.style.width = "30px";
+    //         el.style.height = "30px";
+    //         el.style.backgroundImage =
+    //             "url('https://img.icons8.com/color/48/person-male--v1.png')";
+    //         el.style.backgroundSize = "cover";
+    //         el.style.borderRadius = "50%";
+    //         el.style.border = "2px solid white";
+
+    //         walkerMarkerRef.current = new mapboxgl.Marker(el)
+    //             .setLngLat([0, 0])
+    //             .addTo(map);
+
+    //         loadMap();
+    //         };
+
+    //         if (map.isStyleLoaded()) onLoad();
+    //         else map.once("load", onLoad);
+    //     }, 300); // 300ms is ideal
+
+    //     return () => {
+    //         clearTimeout(timeoutId);
+
+    //         if (mapRef.current) {
+    //         mapRef.current.remove();
+    //         mapRef.current = null;
+    //         }
+
+    //         if (animationRef.current) {
+    //         cancelAnimationFrame(animationRef.current);
+            
+    //         }
+    //     };
+    //     }, []);
+
     useEffect(() => {
-      if (!mapContainer.current) return;
-      setLoadingMap(true);
+        if (!mapContainer.current) return;
+        setLoadingMap(true);
 
-      const map = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: "mapbox://styles/mapbox/streets-v12",
-        center: [78.0421, 27.1751],
-        zoom: 16,
-        pitch: 0,
-        bearing: 0,
-        antialias: true,
-        attributionControl: false,
-      });
-
-      mapRef.current = map;
-
-      const geocoder = new MapboxGeocoder({
-        accessToken: mapboxgl.accessToken,
-        mapboxgl: mapboxgl,
-        marker: false,
-        placeholder: "Search location",
-      });
-
-      map.addControl(geocoder);
-
-      map.on("load", () => {
-        setLoadingMap(false);
-
-        map.addSource("route", {
-          type: "geojson",
-          data: {
-            type: "Feature",
-            properties: {},
-            geometry: { type: "LineString", coordinates: [] as [number, number][] },
-          },
+        const map = new mapboxgl.Map({
+            container: mapContainer.current,
+            style: "mapbox://styles/mapbox/streets-v12",
+            center: [78.0421, 27.1751],
+            zoom: 16,
+            pitch: 0,
+            bearing: 0,
+            antialias: true,
+            attributionControl: false,
         });
 
-        map.addLayer({
-          id: "route-layer",
-          type: "line",
-          source: "route",
-          layout: { "line-join": "round", "line-cap": "round" },
-          paint: { "line-color": "#3b9ddd", "line-width": 5 },
+        mapRef.current = map;
+
+        const geocoder = new MapboxGeocoder({
+            accessToken: mapboxgl.accessToken,
+            mapboxgl: mapboxgl,
+            marker: false,
+            placeholder: "Search location",
         });
 
-        // Walker marker
-        const el = document.createElement("div");
-        el.style.width = "30px";
-        el.style.height = "30px";
-        el.style.backgroundImage =
-          "url('https://img.icons8.com/color/48/person-male--v1.png')";
-        el.style.backgroundSize = "cover";
-        el.style.borderRadius = "50%";
-        el.style.border = "2px solid white";
-        walkerMarkerRef.current = new mapboxgl.Marker(el).setLngLat([0, 0]).addTo(map);
+        map.addControl(geocoder);
 
-        loadMap();
-      });
+        map.on("load", () => {
+            setLoadingMap(false);
 
-      return () => {
-        map.remove();
-        if (animationRef.current) cancelAnimationFrame(animationRef.current);
-      };
+            map.addSource("route", {
+            type: "geojson",
+            data: {
+                type: "Feature",
+                properties: {},
+                geometry: { type: "LineString", coordinates: [] as [number, number][] },
+            },
+            });
+
+            map.addLayer({
+            id: "route-layer",
+            type: "line",
+            source: "route",
+            layout: { "line-join": "round", "line-cap": "round" },
+            paint: { "line-color": "#3b9ddd", "line-width": 5 },
+            });
+
+            // Walker marker
+            const el = document.createElement("div");
+            el.style.width = "30px";
+            el.style.height = "30px";
+            el.style.backgroundImage =
+            "url('https://img.icons8.com/color/48/person-male--v1.png')";
+            el.style.backgroundSize = "cover";
+            el.style.borderRadius = "50%";
+            el.style.border = "2px solid white";
+            walkerMarkerRef.current = new mapboxgl.Marker(el).setLngLat([0, 0]).addTo(map);
+
+            loadMap();
+        });
+
+        return () => {
+            map.remove();
+            if (animationRef.current) cancelAnimationFrame(animationRef.current);
+        };
     }, []);
 
   // Map click handler
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
- 
-    const handleClick = (e: mapboxgl.MapMouseEvent) => {
-      if (loopClosed) return alert("Loop already closed.");
+    useEffect(() => {
+        const map = mapRef.current;
+        if (!map) return;
+    
+        const handleClick = (e: mapboxgl.MapMouseEvent) => {
+        if (loopClosed) return alert("Loop already closed.");
 
-      const coords: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+        const coords: [number, number] = [e.lngLat.lng, e.lngLat.lat];
 
-      // Loop detection
-      if (points.length > 2) {
-        const first = points[0];
-        const dist =
-          Math.sqrt(Math.pow(first[0] - coords[0], 2) + Math.pow(first[1] - coords[1], 2));
-        if (dist < 0.0001) {
-          setLoopClosed(true);
-          alert("Loop closed!");
-          setPoints((prev) => {
-            const newPoints = [...prev, coords];
-            updateRoute(newPoints);
-            // handleAddMapPoints(newPoints);
-            return newPoints;
-          });
-          return;
+        // Loop detection
+        if (points.length > 2) {
+            const first = points[0];
+            const dist =
+            Math.sqrt(Math.pow(first[0] - coords[0], 2) + Math.pow(first[1] - coords[1], 2));
+            if (dist < 0.0001) {
+            setLoopClosed(true);
+            alert("Loop closed!");
+            setPoints((prev) => {
+                const newPoints = [...prev, coords];
+                updateRoute(newPoints);
+                // handleAddMapPoints(newPoints);
+                return newPoints;
+            });
+            return;
+            }
         }
-      }
 
-      // Prompt for title
-      openCustomPrompt((title) => {
-        if (!title) return;
+        // Prompt for title
+        openCustomPrompt((title) => {
+            if (!title) return;
 
-        const index = points.length;
+            const index = points.length;
 
-        const marker = new mapboxgl.Marker({ draggable: true })
-          .setLngLat(coords)
-          .setPopup(new mapboxgl.Popup().setText(title))
-          .addTo(mapRef.current!);
+            const marker = new mapboxgl.Marker({ draggable: true })
+            .setLngLat(coords)
+            .setPopup(new mapboxgl.Popup().setText(title))
+            .addTo(mapRef.current!);
 
-        marker.togglePopup();
+            marker.togglePopup();
 
-        // Drag update
-        marker.on("dragend", () => {
-          const lngLat = marker.getLngLat();
-          setPoints((prev) => {
-            const updatedPoints = [...prev];
-            updatedPoints[index] = [lngLat.lng, lngLat.lat];
-            updateRoute(updatedPoints);
-            // handleAddMapPoints(updatedPoints); // 30-12-25
-            return updatedPoints;
-          });
+            // Drag update
+            marker.on("dragend", () => {
+            const lngLat = marker.getLngLat();
+            setPoints((prev) => {
+                const updatedPoints = [...prev];
+                updatedPoints[index] = [lngLat.lng, lngLat.lat];
+                updateRoute(updatedPoints);
+                // handleAddMapPoints(updatedPoints); // 30-12-25
+                return updatedPoints;
+            });
+            });
+
+            // Update state
+            setPoints((prev) => {
+            const newPoints = [...prev, coords];
+            setTitles((prevTitles) => [...prevTitles, title]);
+            setMarkers((prevMarkers) => [...prevMarkers, marker]);
+
+            updateRoute(newPoints);
+
+            // API call
+            handleAddMapPoints(newPoints);
+
+            return newPoints;
+            });
         });
+        };
 
-        // Update state
-        setPoints((prev) => {
-          const newPoints = [...prev, coords];
-          setTitles((prevTitles) => [...prevTitles, title]);
-          setMarkers((prevMarkers) => [...prevMarkers, marker]);
-
-          updateRoute(newPoints);
-
-          // API call
-          handleAddMapPoints(newPoints);
-
-          return newPoints;
-        });
-      });
-    };
-
-    map.on("click", handleClick);
-     return () => {
-      map.off("click", handleClick);
-    };
-    // return () => map.off("click", handleClick);
-  }, [points, loopClosed]); 
+        map.on("click", handleClick);
+        return () => {
+        map.off("click", handleClick);
+        };
+        // return () => map.off("click", handleClick);
+    }, [points, loopClosed]); 
 
     // Get route using Mapbox Directions API
     const getRoute = async (start: [number, number], end: [number, number]) => {
@@ -400,7 +479,7 @@ const AddPostSection: React.FC = () => {
 
 
     const loadMap = async () => {
-        //alert('load'); 
+        // alert('load'); 
         const res = await fetch("/Trails/Load");
         if (!res.ok) return console.warn("Map not found.");
         const data = await res.json();
@@ -835,7 +914,14 @@ const AddPostSection: React.FC = () => {
                                 ))} 
                                 
                                 <div className="upload-btn-wrapper" style={{display: "flex",alignItems: "center", gap: "100px"}}>
-                                    
+                                    {/* <label htmlFor="imageInput"
+                                    style={{background: "#FC673C", border: "none",borderRadius: "50px", padding: "10px", width:'100px'}}
+                                        className="btn btn-sm btn-primary ms-2"
+                                    >Add Images</label>
+                                    <input id="imageInput" type="file" accept="image/*" multiple
+                                    onChange={handleFileChange}
+                                    style={{ display: "none" }}
+                                    /> */}
                                     {/* <label htmlFor="thumbnail" style={{ minWidth: "150px" }}>Thumbnail Image</label> */}
                                     <input type="file"  multiple ref={fileInputRef} onChange={handleFileChange} /> 
                                 </div>
@@ -1097,6 +1183,7 @@ const AddPostSection: React.FC = () => {
                         
                     </div>
                     <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12 grid-item">
+                        <p style={{margin:'0px',color:'#FC673C'}}>Please click the over map and set point.</p>
                         <div ref={mapContainer} style={{ width: "100%", height: "400px",borderRadius:'10px'}}></div>
                         <div className="my-4">
                             <button className="btn-style-1" onClick={handleProfileUpdate}>Add Post</button>
