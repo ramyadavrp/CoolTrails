@@ -769,7 +769,7 @@ const AffiliateDetailTrail: React.FC = () => {
             if (userReview) {
                 // UPDATE review
                 response = await updateReviewAPI();
-                console.log('response',response);
+                console.log('update response',response);
                 if (response.data.status === "success") {
                     useAlertMessage({
                         icon: "success",
@@ -797,6 +797,7 @@ const AffiliateDetailTrail: React.FC = () => {
             } else {
                 // ADD review
                 response = await addReviewAPI();
+                console.log('add response',response);
                 if (response.data.status === "success") {
                     useAlertMessage({
                         icon: "success",
@@ -1353,7 +1354,7 @@ const AffiliateDetailTrail: React.FC = () => {
     }
     if (errorDetailTrails) return <p>{errorDetailTrails}</p>;
    
-    if (!trailDetail) return <p>No local favorites found.</p>;
+    if (!trailDetail) return <p>No Trail found.</p>;
     const trailPoints: [number, number][] = getmapPoints.map((p) => [p.latitude, p.longitude]);
 
     const total_reviews = getReviews.length;
