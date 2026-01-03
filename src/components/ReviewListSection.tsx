@@ -93,12 +93,18 @@ const ReviewListSection: React.FC = () => {
                                                 loadingReview ?(
                                                     <tr>
                                                         <td colSpan={4} className="text-center py-4">
-                                                             <div
+                                                            <div
                                                                 style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", background: "#FFF5E9",
                                                                 display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999,
                                                                 }} >
                                                                 <SquareLoader color="#FC673C" size={80} speedMultiplier={1.5} />
                                                             </div>
+                                                            {/* <div
+                                                                className="d-flex align-items-center justify-content-center"
+                                                                style={{ position: "absolute",inset: 0, background: "#FFF5E9", zIndex: 10, top:0, }}>
+                                                                <SyncLoader color="#FC673C" size={20} speedMultiplier={1.5} />
+                                                            </div> */}
+                                                            
                                                         </td>
                                                     </tr>
                                                 ):reviewDetails.length > 0 ? (

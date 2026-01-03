@@ -167,6 +167,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
     const [previewUrls, setPreviewUrls] = useState<string[]>([]);
     const [isUploading, setIsUploading] = useState<boolean>(false)
     const [postVisibleCount, setPostVisibleCount] = useState(10);
+    const [deleting, setDeleting] = useState(false);
 
     // const handleRemoveImage = (index: number) => {
     //     setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
@@ -329,14 +330,16 @@ const CommunitySectionCmtDetails: React.FC = () => {
     };
 
     const handleDeleteClick = (id:any ) => {
-        // alert(id);
+        //  alert(id);
         setSelectedCommentId(id); 
         setIsOpen(true); 
     };
     const handleConfirmDelete = async () =>{
-         if (!selectedCommentId) return;
+        if (!selectedCommentId || deleting) return;
+
+    setDeleting(true);
         try {
-            // console.log("Deleting comment:", selectedCommentId);
+            console.log("Deleting comment:", selectedCommentId);
             const response = await axios.post(`${BASE_URL}/feed/comment/delete`, {
                 commentId: selectedCommentId,
                 UserId: userId
@@ -368,7 +371,11 @@ const CommunitySectionCmtDetails: React.FC = () => {
                 });
             }
             
-        } catch (error:any) {
+        }catch (error: any) {
+            // console.log("DELETE ERROR FULL:", error);
+            // console.log("RESPONSE:", error?.response);
+            // console.log("DATA:", error?.response?.data);
+
             useAlertMessage({
                 title: "Upload Failed",
                 html: "<strong>Error uploading images. Please try again.</strong>",
@@ -377,6 +384,8 @@ const CommunitySectionCmtDetails: React.FC = () => {
                 confirmButtonText: "OK",
                 confirmButtonColor: "#dc3545",
             });
+        }finally {
+            setDeleting(false);
         }
     }
     
@@ -1014,6 +1023,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
 
                         // ✅ ADD TO TOP
                         setComments((prev) => [newComment, ...prev]);
+                        fetchPostDetail(slug); //
                         setInputTextValue("");
                         // Swal.fire("Uploaded!", "Images uploaded successfully!", "success");
                         Swal.fire({
@@ -1168,10 +1178,19 @@ const CommunitySectionCmtDetails: React.FC = () => {
 
             const data = response.data?.data;
             console.log('community/1',data);
+            console.log('reviews/1',data.reviews);
+
             setProfileCommunity(data?.profile_Community || []);
             setImagesArray(data?.following_by?.images || []);
             setFollowingBy(data?.following_by || []);
-            setReviewListing(data?.reviews || []);
+            // sorting order
+            const sortedReviews = (data?.reviews || []).sort(
+            (a: any, b: any) =>
+                new Date(b.date).getTime() - new Date(a.date).getTime()
+            );
+
+            setReviewListing(sortedReviews);
+            // setReviewListing(data?.reviews || []);
             setComments(data?.following_by?.comments || []);
 
             let postDats: any[] = [];
@@ -1758,7 +1777,9 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                         <p className="mb-0">Users Favorite </p>
                                     </div>
                                     <div className="tusc-cn-2">
-                                        <p className="mb-0 text-midnight-navy">{getfollowingBy?.user_favorite}</p>
+                                        <p className="mb-0 text-midnight-navy">
+                                            {/* {getfollowingBy?.user_favorite} */}
+                                            </p>
                                     </div>
                                 </div>
 
@@ -2267,8 +2288,8 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                         <div className="test-head">
                                                             <h3 className="reviewer-name fw-normal text-midnight-navy mb-0"> {rev.user.name ?? ''}</h3>
                                                             <div className="rating">
-                                                                <StarRating rating={Number(5)}/>
-                                                                {/* <StarRating rating={Number(rev?.rating)}/> */}
+                                                                {/* <StarRating rating={Number(5)}/> */}
+                                                                <StarRating rating={Number(rev?.rating)}/>
                                                             </div>
                                                             <p className="mb-0">{rev.date ?? ''} <span className="d-inline-block mx-1">•</span>{String(rev?.activity || '').trim() || 'Hiking'}</p>
                                                         </div>

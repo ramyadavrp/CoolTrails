@@ -122,7 +122,7 @@ const AddPostSection: React.FC = () => {
     const [showPrompt, setShowPrompt] = useState(false);
     const [promptValue, setPromptValue] = useState("");
     const [promptCallback, setPromptCallback] = useState<((value: string | null) => void) | null>(null);
-
+    
     useEffect(() => {
         const { userId, token ,login,email} = getAuth();
             if (userId) setUserId(userId);
@@ -145,89 +145,11 @@ const AddPostSection: React.FC = () => {
     // Map
     // Start map creation 
     // Initialize map
-    // useEffect(() => {
-    //     if (mapRef.current) return;
-
-    //     const timeoutId = setTimeout(() => {
-    //         if (!mapContainer.current || mapRef.current) return;
-
-    //         const map = new mapboxgl.Map({
-    //         container: mapContainer.current,
-    //         style: "mapbox://styles/mapbox/streets-v12",
-    //         center: [78.0421, 27.1751],
-    //         zoom: 16,
-    //         pitch: 0,
-    //         bearing: 0,
-    //         antialias: true,
-    //         attributionControl: false,
-    //         });
-
-    //         mapRef.current = map;
-
-    //         const geocoder = new MapboxGeocoder({
-    //         accessToken: mapboxgl.accessToken,
-    //         mapboxgl,
-    //         marker: false,
-    //         placeholder: "Search location",
-    //         });
-
-    //         map.addControl(geocoder);
-
-    //         const onLoad = () => {
-    //         map.addSource("route", {
-    //             type: "geojson",
-    //             data: {
-    //             type: "Feature",
-    //             geometry: { type: "LineString", coordinates: [] },
-    //             },
-    //         });
-
-    //         map.addLayer({
-    //             id: "route-layer",
-    //             type: "line",
-    //             source: "route",
-    //             paint: { "line-color": "#3b9ddd", "line-width": 5 },
-    //         });
-
-    //         const el = document.createElement("div");
-    //         el.style.width = "30px";
-    //         el.style.height = "30px";
-    //         el.style.backgroundImage =
-    //             "url('https://img.icons8.com/color/48/person-male--v1.png')";
-    //         el.style.backgroundSize = "cover";
-    //         el.style.borderRadius = "50%";
-    //         el.style.border = "2px solid white";
-
-    //         walkerMarkerRef.current = new mapboxgl.Marker(el)
-    //             .setLngLat([0, 0])
-    //             .addTo(map);
-
-    //         loadMap();
-    //         };
-
-    //         if (map.isStyleLoaded()) onLoad();
-    //         else map.once("load", onLoad);
-    //     }, 300); // 300ms is ideal
-
-    //     return () => {
-    //         clearTimeout(timeoutId);
-
-    //         if (mapRef.current) {
-    //         mapRef.current.remove();
-    //         mapRef.current = null;
-    //         }
-
-    //         if (animationRef.current) {
-    //         cancelAnimationFrame(animationRef.current);
-            
-    //         }
-    //     };
-    //     }, []);
+    
 
     useEffect(() => {
         if (!mapContainer.current) return;
         setLoadingMap(true);
-
         const map = new mapboxgl.Map({
             container: mapContainer.current,
             style: "mapbox://styles/mapbox/streets-v12",
@@ -240,7 +162,6 @@ const AddPostSection: React.FC = () => {
         });
 
         mapRef.current = map;
-
         const geocoder = new MapboxGeocoder({
             accessToken: mapboxgl.accessToken,
             mapboxgl: mapboxgl,
@@ -281,14 +202,16 @@ const AddPostSection: React.FC = () => {
             el.style.border = "2px solid white";
             walkerMarkerRef.current = new mapboxgl.Marker(el).setLngLat([0, 0]).addTo(map);
 
-            loadMap();
+            setTimeout(() => {
+                loadMap();  
+            }, 3000); 
         });
 
         return () => {
             map.remove();
             if (animationRef.current) cancelAnimationFrame(animationRef.current);
         };
-    }, []);
+    }, [mapContainer.current]);
 
   // Map click handler
     useEffect(() => {
@@ -321,7 +244,7 @@ const AddPostSection: React.FC = () => {
         // Prompt for title
         openCustomPrompt((title) => {
             if (!title) return;
-
+            // alert('hh');
             const index = points.length;
 
             const marker = new mapboxgl.Marker({ draggable: true })
@@ -391,7 +314,7 @@ const AddPostSection: React.FC = () => {
             }
             return;
         }
-        let fullRoute: [number, number][] = [];
+        let fullRoute: [number, number][] = []; 
 
         for (let i = 0; i < pts.length - 1; i++) {
             const route = await getRoute(pts[i], pts[i + 1]);
@@ -720,7 +643,7 @@ const AddPostSection: React.FC = () => {
             try {
                 const response = await axios.get(`${BASE_URL}/home/topcategory/10`);
                 setActivity(response.data.data);
-                 console.log('topcategory',response.data.data);
+                //  console.log('topcategory',response.data.data);
             } catch (error) {
                 console.error('API Error:', error);
                 // setErrorLocatTrails('Unable to fetch top local trails');
@@ -790,7 +713,7 @@ const AddPostSection: React.FC = () => {
     }, [profileData.CountryId]);
 
     useEffect(() => {
-        console.log('StateId',profileData.StateId);
+        // console.log('StateId',profileData.StateId);
         if (!profileData.StateId) return;
         const cityList= async ()=>{
             try{
@@ -1184,7 +1107,8 @@ const AddPostSection: React.FC = () => {
                     </div>
                     <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12 grid-item">
                         <p style={{margin:'0px',color:'#FC673C'}}>Please click the over map and set point.</p>
-                        <div ref={mapContainer} style={{ width: "100%", height: "400px",borderRadius:'10px'}}></div>
+                        <div ref={mapContainer} className="map-container"></div>
+                        {/* <div ref={mapContainer} style={{ width: "100%", height: "400px",borderRadius:'10px'}}></div> */}
                         <div className="my-4">
                             <button className="btn-style-1" onClick={handleProfileUpdate}>Add Post</button>
                             <button className="btn-style-0">Cancel</button>

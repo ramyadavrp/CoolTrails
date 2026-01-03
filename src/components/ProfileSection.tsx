@@ -44,7 +44,7 @@ const ProfileSection: React.FC = () => {
     }, []);
     //   console.log("loginId:", loginId); 
     //  console.log("token:", token); 
-     console.log("userId:", userId); 
+    //  console.log("userId:", userId); 
     
     // Show the profile
     useEffect(() => {
