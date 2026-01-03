@@ -46,6 +46,7 @@ interface ALLActivity {
 interface Profile {
   fullName: string;
   address: string;
+  abount: string;
   picturePath: string;
   registeredOn: string;
   totalFollowers: number;
@@ -507,6 +508,7 @@ const ProfileEditSection: React.FC = () => {
                                         placeholder="Enter about yourself"
                                         value={profileData.about_me}
                                         onChange={handleInputChange}
+                                         style={{ minHeight: "120px", resize: "vertical" }}
                                         />
 
                                         <div className="d-flex justify-content-between mt-1">
