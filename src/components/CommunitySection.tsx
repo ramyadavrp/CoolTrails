@@ -477,12 +477,6 @@ const CommunitySection: React.FC = () => {
                     setCommunity((prev: any[]) =>
                     prev.filter((item) => item.id !== id)
                     );
-                                // setUsers((prev) => prev.filter((u) => u.id !== id));
-                    // setFollow((prev) => ({
-                    //     ...prev,
-                    //     // [id]: true, // true = Following, false = Follow
-                    //     [id]: response.data.do_follow, // true = Following, false = Follow
-                    // }));
                 } else {
                     console.warn("Unhandled response:", response.data);
                 }
@@ -633,7 +627,7 @@ const CommunitySection: React.FC = () => {
                                     {
                                         getCommunity.length> 0 ?(
                                             getCommunity.map((getCom:any,index:number)=>(
-                                                <div key={index} className="suggested-member-single bg-almost-white d-flex align-items-center">
+                                                <div key={getCom.id} className="suggested-member-single bg-almost-white d-flex align-items-center">
                                                     
                                                     <div className="sms-img">
                                                         <img
