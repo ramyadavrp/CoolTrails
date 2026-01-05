@@ -154,14 +154,15 @@ const AddPostSection: React.FC = () => {
     style: "mapbox://styles/mapbox/streets-v12",
     center: [78.0421, 27.1751],
     zoom: 16,
+    attributionControl:false,
   });
 
   mapRef.current = map;
 
   return () => map.remove();
-}, []);
+}, [mapContainer.current]);
 
-    console.log('mapContainer.current',mapContainer.current);
+    // console.log('mapContainer.current',mapContainer.current);
   // Map click handler
     useEffect(() => {
         const map = mapRef.current;
@@ -487,7 +488,7 @@ const AddPostSection: React.FC = () => {
         ) => {
             const { name, value } = e.target;
            console.log('add',profileData);
-        //     console.log('add',value);
+            // console.log('add',value);
         setProfileData((prev) => {
             let updatedData = { ...prev, [name]: value };
 
@@ -628,7 +629,7 @@ const AddPostSection: React.FC = () => {
                 //setLoadingFeed(true); // show loader every time fetch starts
                 setErrorsFeed("");
                 const response = await axios.get(`${BASE_URL}/common/countrylist`);
-                // console.log(response.data.data);
+                console.log(response.data.data);
                 setCountryList(response.data.data);
             }catch(err){
                 console.error('API Error:', err);
@@ -648,7 +649,7 @@ const AddPostSection: React.FC = () => {
                 //setLoadingFeed(true); // show loader every time fetch starts
                 setErrorsFeed("");
                 const response = await axios.get(`${BASE_URL}/common/statelistbycountry/${profileData.CountryId}`);
-                // console.log('state',response.data.data);
+                console.log('state',response.data.data);
                 setStateList(response.data.data);
                 // setPrak(response.data.data.parks);
             }catch(err){
@@ -669,7 +670,7 @@ const AddPostSection: React.FC = () => {
                 //setLoadingFeed(true); // show loader every time fetch starts
                 setErrorsFeed("");
                 const response = await axios.get(`${BASE_URL}/common/citylistbystate/${profileData.StateId}`);
-                console.log('state',response.data.data);
+                // console.log('state',response.data.data);
                 setCityList(response.data.data);
                  console.log('CITY',response.data.data);
                 // setPrak(response.data.data.parks);
