@@ -882,7 +882,8 @@ const CommunitySection: React.FC = () => {
                                                                                 <i className="bi bi-three-dots"></i>
                                                                             </a>
                                                                             <ul className="dropdown-menu dropdown-sm dropdown-rounded custom-dropdown">
-                                                                                <li><a className="dropdown-item" href="#" 
+                                                                                <li>
+                                                                                <a className="dropdown-item"  
                                                                                 onClick={() => {
                                                                                     setSelectedName({ id: getSug.id, name: getSug.name,post_by_userid:getSug.post_by_userid}); 
                                                                                     setIsOpen(true);
@@ -1406,7 +1407,7 @@ const CommunitySection: React.FC = () => {
                                     {/* <ProfileLeftSection/> */}
                                     <div className="col-xl-3 col-lg-5 col-md-6 col-sm-12 col-12 order-xl-last order-lg-last order-md-last order-sm-first order-first">
                                         {/* <aside className="profile-sidebar sticky-top" id="profile-sidebar-community"> */}
-                                        <aside className="profile-sidebar sticky-top" id="profile-sidebar-community">
+                                        <aside className="profile-sidebar sticky-top" id="profile-sidebar-community" style={{zIndex:'0'}}>
                                             <div className="profile-sidebar-top  bg-almost-white">
                                                 <div className="sidebar-profile">
                                                     <div className="profile-img">
