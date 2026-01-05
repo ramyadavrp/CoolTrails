@@ -176,7 +176,7 @@ function ExploreNearByTrailsSection() {
              
             try {
                  setloadingExplore(true);
-                const response = await axios.get(`${BASE_URL}/home/topcategory/10`);
+                const response = await axios.get(`${BASE_URL}/home/topcategory/20`);
                 setActivity(response.data.data);
             } catch (error) {
                 console.error('API Error:', error);

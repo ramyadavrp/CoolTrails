@@ -1,5 +1,5 @@
 // src/components/ProfileEditSection.tsx
-import React, { useState, useEffect,useRef} from 'react';
+import React, { useState, useEffect,useRef,useLayoutEffect} from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios'; // Import axios
 import { useNavigate } from 'react-router-dom'; // Import useNavigate for redirection
@@ -110,7 +110,6 @@ const AddPostSection: React.FC = () => {
      // map state
     const mapContainer = useRef<HTMLDivElement | null>(null);
     const mapRef = useRef<mapboxgl.Map | null>(null);
-    // const mapContainer = useRef<HTMLDivElement | null>(null);
     const walkerMarkerRef = useRef<mapboxgl.Marker | null>(null);
     const animationRef = useRef<number | null>(null);
     // const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -147,72 +146,22 @@ const AddPostSection: React.FC = () => {
     // Initialize map
     
 
-    useEffect(() => {
-        if (!mapContainer.current) return;
-        setLoadingMap(true);
-        const map = new mapboxgl.Map({
-            container: mapContainer.current,
-            style: "mapbox://styles/mapbox/streets-v12",
-            center: [78.0421, 27.1751],
-            zoom: 16,
-            pitch: 0,
-            bearing: 0,
-            antialias: true,
-            attributionControl: false,
-        });
+    useLayoutEffect(() => {
+  if (!mapContainer.current) return;
 
-        mapRef.current = map;
-        const geocoder = new MapboxGeocoder({
-            accessToken: mapboxgl.accessToken,
-            mapboxgl: mapboxgl,
-            marker: false,
-            placeholder: "Search location",
-        });
+  const map = new mapboxgl.Map({
+    container: mapContainer.current,
+    style: "mapbox://styles/mapbox/streets-v12",
+    center: [78.0421, 27.1751],
+    zoom: 16,
+  });
 
-        map.addControl(geocoder);
+  mapRef.current = map;
 
-        map.on("load", () => {
-            setLoadingMap(false);
+  return () => map.remove();
+}, []);
 
-            map.addSource("route", {
-            type: "geojson",
-            data: {
-                type: "Feature",
-                properties: {},
-                geometry: { type: "LineString", coordinates: [] as [number, number][] },
-            },
-            });
-
-            map.addLayer({
-            id: "route-layer",
-            type: "line",
-            source: "route",
-            layout: { "line-join": "round", "line-cap": "round" },
-            paint: { "line-color": "#3b9ddd", "line-width": 5 },
-            });
-
-            // Walker marker
-            const el = document.createElement("div");
-            el.style.width = "30px";
-            el.style.height = "30px";
-            el.style.backgroundImage =
-            "url('https://img.icons8.com/color/48/person-male--v1.png')";
-            el.style.backgroundSize = "cover";
-            el.style.borderRadius = "50%";
-            el.style.border = "2px solid white";
-            walkerMarkerRef.current = new mapboxgl.Marker(el).setLngLat([0, 0]).addTo(map);
-
-            setTimeout(() => {
-                loadMap();  
-            }, 3000); 
-        });
-
-        return () => {
-            map.remove();
-            if (animationRef.current) cancelAnimationFrame(animationRef.current);
-        };
-    }, [mapContainer.current]);
-
+    console.log('mapContainer.current',mapContainer.current);
   // Map click handler
     useEffect(() => {
         const map = mapRef.current;

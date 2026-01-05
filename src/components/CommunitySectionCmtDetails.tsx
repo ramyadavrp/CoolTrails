@@ -265,8 +265,8 @@ const CommunitySectionCmtDetails: React.FC = () => {
         // Update UI
         // setMultipleImages((prev) => [...prev, ...selectedFiles]);
         // setPreviewUrls((prev) => [...prev, ...imageURLs]);
-
         await handleUploadImages(selectedFiles);
+        
     };
 
     const handleUploadImages = async (files: File[]) => {

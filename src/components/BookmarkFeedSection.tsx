@@ -10,7 +10,7 @@ import { SyncLoader } from "react-spinners";
 import { encodeId, generateSlug ,slugToTitle,usePageTitle} from '../utils/helpers';
 import Select from "react-select";
 import {getAuth} from '../utils/storage';
-
+import DataStateLoading from '../utils/DataStateLoading';
 const BASE_URL = import.meta.env.VITE_API_URL;
 
 interface Park{
@@ -106,42 +106,47 @@ const BookmarkFeedSection: React.FC = () => {
                         <div className="col-xl-9 col-lg-7 col-md-7 col-sm-12 col-12">
                             <div className="profile-inner-card bg-almost-white br-20 profile-card-feed">
                                 <div className="row">
-
-                                    {/* dynamic data */}
-                                    {/* <div className="col-md-4">
-                                        {getBookmark.length > 0 &&(
-                                            getBookmark.map((item:any,index:number)=>(
-                                                <div key={index} className="local-favorite-single">
-                                                    <div className="lfc-thumb position-relative">
-                                                        <a href="/Triund-Trek-via-Gallu-Devi-Temple" data-discover="true">
-                                                            <img
-                                                                src={item.imagePath || '/assets/images/not-found.jpg'}
-                                                                alt="local Trail"
-                                                                className="img-fluid img-fixed-size"
-                                                                onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                                                                    const target = e.currentTarget;
-                                                                    target.onerror = null;
-                                                                    target.src = '/assets/images/not-found.jpg';
-                                                                }}
-                                                            />
-                                                        </a>
+                                    {/* <DataStateLoading
+                                        loading={loadingBookmark}
+                                        error={errorsBookmark || null}
+                                        isEmpty={!loadingBookmark && getBookmark.length === 0}
+                                        emptyText="NO Bookmarked Feed found."
+                                    >
+                                        <div className="col-md-4">
+                                            {getBookmark.length > 0 &&(
+                                                getBookmark.map((item:any,index:number)=>(
+                                                    <div key={index} className="local-favorite-single">
+                                                        <div className="lfc-thumb position-relative">
+                                                            <a href="/Triund-Trek-via-Gallu-Devi-Temple" data-discover="true">
+                                                                <img
+                                                                    src={item.imagePath || '/assets/images/not-found.jpg'}
+                                                                    alt="local Trail"
+                                                                    className="img-fluid img-fixed-size"
+                                                                    onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                                                        const target = e.currentTarget;
+                                                                        target.onerror = null;
+                                                                        target.src = '/assets/images/not-found.jpg';
+                                                                    }}
+                                                                />
+                                                            </a>
+                                                        </div>
+                                                        <div className="lfc-content">
+                                                            <a href="/Triund-Trek-via-Gallu-Devi-Temple" data-discover="true">
+                                                                <h3 className="lfc-title">{item.title}</h3>
+                                                                <p className="lfc-location mb-1">
+                                                                    {item.address}
+                                                                </p>
+                                                                <p className="lfc-tags">
+                                                                    <i className="bi bi-star-fill"></i> {item.rating.toFixed(1)} · Moderate · {item.length} km · Est. {item.estimateTime}
+                                                                </p>
+                                                            </a>
+                                                            <Link to={`/${item.urlTitle|| generateSlug(item.title || '')}`} className="btn-style-1 w-100">Check Details</Link>
+                                                        </div>
                                                     </div>
-                                                    <div className="lfc-content">
-                                                        <a href="/Triund-Trek-via-Gallu-Devi-Temple" data-discover="true">
-                                                            <h3 className="lfc-title">{item.title}</h3>
-                                                            <p className="lfc-location mb-1">
-                                                                {item.address}
-                                                            </p>
-                                                            <p className="lfc-tags">
-                                                                <i className="bi bi-star-fill"></i> {item.rating.toFixed(1)} · Moderate · {item.length} km · Est. {item.estimateTime}
-                                                            </p>
-                                                        </a>
-                                                        <Link to={`/${item.urlTitle|| generateSlug(item.title || '')}`} className="btn-style-1 w-100">Check Details</Link>
-                                                    </div>
-                                                </div>
-                                            ))
-                                        )}
-                                    </div> */}
+                                                ))
+                                            )}
+                                        </div>
+                                    </DataStateLoading> */}
                                     <div className="col-md-4">
                                         <div className="local-favorite-single">
                                             <div className="lfc-thumb position-relative"><a href="/Triund-Trek-via-Gallu-Devi-Temple" data-discover="true">
