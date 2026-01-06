@@ -57,6 +57,7 @@ function ExploreNearByTrailsSection() {
     const [loading, setloading] = useState(false);
     const [sortType, setSortType] = useState("Best");
     const [nearFilter, setNearFilter] = useState("all");
+    // const [category, setCategory] = useState("all");
     const [lengthDifficulty, setDifficulty] = useState("all");
     const [searchTerm, setSearchText] = useState("");
     // const [selected, setSelected] = useState(options[0]);
@@ -196,6 +197,14 @@ function ExploreNearByTrailsSection() {
         setTimeout(() => setloading(false), 30000);
     };
 
+    const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const newValue = e.target.value;
+        console.log('newValue',newValue);
+        setloading(true);
+        setCategory(newValue);
+        setTimeout(() => setloading(false), 30000);
+    };
+
     const handleDifficultyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newValue = e.target.value;
         setloading(true);
@@ -249,7 +258,12 @@ function ExploreNearByTrailsSection() {
         else if (lengthDifficulty === "hard") {
             result = result.filter(trail => trail.length > 10);
         }
-
+         // Category filter 
+        // if (category !== "all") {
+        //     result = result.filter(trail =>
+        //     trail.category.toLowerCase() === category.toLowerCase()
+        //     );
+        // }
         // --- Sorting ---
         if (sortType === "popular") {
             result.sort((a, b) => b.rating - a.rating);
@@ -377,9 +391,11 @@ function ExploreNearByTrailsSection() {
                                                 <select name="activity"
                                                     id="runningFilter"
                                                     className="form-select advance-select"
+                                                    // value={category}// auto-selects based on URL
                                                     value={title ?? ""}// auto-selects based on URL
                                                     // onChange={(e) => console.log("Selected:", e.target.value)}
-                                                    onChange={(e) => (e.target.value)}
+                                                    // onChange={(e) => (e.target.value)}
+                                                    onChange={handleCategoryChange}
                                                 >
                                                     {getActivity.map((act: any, index: number) => (
                                                         <option key={index} value={act.title.toLowerCase()}>

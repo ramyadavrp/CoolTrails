@@ -1940,7 +1940,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                             </li>
                                                             ) : (
                                                             <>
-                                                                <li>
+                                                                <li> 
                                                                     <a 
                                                                     className="dropdown-item" 
                                                                     style={{cursor: 'pointer' }}

@@ -308,7 +308,13 @@ const ReviewSection: React.FC = () => {
                                                 <h3 className="ff-title">{explorer.fullName}</h3>
                                                 <p>{explorer.address} Member since&nbsp;{explorer.registeredOn} </p>
                                                 {explorer.id === userId ? (
-                                                    <span className="btn-style-1 stretched-link">You</span> // optional text
+                                                    <span className="btn-style-1 stretched-link"
+                                                    style={{border: 'none',
+                                                            padding: '5px 25px',
+                                                            borderRadius: '50px',
+                                                            textAlign:'center',
+                                                            fontSize:'14px'}}
+                                                    >You</span> // optional text
                                                     ) : (
                                                     <button
                                                         disabled={getFollow[explorer.id]} 
@@ -371,7 +377,13 @@ const ReviewSection: React.FC = () => {
                                                 <p>{explorer.address} Member since&nbsp;{explorer.registeredOn} </p>
                                                 {
                                                     explorer.id === userId ? (
-                                                        <span className="btn-style-1 stretched-link">You</span>
+                                                        <span className="btn-style-1 stretched-link"
+                                                            style={{border: 'none',
+                                                            padding: '5px 25px',
+                                                            borderRadius: '50px',
+                                                            textAlign:'center',
+                                                            fontSize:'14px'}}
+                                                        >You</span>
                                                     ):(
                                                     <button
                                                         disabled={getFollow[explorer.id]} 

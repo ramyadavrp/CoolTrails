@@ -139,9 +139,12 @@ const LoginForm = () => {
                               <button type="submit" className="btn-style-1 w-100" disabled={loading}>{loading ? "Logging in..." : "Log in"}</button>
                           </form>
                           <div className="forgot-password text-center mb-3">
-                              <a href="">Forgot your password?</a>
+                            <Link to={'/forgot-password'}>
+                                  Forgot your password?
+                            </Link>
+                              {/* <a href="">Forgot your password?</a> */}
                           </div>
-                          <p className="or text-center mb-3">or</p>
+                          {/* <p className="or text-center mb-3">or</p>
                           <div className="platform-logins">
                               <a href="" className="login-btn mb-2"> <img
                                       src="assets/images/icons/facebook-color.svg" alt="" /> Continue with
@@ -152,7 +155,7 @@ const LoginForm = () => {
                               <a href="" className="login-btn"> <img src="assets/images/icons/apple-color.svg"
                                       alt="" />
                                   Continue with Apple</a>
-                          </div>
+                          </div> */}
                           <div className="dont-have-ac text-center">
                               <p className="txt-1">Don't have an account? 
                                 {/* <a href="signup.html" className="text-midnight-navy">Sign up for free</a> */}

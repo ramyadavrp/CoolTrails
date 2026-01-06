@@ -195,7 +195,9 @@ const SignupForm = () => {
                                 <button type="submit" className="btn-style-1 w-100" disabled={loading}>{loading ? "Signing Up..." : "Sign Up"}</button>
                             </form>
                             <div className="forgot-password text-center mb-3">
-                                <a href="">Forgot your password?</a>
+                                <Link to={'/forgot-password'}>
+                                  Forgot your password?
+                                </Link>
                             </div>
                             {/* <p className="or text-center mb-3">or</p>
                             <div className="platform-logins">

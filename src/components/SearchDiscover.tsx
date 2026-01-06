@@ -47,7 +47,7 @@ const SearchDiscover: React.FC = () => {
 
         // Check current bookmark status
         const isAlreadyBookmarked = bookmarkedTrails.includes(trailId);
-        // console.log(isAlreadyBookmarked);
+         console.log('isAlreadyBookmarked',isAlreadyBookmarked);
         try {
             // Send true for new bookmark, false for remove
             const response = await axios.post(`${BASE_URL}/trail/bookmark`, {
@@ -61,7 +61,7 @@ const SearchDiscover: React.FC = () => {
             //   },
             // }
         );
-            console.log('bookmark',response.data);
+             console.log('bookmark',response.data);
             if (response.data.status === "success") {
             // Update local state
             setBookmarkedTrails((prev) =>
@@ -70,7 +70,7 @@ const SearchDiscover: React.FC = () => {
                 : [...prev, trailId]
             );
             } else {
-            console.error("Bookmark error:", response.data);
+            // console.error("Bookmark error:", response.data);
             alert("Error bookmarking trail.");
             }
         } catch (error) {
