@@ -14,6 +14,7 @@ import { SquareLoader } from "react-spinners";
 import {getAuth} from '../utils/storage';
 import Swal from "sweetalert2";
 import mapboxgl from "mapbox-gl";
+
 // import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
@@ -26,6 +27,15 @@ interface Point {
   latitude: number; 
   longitude: number;
   pointOrder: number;
+}
+interface MapPoint {
+  lat?: number;
+  lng?: number;
+  lon?: number;
+  elevation?: number;
+  latitude: number;
+  longitude: number;
+  time?: number;
 }
 
 interface suggestedNearby{
@@ -138,18 +148,10 @@ const CommunitySectionCmtDetails: React.FC = () => {
     const [showReviews, setShowReviews] = useState(true);
     // map state
     const mapContainer = useRef<HTMLDivElement | null>(null);
-    const mapRef = useRef<mapboxgl.Map | null>(null);
-    // const mapContainer = useRef<HTMLDivElement | null>(null);
-    const walkerMarkerRef = useRef<mapboxgl.Marker | null>(null);
-    const animationRef = useRef<number | null>(null);
-    // const mapRef = useRef<mapboxgl.Map | null>(null);
-  
-    const [points, setPoints] = useState<[number, number][]>([]);
-    const [titles, setTitles] = useState<string[]>([]);
-    const [markers, setMarkers] = useState<mapboxgl.Marker[]>([]);
-    const [loopClosed, setLoopClosed] = useState(false);
-    const [loadingMap,setLoadingMap] = useState(true);
- 
+    const map = useRef<mapboxgl.Map | null>(null);
+    const walkerMarker = useRef<mapboxgl.Marker | null>(null);
+    const markersRef = useRef<mapboxgl.Marker[]>([]);
+    const [getmapPoints, setMapPoints] = useState<MapPoint[]>([]);
      // map state close
     const [selectedCommentId, setSelectedCommentId] = useState(null);
     const shareUrl = window.location.href;
@@ -168,7 +170,13 @@ const CommunitySectionCmtDetails: React.FC = () => {
     const [isUploading, setIsUploading] = useState<boolean>(false)
     const [postVisibleCount, setPostVisibleCount] = useState(10);
     const [deleting, setDeleting] = useState(false);
-
+    const mappointsData: MapPoint[] = [
+        { latitude: 28.631233154913488, longitude: 77.21910966616741 },
+        { latitude: 28.631953033233273, longitude: 77.21928688873709 },
+        { latitude: 28.632340101444015, longitude: 77.2206593332844 },
+        { latitude: 28.633714724673695, longitude: 77.21910966616741 },
+        { latitude: 28.631233154913488, longitude: 77.21910966616741 },
+    ];
     // const handleRemoveImage = (index: number) => {
     //     setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
     // };
@@ -389,6 +397,172 @@ const CommunitySectionCmtDetails: React.FC = () => {
         }
     }
     
+
+
+     // INIT MAP
+    useEffect(() => {
+        if (!getmapPoints.length || map.current || !mapContainer.current) return;
+
+        const firstPoint = getmapPoints[0];
+
+        map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: "mapbox://styles/mapbox/outdoors-v12",
+        center: [firstPoint.longitude, firstPoint.latitude],
+        zoom: 13,
+        attributionControl: false,
+        });
+
+        // map.current.addControl(new mapboxgl.NavigationControl());
+
+        map.current.on("load", () => {
+            
+        bindMap();
+        });
+    }, [getmapPoints]);
+    
+
+    // BIND MAP DATA
+    const bindMap = async () => {
+        if (!map.current) return;
+
+        // normalize to [lng, lat]
+        const points: [number, number][] = getmapPoints.map(p => [
+        p.longitude ?? p.lng ?? p.lon!,
+        p.latitude ?? p.lat!,
+        ]);
+
+        // clear old markers
+        markersRef.current.forEach(m => m.remove());
+        markersRef.current = [];
+
+        const bounds = new mapboxgl.LngLatBounds();
+
+        points.forEach((coords, index) => {
+        const marker = new mapboxgl.Marker()
+            .setLngLat(coords)
+            .setPopup(new mapboxgl.Popup().setText(`Point ${index + 1}`))
+            .addTo(map.current!);
+
+        markersRef.current.push(marker);
+        bounds.extend(coords);
+        });
+
+        map.current.fitBounds(bounds, { padding: 50, maxZoom: 16 });
+        
+        // ROUTE SOURCE
+        map.current.addSource("route", {
+            type: "geojson",
+            data: {
+                type: "Feature",
+                properties: {}, // REQUIRED
+                geometry: {
+                type: "LineString",
+                coordinates: [] as [number, number][], // FIX never[]
+                },
+            },
+        });
+
+        map.current.addLayer({
+        id: "route-layer",
+        type: "line",
+        source: "route",
+        paint: {
+            "line-color": "#3b9ddd",
+            "line-width": 5,
+        },
+        });
+        
+        // WALKER MARKER
+        const el = document.createElement("div");
+        el.style.width = "30px";
+        el.style.height = "30px";
+        el.style.backgroundImage =
+        "url('https://img.icons8.com/color/48/person-male--v1.png')";
+        el.style.backgroundSize = "cover";
+        el.style.borderRadius = "50%";
+        el.style.border = "2px solid white";
+
+        walkerMarker.current = new mapboxgl.Marker(el)
+        .setLngLat(points[0])
+        .addTo(map.current);
+
+        await updateRoute(points);
+    };
+
+    // GET ROUTE
+    const getRoute = async (start: [number, number], end: [number, number]) => {
+        const url = `https://api.mapbox.com/directions/v5/mapbox/walking/${start[0]},${start[1]};${end[0]},${end[1]}?geometries=geojson&access_token=${mapboxgl.accessToken}`;
+        const res = await fetch(url);
+        const json = await res.json();
+        return json.routes?.[0]?.geometry?.coordinates || [];
+    };
+
+    // BUILD FULL ROUTE
+    const updateRoute = async (points: [number, number][]) => {
+        if (!map.current || points.length < 2) return;
+
+        let fullRoute: [number, number][] = [];
+
+        for (let i = 0; i < points.length - 1; i++) {
+        const segment = await getRoute(points[i], points[i + 1]);
+        if (i > 0) segment.shift();
+        fullRoute.push(...segment);
+        }
+
+        const source = map.current.getSource("route") as mapboxgl.GeoJSONSource;
+        source.setData({
+        type: "Feature",
+        properties: {},
+        geometry: { type: "LineString", coordinates: fullRoute },
+        });
+
+        animateAlongPath(fullRoute);
+    };
+
+    // ANIMATION
+    const animateAlongPath = (coords: [number, number][]) => {
+        if (!walkerMarker.current) return;
+
+        let i = 0;
+
+        const step = () => {
+        if (i >= coords.length - 1) return;
+
+        const start = coords[i];
+        const end = coords[i + 1];
+        const startTime = performance.now();
+        const duration = 200;
+
+        const animate = (t: number) => {
+            const progress = Math.min((t - startTime) / duration, 1);
+            const lng = start[0] + (end[0] - start[0]) * progress;
+            const lat = start[1] + (end[1] - start[1]) * progress;
+
+            walkerMarker.current!.setLngLat([lng, lat]);
+
+            if (progress < 1) {
+            requestAnimationFrame(animate);
+            } else {
+            i++;
+            requestAnimationFrame(step);
+            }
+        };
+
+        requestAnimationFrame(animate);
+        };
+
+        step();
+    };
+
+    // CLEANUP
+    useEffect(() => {
+        return () => {
+        map.current?.remove();
+        map.current = null;
+        };
+    }, []);
+
     const fetchUserImages = async () => {
         if (!userId) return; 
 
@@ -461,302 +635,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
 
     // Start map creation
     // Initialize map
-    useEffect(() => {
-        if (!mapContainer.current) return;
-        setLoadingMap(true);
-
-        const map = new mapboxgl.Map({
-            container: mapContainer.current,
-            style: "mapbox://styles/mapbox/streets-v12",
-            center: [78.0421, 27.1751],
-            zoom: 16,
-            pitch: 0,
-            bearing: 0,
-            antialias: true,
-            attributionControl: false,
-        });
-
-        mapRef.current = map;
-
-        const geocoder = new MapboxGeocoder({
-            accessToken: mapboxgl.accessToken,
-            mapboxgl: mapboxgl,
-            marker: false,
-            placeholder: "Search location",
-        });
-
-        map.addControl(geocoder);
-
-        map.on("load", () => {
-            setLoadingMap(false);
-
-            map.addSource("route", {
-            type: "geojson",
-            data: {
-                type: "Feature",
-                properties: {},
-                geometry: { type: "LineString", coordinates: [] as [number, number][] },
-            },
-            });
-
-            map.addLayer({
-            id: "route-layer",
-            type: "line",
-            source: "route",
-            layout: { "line-join": "round", "line-cap": "round" },
-            paint: { "line-color": "#3b9ddd", "line-width": 5 },
-            });
-
-            // Walker marker
-            const el = document.createElement("div");
-            el.style.width = "30px";
-            el.style.height = "30px";
-            el.style.backgroundImage =
-            "url('https://img.icons8.com/color/48/person-male--v1.png')";
-            el.style.backgroundSize = "cover";
-            el.style.borderRadius = "50%";
-            el.style.border = "2px solid white";
-            
-            walkerMarkerRef.current = new mapboxgl.Marker(el).setLngLat([0, 0]).addTo(map);
-
-            loadMap();
-        });
-
-      return () => {
-        map.remove();
-        if (animationRef.current) cancelAnimationFrame(animationRef.current);
-      };
-    }, []);
-
-
-    // Map click handler
-    useEffect(() => {
-        const map = mapRef.current;
-        if (!map) return;
-
-        const handleClick = async (e: mapboxgl.MapMouseEvent) => {
-            if (loopClosed) return alert("Loop already closed.");
-
-            const coords: [number, number] = [e.lngLat.lng, e.lngLat.lat];
-
-            if (points.length > 2) {
-                const first = points[0];
-                const dist = Math.sqrt(Math.pow(first[0] - coords[0], 2) + Math.pow(first[1] - coords[1], 2));
-                if (dist < 0.0001) {
-                    setLoopClosed(true);
-                    alert("Loop closed!");
-                    setPoints(prev => {
-                        const newPoints = [...prev, coords];
-                        updateRoute(newPoints);
-                        return newPoints;
-                    });
-                    return;
-                }
-            }
-
-            const title = prompt("Enter title for this point:");
-            if (!title) return;
-
-            const index = points.length; // assign index for this marker
-
-            const marker = new mapboxgl.Marker({ draggable: true })
-                .setLngLat(coords)
-                .setPopup(new mapboxgl.Popup().setText(title))
-                .addTo(mapRef.current!);
-
-            marker.togglePopup();
-
-            // marker drag updates correct index
-            marker.on("dragend", () => {
-                const lngLat = marker.getLngLat();
-                setPoints(prev => {
-                    const updatedPoints = [...prev];
-                    updatedPoints[index] = [lngLat.lng, lngLat.lat];
-                    updateRoute(updatedPoints);
-                    return updatedPoints;
-                });
-            });
-
-            setMarkers(prev => [...prev, marker]);
-            setTitles(prev => [...prev, title]);
-            setPoints(prev => {
-                const newPoints = [...prev, coords];
-                updateRoute(newPoints);
-                return newPoints;
-            });
-        };
-
-            map.on("click", handleClick);
-
-            return () => {
-                map.off("click", handleClick);
-            };
-    }, [points, titles, loopClosed]);
-
-    // Get route using Mapbox Directions API
-    const getRoute = async (start: [number, number], end: [number, number]) => {
-        const url = `https://api.mapbox.com/directions/v5/mapbox/walking/${start[0]},${start[1]};${end[0]},${end[1]}?geometries=geojson&access_token=${mapboxgl.accessToken}`;
-        const res = await fetch(url);
-        const json = await res.json();
-        return json.routes?.[0]?.geometry.coordinates || null;
-    };
-
-    const updateRoute = async (pts: [number, number][]) => {
-        const map = mapRef.current;
-        if (!map) return;
-        if (pts.length < 2) {
-            const source = map.getSource("route") as mapboxgl.GeoJSONSource;
-            if (source) {
-                source.setData({
-                    type: "Feature",
-                    properties: {},
-                    geometry: {
-                        type: "LineString",
-                        coordinates: [],
-                    },
-                });
-            }
-            return;
-        }
-        let fullRoute: [number, number][] = [];
-
-        for (let i = 0; i < pts.length - 1; i++) {
-            const route = await getRoute(pts[i], pts[i + 1]);
-            if (!route) return;
-            if (i > 0) route.shift();
-            fullRoute = fullRoute.concat(route);
-        }
-
-        if (loopClosed && pts.length > 2) {
-            const closeRoute = await getRoute(pts[pts.length - 1], pts[0]);
-            if (closeRoute) {
-                closeRoute.shift();
-                fullRoute = fullRoute.concat(closeRoute);
-            }
-        }
-
-        walkerMarkerRef.current?.setLngLat(fullRoute[0]);
-        const source = map.getSource("route") as mapboxgl.GeoJSONSource;
-        if (source) {
-            source.setData({
-                type: "Feature",
-                properties: {},
-                geometry: {
-                    type: "LineString",
-                    coordinates: fullRoute,
-                },
-            });
-        }
-        animateAlongPath(fullRoute);
-    };
-
-    const animateAlongPath = (coords: [number, number][]) => {
-        if (!walkerMarkerRef.current) return;
-
-        let i = 0;
-
-        const step = () => {
-            if (i >= coords.length - 1) return;
-            const start = coords[i];
-            const end = coords[i + 1];
-            let progress = 0;
-            const duration = 200;
-            const startTime = performance.now();
-
-            const animate = (t: number) => {
-                progress = Math.min((t - startTime) / duration, 1);
-                const lng = start[0] + (end[0] - start[0]) * progress;
-                const lat = start[1] + (end[1] - start[1]) * progress;
-                walkerMarkerRef.current?.setLngLat([lng, lat]);
-
-                if (progress < 1) {
-                    animationRef.current = requestAnimationFrame(animate);
-                } else {
-                    i++;
-                    animationRef.current = requestAnimationFrame(step);
-                }
-            };
-
-            animationRef.current = requestAnimationFrame(animate);
-        };
-
-        if (animationRef.current) cancelAnimationFrame(animationRef.current);
-        animationRef.current = requestAnimationFrame(step);
-    };
-
-    const clearMap = () => {
-        markers.forEach((m) => m.remove());
-        setMarkers([]);
-        setPoints([]);
-        setTitles([]);
-        setLoopClosed(false);
-        walkerMarkerRef.current?.setLngLat([0, 0]);
-        mapRef.current?.getSource("route")?.setData({
-            type: "Feature",
-            geometry: { type: "LineString", coordinates: [] },
-        });
-    };
-
-    const toggle3D = () => {
-        const map = mapRef.current;
-        if (!map) return;
-        const pitch = map.getPitch();
-        map.easeTo({ pitch: pitch === 0 ? 60 : 0, bearing: pitch === 0 ? 20 : 0 });
-    };
-
-
-    const loadMap = async () => {
-        //alert('load'); 
-        const res = await fetch("/Trails/Load");
-        if (!res.ok) return console.warn("Map not found.");
-        const data = await res.json();
-
-        clearMap();
-        const bounds = new mapboxgl.LngLatBounds();
-        const newPoints: [number, number][] = [];
-        const newMarkers: mapboxgl.Marker[] = [];
-        const newTitles: string[] = [];
-
-        data.points.data.forEach((p: any, idx: number) => {
-            const coords: [number, number] = [p.longitude, p.latitude];
-            const marker = new mapboxgl.Marker({ draggable: true })
-                .setLngLat(coords)
-                .setPopup(new mapboxgl.Popup().setText(p.title))
-                .addTo(mapRef.current!);
-            marker.togglePopup();
-
-            // use index binding
-            marker.on("dragend", () => {
-                const lngLat = marker.getLngLat();
-                setPoints(prev => {
-                    const updatedPoints = [...prev];
-                    updatedPoints[idx] = [lngLat.lng, lngLat.lat];
-                    updateRoute(updatedPoints);
-                    return updatedPoints;
-                });
-            });
-
-            newPoints.push(coords);
-            newMarkers.push(marker);
-            newTitles.push(p.title);
-            bounds.extend(coords);
-        });
-
-        setPoints(newPoints);
-        setMarkers(newMarkers);
-        setTitles(newTitles);
-
-        if (newPoints.length > 2) {
-            const first = newPoints[0],
-                last = newPoints[newPoints.length - 1];
-            const dist = Math.sqrt(Math.pow(first[0] - last[0], 2) + Math.pow(first[1] - last[1], 2));
-            setLoopClosed(dist < 0.0001);
-        }
-
-        if (!bounds.isEmpty()) mapRef.current!.fitBounds(bounds, { padding: 50, maxZoom: 17 });
-
-        updateRoute(newPoints);
-    };
+    
  
   // End map creation
      // 1) SVG icon components
@@ -980,7 +859,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
             if (!userId) {
                 console.error("No valid userId found!");
                 return;
-            }
+            } 
             try {
                 const response = await axios.post(
                         `${BASE_URL}/feed/comment/`,
@@ -1179,7 +1058,8 @@ const CommunitySectionCmtDetails: React.FC = () => {
             const data = response.data?.data;
             console.log('community/1',data);
             console.log('reviews/1',data.reviews);
-
+            setMapPoints(mappointsData);
+            // setMapPoints(data?.mapPoints || []);
             setProfileCommunity(data?.profile_Community || []);
             setImagesArray(data?.following_by?.images || []);
             setFollowingBy(data?.following_by || []);
@@ -2047,31 +1927,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                 </div>
                                 {/* <!-- <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d194474.440444268!2d55.959295174859626!3d25.08154936413991!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ef5a8616e5ca149%3A0x75d4f4005126006a!2sShawkah%20Dam!5e0!3m2!1sen!2sin!4v1749891263519!5m2!1sen!2sin"   allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe> --> */}
                                 {/* <img src="/assets/images/trails/map.png" alt="" className="map-img"/> */}
-                                    <div
-                                            style={{
-                                            // position: "absolute",
-                                            top: 10,
-                                            left: 10,
-                                            background: "white",
-                                            padding: 10,
-                                            borderRadius: 8,
-                                            boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-                                            zIndex: 1,
-                                            display: "flex",
-                                            gap: "8px",
-                                            flexWrap: "wrap",
-                                            marginBottom: "25px",
-                                            justifyContent:"space-around", 
-                                            }}
-                                        > 
-                                            {/* <button onClick={saveMap}>💾 Save Map</button>
-                                            <button onClick={deleteMap}>🗑️ Delete Map</button>
-                                            <button onClick={() => window.location.reload()}>🔄 Refresh</button> */}
-                                            <button className="btn-style-12" onClick={toggle3D}>3D View</button>
-                                            <button  className="btn-style-12" onClick={clearMap}>Clear</button>
-                                            {/* <button  className="btn-style-12" onClick={() => (window.location.href = "")}>Trail Details</button>  */}
-                                            {/* <button  className="btn-style-12" onClick={() => (window.location.href = "/Trails/Details")}>Trail Details</button>  */}
-                                    </div>  
+                                    
                                 <div style={{ height: "100vh", width: "100%", position: "relative" }}>
                                     {/* Map Container */}
                                     

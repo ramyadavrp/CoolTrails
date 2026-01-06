@@ -880,6 +880,7 @@ const AffiliateDetailTrail: React.FC = () => {
             fetchTrailDetail(title);
         }
     }, [loginId, title]);
+    
     useEffect(() => {
         if (!getmapPoints.length || map.current) return;
         // console.log(getmapPoints);

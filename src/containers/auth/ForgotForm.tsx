@@ -17,8 +17,14 @@ const ForgotForm = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
-        if(!email.trim()) setError("Email address is required");
-        if(!isValidEmail(email)) setError("Please enter a valid email address");
+        if(!email.trim()) {
+            setError("Email address is required");
+            return;
+        }
+        if(!isValidEmail(email)) {
+            setError("Please enter a valid email address");
+            return;
+        }
         try {
             setLoading(true);
             // Api call
