@@ -45,6 +45,7 @@ import BlockedComment from '../containers/BlockedComment';
 import ReportAnIssueComment from '../containers/ReportAnIssueComment';
 import FullTrailMapSection from '../components/FullTrailMapSection';
 import ExploreNearByTrails from '../containers/ExploreNearByTrails';
+import Forgot from '../containers/auth/Forgot';
 
 const AppRoute = () => {
   
@@ -56,6 +57,7 @@ const AppRoute = () => {
         <Route path="/contact" element={<Contact />} /> */}
         <Route path="*" element={<NotFound />} /> 
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<Forgot />} />
         <Route path="/signup" element={<Signup />} /> 
         <Route path="/affiliates" element={<Affiliate />} />
         <Route path="/Trails/:country/:state?/:city?/:title" element={<AffiliateDetails />} />
@@ -81,7 +83,7 @@ const AppRoute = () => {
         <Route path="/activities" element={<ActivitiesList />} />
         <Route path="/complete" element={<Complete />} />
         <Route path="/trail-map" element={<FullTrailMapSection />} />
-       
+        
         
         
 {/* <Route path="/guides/:country/:title" element={<ParkDetails />} />  15-12-25*/} 
