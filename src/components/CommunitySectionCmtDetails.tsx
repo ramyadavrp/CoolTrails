@@ -462,6 +462,26 @@ const CommunitySectionCmtDetails: React.FC = () => {
                 },
             },
         });
+        
+         // Arrow icon
+        map.current.loadImage("https://cdn-icons-png.flaticon.com/512/271/271228.png", (error, image) => {
+            if (error || !image) return;
+            if (!map.current.hasImage('arrow')) map.current.addImage('arrow', image);
+
+            map.current.addLayer({
+            id: 'arrow-layer',
+            type: 'symbol',
+            source: 'route',
+            layout: {
+                'symbol-placement': 'line',
+                'symbol-spacing': 60,
+                'icon-image': 'arrow',
+                'icon-size': 0.05,
+                'icon-allow-overlap': true,
+                'icon-rotation-alignment': 'map',
+            },
+            });
+        });
 
         map.current.addLayer({
         id: "route-layer",
@@ -1928,16 +1948,8 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                 {/* <!-- <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d194474.440444268!2d55.959295174859626!3d25.08154936413991!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ef5a8616e5ca149%3A0x75d4f4005126006a!2sShawkah%20Dam!5e0!3m2!1sen!2sin!4v1749891263519!5m2!1sen!2sin"   allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe> --> */}
                                 {/* <img src="/assets/images/trails/map.png" alt="" className="map-img"/> */}
                                     
-                                <div style={{ height: "100vh", width: "100%", position: "relative" }}>
-                                    {/* Map Container */}
-                                    
-                                    <div
-                                        ref={mapContainer} 
-                                        style={{ height: "100%", width: "100%",borderRadius: "10px" }}
-                                    />  
-
-                                    {/* Buttons Overlay */}
-                                     
+                                <div style={{ height: "75vh", width: "100%", position: "relative" }}>
+                                    <div ref={mapContainer}  style={{ height: "100%", width: "100%",borderRadius: "10px" }}/>                                      
                                 </div>
  
 
