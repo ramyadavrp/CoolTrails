@@ -46,6 +46,7 @@ import ReportAnIssueComment from '../containers/ReportAnIssueComment';
 import FullTrailMapSection from '../components/FullTrailMapSection';
 import ExploreNearByTrails from '../containers/ExploreNearByTrails';
 import Forgot from '../containers/auth/Forgot';
+import Reset from '../containers/auth/Reset';
 
 const AppRoute = () => {
   
@@ -58,6 +59,7 @@ const AppRoute = () => {
         <Route path="*" element={<NotFound />} /> 
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<Forgot />} />
+        <Route path="/reset-password" element={<Reset />} />
         <Route path="/signup" element={<Signup />} /> 
         <Route path="/affiliates" element={<Affiliate />} />
         <Route path="/Trails/:country/:state?/:city?/:title" element={<AffiliateDetails />} />

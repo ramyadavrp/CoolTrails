@@ -25,6 +25,7 @@ interface TrailDetail {
 interface Trails {
     imagePath: string,
     title: string,
+    activity: string,
     explore_address: string,
     rating: any,
     length: any,
@@ -57,7 +58,8 @@ function ExploreNearByTrailsSection() {
     const [loading, setloading] = useState(false);
     const [sortType, setSortType] = useState("Best");
     const [nearFilter, setNearFilter] = useState("all");
-    // const [category, setCategory] = useState("all");
+    const [selectedCategory, setSelectedCategory] = useState<string>("all");
+
     const [lengthDifficulty, setDifficulty] = useState("all");
     const [searchTerm, setSearchText] = useState("");
     // const [selected, setSelected] = useState(options[0]);
@@ -187,7 +189,12 @@ function ExploreNearByTrailsSection() {
         }
         fetchActivity();
     }, []);
-    
+    const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const value = e.target.value;
+        setSelectedCategory(value);
+        console.log('selectedCategory:', value);
+    };
+
     const handleNearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newValue = e.target.value;
         setloading(true);
@@ -197,13 +204,6 @@ function ExploreNearByTrailsSection() {
         setTimeout(() => setloading(false), 30000);
     };
 
-    const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const newValue = e.target.value;
-        console.log('newValue',newValue);
-        setloading(true);
-        setCategory(newValue);
-        setTimeout(() => setloading(false), 30000);
-    };
 
     const handleDifficultyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newValue = e.target.value;
@@ -227,7 +227,7 @@ function ExploreNearByTrailsSection() {
         setloading(true);
         const timer = setTimeout(() => setloading(false), 3000);
         return () => clearTimeout(timer);
-    }, [searchTerm, sortType, nearFilter, lengthDifficulty, getTrails]);
+    }, [searchTerm, sortType, nearFilter, lengthDifficulty, selectedCategory,getTrails]);
 
     const { sortedData, count } = useMemo<{ sortedData: Trails[]; count: number }>(() => {
         setloading(true);
@@ -239,6 +239,12 @@ function ExploreNearByTrailsSection() {
         if (searchTerm){
             result = result.filter(trail => trail.title.toLowerCase().includes(searchTerm.toLowerCase()));
         } 
+        if (selectedCategory !=='all') {
+            result = result.filter(trail =>
+                trail.activity?.toLowerCase() === selectedCategory
+            );
+        }
+
         // --- Filters ---
         if (nearFilter === "near") {
             result = result.filter(trail => trail.length <= 8);
@@ -258,12 +264,7 @@ function ExploreNearByTrailsSection() {
         else if (lengthDifficulty === "hard") {
             result = result.filter(trail => trail.length > 10);
         }
-         // Category filter 
-        // if (category !== "all") {
-        //     result = result.filter(trail =>
-        //     trail.category.toLowerCase() === category.toLowerCase()
-        //     );
-        // }
+        
         // --- Sorting ---
         if (sortType === "popular") {
             result.sort((a, b) => b.rating - a.rating);
@@ -284,7 +285,7 @@ function ExploreNearByTrailsSection() {
 
         const count = result.length;
         return { sortedData: result, count };
-    }, [getTrails, searchTerm, sortType, nearFilter, lengthDifficulty]);
+    }, [getTrails, searchTerm, sortType, nearFilter, selectedCategory,lengthDifficulty]);
 
     useEffect(() => {
         if (title) {
@@ -392,18 +393,17 @@ function ExploreNearByTrailsSection() {
                                                     id="runningFilter"
                                                     className="form-select advance-select"
                                                     // value={category}// auto-selects based on URL
-                                                    value={title ?? ""}// auto-selects based on URL
+                                                    value={selectedCategory}
                                                     // onChange={(e) => console.log("Selected:", e.target.value)}
                                                     // onChange={(e) => (e.target.value)}
                                                     onChange={handleCategoryChange}
                                                 >
+                                                     <option value="all">All Categories</option>
                                                     {getActivity.map((act: any, index: number) => (
                                                         <option key={index} value={act.title.toLowerCase()}>
                                                             {act.title}
                                                         </option>
                                                     ))}
-                                                    {/* <option value="running">Running</option>
-                                                    <option value="option">Option</option> */}
                                                 </select>
                                             </div>
                                             <div className="single-select-filter">

@@ -155,9 +155,10 @@ const ProfileSection: React.FC = () => {
                                     const mediaUrl = post.media && post.media.length > 0 
                                     ? post.media[0].mediaUrl 
                                     : '/assets/images/not-found.jpg';
-                                    const thumbnailUrl = post.media && post.media.length > 0 
-                                    ? post.media[0].thumbnailUrl 
-                                    : '/assets/images/not-found.jpg';
+                                    const thumbnailUrl =
+                                        post?.media?.length > 0 && post.media[0]?.thumbnailUrl
+                                            ? post.media[0].thumbnailUrl
+                                            : '/assets/images/not-found.jpg';
                                     
                                     return(
                                 // postDetails.map((post:any,index:number)=>(
