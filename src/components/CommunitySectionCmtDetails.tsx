@@ -782,7 +782,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
     // Submit report API call
     //commentreportanissue
         const handleSubmitReport = async (getBlockedUserId:any,getBlockedId:any) => {
-             console.log('comment',getBlockedId); 
              
              const reason = reasonValue[getBlockedUserId];
             if (!getBlockPostId || !getBlockedUserId || !userId) {
@@ -805,8 +804,8 @@ const CommunitySectionCmtDetails: React.FC = () => {
             try {
             const response = await axios.post(`${BASE_URL}/user/commentreportanissue`, {
                 // CommentId:2,
-                // issueRaisedBy:'360ccff6-2f3b-4f27-9d06-692ca03657c3',
-                // UserId:'9458d7d7-9268-457c-b27a-3011976bb2e4',
+                // issueRaisedBy:'20c8a597-25b7-414d-8b9c-c9575f40b9fc',
+                // UserId:'360ccff6-2f3b-4f27-9d06-692ca03657c3',
                 CommentId: getBlockedId,
                 issueRaisedBy: userId,
                 UserId: getBlockedUserId,
@@ -988,74 +987,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
     useEffect(() => {
             loadReviewPost();
     }, [userId]);
-    //  call api all single page data  
-        // const fetchData= async (title:String) => {
-    // useEffect(() => {
-    //     if (!loginId || !slug) {
-    //         return;
-    //     }
-    //     const fetchPostDetail = async (slug:any) => {
-    //         try {
-    //         const response = await axios.post(
-    //             `${BASE_URL}/user/community/${slug}`,
-    //             {
-    //             LoginId: loginId,
-    //             slug: slug,
-    //             },
-    //             {
-    //             headers: {
-    //                 "Content-Type": "application/json",
-    //                 Accept: "application/json",
-    //             },
-    //             }
-    //         );
-    
-    //         console.log('community/1',response.data.data);
-    //         setProfileCommunity(response.data?.data?.profile_Community || []);
-    //         const followingBy = response.data?.data?.following_by;
-    //         const images = response.data?.data?.following_by.images || [];
-    //         //  setImages(response.data.data.imageUrls);
-    //             setImagesArray(response.data.data.following_by.images);
-    //         // console.log('images from API:', images);
-    //         // setImagesArray(images);
-    //         setFollowingBy(followingBy || []);
-    //         setReviewListing(response.data.data.reviews);
-    //         setComments(response.data.data.following_by.comments);
-    //         let postDats = [];
-
-    //         if (Array.isArray(followingBy)) {
-    //         followingBy.forEach(item => {
-    //             if (!item) return;
-
-    //             if (Array.isArray(item.comments)) {
-    //             item.comments.forEach(c => c?.postDto && postDats.push(c.postDto));
-    //             } else if (item.comments?.postDto) {
-    //             postDats.push(item.comments.postDto);
-    //             } else if (item.postDto) {
-    //             postDats.push(item.postDto);
-    //             }
-    //         });
-    //         } else if (followingBy && typeof followingBy === "object") {
-    //             if (Array.isArray(followingBy.comments)) {
-    //                 postDats = followingBy.comments.map(c => c?.postDto).filter(Boolean);
-    //             } else if (followingBy.comments?.postDto) {
-    //                 postDats = [followingBy.comments.postDto];
-    //             } else if (followingBy.postDto) {
-    //                 postDats = [followingBy.postDto];
-    //             }       
-    //         }
-    //         // console.log("postDats", postDats);
-    //         setPostdata(postDats);
-
-    //         } catch (error) {
-    //         console.error("Error fetching community data", error);
-    //         } finally {
-    //         setCommunityLoading(false);
-    //         }
-    //     };
-
-    //     fetchPostDetail(slug);
-    // }, [loginId,slug]); 
+   
 
     const fetchPostDetail = async (slug: any) => {
         if (!loginId || !slug) return;
@@ -1116,119 +1048,120 @@ const CommunitySectionCmtDetails: React.FC = () => {
         }
     }, [loginId, slug]);
 
-    // Add rating // 27-11-25
-    const addReviewAPI = async () => {
-        return axios.post(`${BASE_URL}/feed/addrating`, {
-            FeedId: postId,
-            UserId: userId,
-            Rating: rating,
-            Review: review,
-        });
-    };
-
-    const updateReviewAPI = async () => {
-        return axios.post(`${BASE_URL}/feed/updaterating`, {
-            // Id:1   optional check
-            feedId: postId,
-            UserId: userId,
-            Rating: rating,
-            Review: review,
-        });
-    };
-    // console.log('PostId  handle',postId);
-    const handleSubmitReview = async () => {
-        if (!userId || !postId) {
-            Swal.fire({
-                icon: "error",
-                title: "Missing Information",
-                text: "Missing user or post ID",
-                showConfirmButton: false,
-                width: "350px",
-                timer: 2500,
+        // Add rating // 27-11-25
+        const addReviewAPI = async () => {
+            return axios.post(`${BASE_URL}/feed/addrating`, {
+                FeedId: postId,
+                UserId: userId,
+                Rating: rating,
+                Review: review,
             });
-            return;
-        }
+        };
 
-        try {
-            let response;
-
-            if (userReview) {
-            // UPDATE existing review
-            response = await updateReviewAPI();
-            // console.log(response.data.data);
-                if (response.data.status === "success") {
-                    useAlertMessage({
-                        icon: "success",
-                        title: "Done!",
-                        html: "<strong>Review updated successfully!</strong>",
-                        confirmButtonText: "Ok!",
-                        width: "350px",
-                        confirmButtonColor: "#fc673c",
-                        padding: "1rem",
-                    });
-                } else {
-                    useAlertMessage({
-                        title: "Failed",
-                        html: `<strong style="color:red;">${response.data.message || "Something went wrong."}</strong>`,
-                        icon: "error",
-                        width: "350px",
-                        confirmButtonText: "OK",
-                        confirmButtonColor: "#dc3545",
-                        padding: "1rem",
-                    });
-                }
-            fetchPostDetail(slug);
-            // loadReviewPost();
-            } else {
-            // ADD new review
-            response = await addReviewAPI();
-                if (response.data.status === "success") {
-                    useAlertMessage({
-                        icon: "success",
-                        title: "Done!",
-                        html: "<strong>Review Added successfully!</strong>",
-                        confirmButtonText: "Ok!",
-                        width: "350px",
-                        confirmButtonColor: "#fc673c",
-                        padding: "1rem",
-                    });
-                } else{
-                    useAlertMessage({
-                        title: "Failed",
-                        html: `<strong style="color:red;">${response.data.message || "Something went wrong."}</strong>`,
-                        icon: "error",
-                        width: "350px",
-                        confirmButtonText: "OK",
-                        confirmButtonColor: "#dc3545",
-                        padding: "1rem",
-                    });
-                   
-                }
-           fetchPostDetail(slug);
-            // loadReviewPost();
-            }
-
-            if (response?.data?.status === "success") {
-                setUserReview({
-                    UserId: userId,
-                    Rating: rating,
-                    Review: review,
+        const updateReviewAPI = async () => {
+            return axios.post(`${BASE_URL}/feed/updaterating`, {
+                // Id:1   optional check
+                feedId: postId,
+                UserId: userId,
+                Rating: rating,
+                Review: review,
+            });
+        };
+        // console.log('PostId  handle',postId);
+        const handleSubmitReview = async () => {
+            if (!userId || !postId) {
+                Swal.fire({
+                    icon: "error",
+                    title: "Missing Information",
+                    text: "Missing user or post ID",
+                    showConfirmButton: false,
+                    width: "350px",
+                    timer: 2500,
                 });
+                return;
             }
 
-            setIsReviewOpen(false);
-        } catch (error:any) {
-            useAlertMessage({
-                title: "Upload Failed",
-                html: "<strong>Error. Please try again.</strong>",
-                icon: "error",
-                width: "350px",
-                confirmButtonText: "OK",
-                confirmButtonColor: "#dc3545",
-            });
-            
-        }
-    };
+            try {
+                let response;
+
+                if (userReview) {
+                // UPDATE existing review
+                response = await updateReviewAPI();
+                //  console.log(response.data.data);
+                    if (response.data.status === "success") {
+                        useAlertMessage({
+                            icon: "success",
+                            title: "Done!",
+                            html: "<strong>Review updated successfully!</strong>",
+                            confirmButtonText: "Ok!",
+                            width: "350px",
+                            confirmButtonColor: "#fc673c",
+                            padding: "1rem",
+                        });
+                    } else {
+                        useAlertMessage({
+                            title: "Failed",
+                            html: `<strong style="color:red;">${response.data.message || "Something went wrong."}</strong>`,
+                            icon: "error",
+                            width: "350px",
+                            confirmButtonText: "OK",
+                            confirmButtonColor: "#dc3545",
+                            padding: "1rem",
+                        });
+                    }
+                
+                await fetchPostDetail(slug);
+                // loadReviewPost();
+                } else {
+                // ADD new review
+                response = await addReviewAPI();
+                    if (response.data.status === "success") {
+                        useAlertMessage({
+                            icon: "success",
+                            title: "Done!",
+                            html: "<strong>Review Added successfully!</strong>",
+                            confirmButtonText: "Ok!",
+                            width: "350px",
+                            confirmButtonColor: "#fc673c",
+                            padding: "1rem",
+                        });
+                    } else{
+                        useAlertMessage({
+                            title: "Failed",
+                            html: `<strong style="color:red;">${response.data.message || "Something went wrong."}</strong>`,
+                            icon: "error",
+                            width: "350px",
+                            confirmButtonText: "OK",
+                            confirmButtonColor: "#dc3545",
+                            padding: "1rem",
+                        });
+                    
+                    }
+                    await fetchPostDetail(slug);
+                // loadReviewPost();
+                }
+
+                if (response?.data?.status === "success") {
+                    setUserReview({
+                        UserId: userId,
+                        Rating: rating,
+                        Review: review,
+                    });
+                }
+
+                setIsReviewOpen(false);
+            } catch (error:any) {
+                useAlertMessage({
+                    title: "Upload Failed",
+                    html: "<strong>Error. Please try again.</strong>",
+                    icon: "error",
+                    width: "350px",
+                    confirmButtonText: "OK",
+                    confirmButtonColor: "#dc3545",
+                });
+                
+            }
+        };
 
         // console.log( 'dsklfas',getComments);
     if (CommunityLoading) {

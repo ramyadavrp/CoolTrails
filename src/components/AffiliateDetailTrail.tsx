@@ -659,22 +659,6 @@ const AffiliateDetailTrail: React.FC = () => {
         setCurrentIndex(i => (i + 1) % getImages.length);
     }, [getImages.length]);
 
-    // useEffect(() => {
-    //     if (loginId && title) {
-    //         fetchTrailDetail(title);
-    //     }
-    // }, [loginId, title]);
-    // useEffect(() => {
-    //     // console.log(title);
-    // if (title) {
-    //     try {
-    //     // const trailId = Number(decodeId(encodedId)); // safely decode
-    //     fetchTrailDetail(title);
-    //     } catch (err) {
-    //     console.error('Failed to decode ID:', err);
-    //     }
-    // }
-    // }, [title]);
      // Show review 
         const handleShowReviewMore = () => {
             setReviewVisibleCount((prev) => prev + 2); // Show 2 more each time
@@ -728,11 +712,15 @@ const AffiliateDetailTrail: React.FC = () => {
     // console.log('tariliddd',trailId);
     const addReviewAPI = async () => {
         return axios.post(`${BASE_URL}/trail/addrating`, {
+            // TrailId: trailId,
+            // UserId: userId,
+            // // UserId: "e08ee354-20e2-4af6-a37f-c30127cf322d",
+            // Rating: rating,
+            // Review: review,
             TrailId: trailId,
             UserId: userId,
-            // UserId: "e08ee354-20e2-4af6-a37f-c30127cf322d",
             Rating: rating,
-            Review: review,
+            Review: review
         });
         };
 
@@ -758,7 +746,6 @@ const AffiliateDetailTrail: React.FC = () => {
     const handleSubmitReview = async () => {
         
         if (!userId || !trailId ) {
-            //alert("Login required to add review!");
             window.location.href = "/login";
             return;
         }
@@ -769,7 +756,7 @@ const AffiliateDetailTrail: React.FC = () => {
             if (userReview) {
                 // UPDATE review
                 response = await updateReviewAPI();
-                console.log('update response',response);
+                // console.log('update response',response.data.data);
                 if (response.data.status === "success") {
                     useAlertMessage({
                         icon: "success",
@@ -791,9 +778,7 @@ const AffiliateDetailTrail: React.FC = () => {
                         padding: "1rem",
                     });
                 }
-                fetchTrailDetail(title);
-                // loadReviewPost();
-                // setMessage("Review updated successfully!");
+                await fetchTrailDetail(title);
             } else {
                 // ADD review
                 response = await addReviewAPI();
@@ -821,7 +806,7 @@ const AffiliateDetailTrail: React.FC = () => {
                     
                 }
                 
-                fetchTrailDetail(title);
+                await fetchTrailDetail(title);
                 // loadReviewPost();
                 // setMessage("Review added successfully!");
             }
@@ -841,11 +826,9 @@ const AffiliateDetailTrail: React.FC = () => {
         }
     };
 
-// alert(isLoggedIn);
-        // console.log(getUserFavorite);
-    const fetchTrailDetail = async (title?:String) =>{
+    const fetchTrailDetail = async (title: any) =>{
+        if (!loginId || !title) return;
         try{
-             setLoadingDetailTrails(true);
             const response = await axios.post(`${BASE_URL}/Trail/traildetail`, {
                 urlTitle: title,
                 
@@ -2847,112 +2830,117 @@ const AffiliateDetailTrail: React.FC = () => {
             </div>
         </section>
         {/* <SearchDiscover/> */}
-        <section className="section-local-favorite py-5 position-relative" id="nearby">
-            <div className="container">
-                <div className="row">
-                    <div className="col-12">
-                        <div className="cooltrails-title text-center">
-                            <h2 className="title">Top Trails <span>Nearby</span></h2>
-                        </div>
-                    </div>
-                </div>
-                <div className="row">
-                    <div className="col-12 top-trail-column">
-                        <div className="custom-slider position-relative">
-                            <div className="slider-container">
-                                <div className="best-view-slider owl-carousel owl-theme br-20 overflow-hidden" id="bestViewSl">
-                                   
-                                    {
-                                        nearTrails.map((trail:any,index:number)=>{
-                                            // const city    = trail.city    ?? null;
-                                            // const state   = trail.state   ?? null;
-                                            // const country = trail.country ?? "India";
-                                            // const slugTitle = trail.urlTitle ?? generateSlug(trail.title);
-                                            // const trailurl = `/${generateSlug(trail.type)}s/${generateSlug(country)}/${generateSlug(state)}/${generateSlug(city)}/${slugTitle}`;
-                                            const type    = generateSlug(trail.type);
-                                            const country = generateSlug(trail.country || "India");
-                                            const state   = trail.state ? generateSlug(trail.state) : null;
-                                            const city    = trail.city ? generateSlug(trail.city) : null;
-                                            const title   = trail.urlTitle ?? generateSlug(trail.title);
-
-                                            let trailurl = `/${type}s/${country}`;
-
-                                            if (state) trailurl += `/${state}`;
-                                            if (city)  trailurl += `/${city}`;
-
-                                            trailurl += `/${title}`;
-                                            return(
-                                             <div key={trail.id || index} className="slider-item-single">
-                                                <div className="local-favorite-single">
-                                                    <div className="lfc-thumb position-relative">
-                                                        <Link to={trail.type === 'Trail' ? trailurl : "#"} > 
-                                                        <img
-                                                            src={trail.imagePath || '/assets/images/not-found.jpg'}
-                                                            alt="Top Trail" className="img-fluid img-fixed-size" 
-                                                            onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                                                                const target = e.currentTarget;
-                                                                target.onerror = null; // prevent infinite loop
-                                                                target.src = '/assets/images/not-found.jpg'; // fallback image
-                                                            }}
-                                                        />
-                                                        </Link>
-                                                        {/* <a href="#!" className="bookmark-btn" title="Save"><i className="bi bi-bookmark"></i></a> */}
-                                                    </div>
-                                                    <div className="lfc-content">
-                                                        <Link to={trail.type === 'Trail' ? trailurl : "#"} > 
-                                                            <h3 className="lfc-title">{trail.title}</h3>
-                                                            <p className="lfc-location mb-1">{trail.address}</p>
-                                                            <p className="lfc-tags"><i className="bi bi-star-fill"></i> {trail.rating}· Moderate · {trail.length} · Est. {trail.estimateTime}</p>
-                                                        </Link>
-                                                        {/* <a href="#!" className="btn-style-1 w-100">Check Details</a> */}
-                                                        <Link to={trail.type === 'Trail' ? trailurl : "#"}  className="btn-style-1 w-100">
-                                                           Check Details
-                                                        </Link>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            )
-                                        })
-                                    }
+        {
+            Array.isArray(nearTrails) && nearTrails.length > 0 && (
+                <section className="section-local-favorite py-5 position-relative" id="nearby">
+                    <div className="container">
+                        <div className="row">
+                            <div className="col-12">
+                                <div className="cooltrails-title text-center">
+                                    <h2 className="title">Top Trails <span>Nearby</span></h2>
                                 </div>
                             </div>
-                            <div className="local-favorite-slider-controls">
-                                <button
-                                className="arrow-btn btn-abs-middle d-flex align-items-center justify-content-center rounded-circle btn-previous"
-                                id="localFavPrev"
-                                onClick={() => $('#bestViewSl').owlCarousel('prev')} // Add onClick handler
-                                >
-                                <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    {/* Fix SVG attributes from hyphen-case to camelCase */}
-                                    <path
-                                    d="M7.38118 15L1.52122 9.23744C0.826258 8.55402 0.826258 7.44598 1.52122 6.76256L7.38118 0.999999M2.04246 8L17 8"
-                                    stroke="#C6C6D1"
-                                    strokeWidth="1.5" // Corrected: stroke-width -> strokeWidth
-                                    strokeLinecap="round" // Corrected: stroke-linecap -> strokeLinecap
-                                    />
-                                </svg>
-                                </button>
-                                <button
-                                className="arrow-btn btn-abs-middle d-flex align-items-center justify-content-center rounded-circle btn-next"
-                                id="localFavNext"
-                                onClick={() => $('#bestViewSl').owlCarousel('next')} // Add onClick handler
-                                >
-                                <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    {/* Fix SVG attributes from hyphen-case to camelCase */}
-                                    <path
-                                    d="M10.6188 15L16.4788 9.23744C17.1737 8.55402 17.1737 7.44598 16.4788 6.76256L10.6188 0.999999M15.9575 8L1 8"
-                                    stroke="#C6C6D1"
-                                    strokeWidth="1.5" // Corrected: stroke-width -> strokeWidth
-                                    strokeLinecap="round" // Corrected: stroke-linecap -> strokeLinecap
-                                    />
-                                </svg>
-                                </button>
+                        </div>
+                        <div className="row">
+                            <div className="col-12 top-trail-column">
+                                <div className="custom-slider position-relative">
+                                    <div className="slider-container">
+                                        <div className="best-view-slider owl-carousel owl-theme br-20 overflow-hidden" id="bestViewSl">
+                                        
+                                            {
+                                                nearTrails.map((trail:any,index:number)=>{
+                                                    // const city    = trail.city    ?? null;
+                                                    // const state   = trail.state   ?? null;
+                                                    // const country = trail.country ?? "India";
+                                                    // const slugTitle = trail.urlTitle ?? generateSlug(trail.title);
+                                                    // const trailurl = `/${generateSlug(trail.type)}s/${generateSlug(country)}/${generateSlug(state)}/${generateSlug(city)}/${slugTitle}`;
+                                                    const type    = generateSlug(trail.type);
+                                                    const country = generateSlug(trail.country || "India");
+                                                    const state   = trail.state ? generateSlug(trail.state) : null;
+                                                    const city    = trail.city ? generateSlug(trail.city) : null;
+                                                    const title   = trail.urlTitle ?? generateSlug(trail.title);
+
+                                                    let trailurl = `/${type}s/${country}`;
+
+                                                    if (state) trailurl += `/${state}`;
+                                                    if (city)  trailurl += `/${city}`;
+
+                                                    trailurl += `/${title}`;
+                                                    return(
+                                                    <div key={trail.id || index} className="slider-item-single">
+                                                        <div className="local-favorite-single">
+                                                            <div className="lfc-thumb position-relative">
+                                                                <Link to={trail.type === 'Trail' ? trailurl : "#"} > 
+                                                                <img
+                                                                    src={trail.imagePath || '/assets/images/not-found.jpg'}
+                                                                    alt="Top Trail" className="img-fluid img-fixed-size" 
+                                                                    onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                                                        const target = e.currentTarget;
+                                                                        target.onerror = null; // prevent infinite loop
+                                                                        target.src = '/assets/images/not-found.jpg'; // fallback image
+                                                                    }}
+                                                                />
+                                                                </Link>
+                                                                {/* <a href="#!" className="bookmark-btn" title="Save"><i className="bi bi-bookmark"></i></a> */}
+                                                            </div>
+                                                            <div className="lfc-content">
+                                                                <Link to={trail.type === 'Trail' ? trailurl : "#"} > 
+                                                                    <h3 className="lfc-title">{trail.title}</h3>
+                                                                    <p className="lfc-location mb-1">{trail.address}</p>
+                                                                    <p className="lfc-tags"><i className="bi bi-star-fill"></i> {trail.rating}· Moderate · {trail.length} · Est. {trail.estimateTime}</p>
+                                                                </Link>
+                                                                {/* <a href="#!" className="btn-style-1 w-100">Check Details</a> */}
+                                                                <Link to={trail.type === 'Trail' ? trailurl : "#"}  className="btn-style-1 w-100">
+                                                                Check Details
+                                                                </Link>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    )
+                                                })
+                                            }
+                                        </div>
+                                    </div>
+                                    <div className="local-favorite-slider-controls">
+                                        <button
+                                        className="arrow-btn btn-abs-middle d-flex align-items-center justify-content-center rounded-circle btn-previous"
+                                        id="localFavPrev"
+                                        onClick={() => $('#bestViewSl').owlCarousel('prev')} // Add onClick handler
+                                        >
+                                        <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            {/* Fix SVG attributes from hyphen-case to camelCase */}
+                                            <path
+                                            d="M7.38118 15L1.52122 9.23744C0.826258 8.55402 0.826258 7.44598 1.52122 6.76256L7.38118 0.999999M2.04246 8L17 8"
+                                            stroke="#C6C6D1"
+                                            strokeWidth="1.5" // Corrected: stroke-width -> strokeWidth
+                                            strokeLinecap="round" // Corrected: stroke-linecap -> strokeLinecap
+                                            />
+                                        </svg>
+                                        </button>
+                                        <button
+                                        className="arrow-btn btn-abs-middle d-flex align-items-center justify-content-center rounded-circle btn-next"
+                                        id="localFavNext"
+                                        onClick={() => $('#bestViewSl').owlCarousel('next')} // Add onClick handler
+                                        >
+                                        <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            {/* Fix SVG attributes from hyphen-case to camelCase */}
+                                            <path
+                                            d="M10.6188 15L16.4788 9.23744C17.1737 8.55402 17.1737 7.44598 16.4788 6.76256L10.6188 0.999999M15.9575 8L1 8"
+                                            stroke="#C6C6D1"
+                                            strokeWidth="1.5" // Corrected: stroke-width -> strokeWidth
+                                            strokeLinecap="round" // Corrected: stroke-linecap -> strokeLinecap
+                                            />
+                                        </svg>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </section>
+                </section>
+            )
+        }
+        
     </main>
   );
 };

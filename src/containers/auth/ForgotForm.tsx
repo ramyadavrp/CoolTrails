@@ -2,15 +2,15 @@ import axios from 'axios';
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {validate,LoginFields,ErrorFields } from '../../utils/validation';
+import { useAutoClearMessage } from '../../utils/useAutoClearMessage';
 const BASE_URL = import.meta.env.VITE_API_URL;
 
 const ForgotForm = () => {
-
-
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState("");
     const [error, setError] = useState<string>("");
-    
+    const [message, setMessage] = useState<string | null>(null);
+    useAutoClearMessage(message, setMessage, 3000);
     const isValidEmail = (value: string): boolean => {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
     };
@@ -27,8 +27,14 @@ const ForgotForm = () => {
         }
         try {
             setLoading(true);
-            // Api call
-            console.log("Valid email:", email);
+            const response = await axios.post(`${BASE_URL}/Common/ForgetPassword`, {
+                Username:email
+            });
+            if (response.data.status === "success") {
+                setMessage(response.data.message); 
+            } else {
+                setError(response.data.message || "Something went wrong");
+            }
 
         } catch (err) {
             setError("Something went wrong. Please try again.");
@@ -50,6 +56,7 @@ const ForgotForm = () => {
                 </div> */}
                 <div className="col-xl-5 col-lg-5 col-md-6 col-sm-12 col-12">
                     <div className="login-container bg-almost-white br-20 h-100">
+                        {message && <p style={{color:'green',fontSize:'14px',textAlign:'center'}} >{message}</p>}
                             <h1 className="login-title text-center">Forgot Password</h1> <p style={{textAlign:'center'}}>Please enter your email address and we'll send you a link to reset your password..</p>
                             <div className="login-form-container">
                                 <form onSubmit={handleSubmit} className="login-form mb-4">
@@ -63,7 +70,7 @@ const ForgotForm = () => {
                                         {error && <p style={{color:'red',fontSize:'14px'}}  className="error">{error}</p>}
                                     </div>
                                     
-                                    <button type="submit" className="btn-style-1 w-100" disabled={loading}>{loading ? "Sending..." : "Submit"}</button>
+                                    <button type="submit" className="btn-style-1 w-100" disabled={loading}>{loading ? "Sending..." : "Send Reset Link"}</button>
                                 </form>
                             
                             </div>

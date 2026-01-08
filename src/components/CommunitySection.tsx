@@ -191,6 +191,7 @@ const CommunitySection: React.FC = () => {
         setPostVisibleCount((prev) => prev + 5); // Show 2 more each time
     };
     const handleReportIssue = async (postId: string, post_by_userid: string, reason: string) => {
+        // console.log('postId',postId)
         try {
         const response = await axios.post(`${BASE_URL}/user/reportanissue`, {
             PostId: postId,
@@ -200,7 +201,7 @@ const CommunitySection: React.FC = () => {
             isBlocked:getCheckblock
         });
     // alert("Report submitted successfully!");
-        console.log('repost',response.data);
+        console.log('report',response.data);
         if (response.data.status === "success") {
             useAlertMessage({
                 icon: "success",
