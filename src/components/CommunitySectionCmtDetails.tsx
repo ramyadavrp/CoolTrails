@@ -11,6 +11,8 @@ import {useAlertMessage}  from '../utils/useAlertMessage';
 const BASE_URL = import.meta.env.VITE_API_URL;
 import axios from 'axios';
 import { SquareLoader } from "react-spinners"; 
+import { SyncLoader } from "react-spinners";
+
 import {getAuth} from '../utils/storage';
 import Swal from "sweetalert2";
 import mapboxgl from "mapbox-gl";
@@ -109,7 +111,8 @@ const CommunitySectionCmtDetails: React.FC = () => {
     const [loginIdBased, setLoginIdBased] = useState("");
     const [userId, setUserId] = useState<string>("");
     const [token, setToken] = useState<string>("");
-    
+    const [mapLoading, setMapLoading] = useState(true);
+
     // comment popup
     const [isOpen, setIsOpen] = useState(false);
     const [isSpam, setSpamModal] = useState(false);
@@ -401,10 +404,12 @@ const CommunitySectionCmtDetails: React.FC = () => {
 
      // INIT MAP
     useEffect(() => {
-        if (!getmapPoints.length || map.current || !mapContainer.current) return;
-
+        if (!getmapPoints.length || map.current || !mapContainer.current){
+            setMapLoading(false);
+            return;
+        }
+        setMapLoading(true);
         const firstPoint = getmapPoints[0];
-
         map.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: "mapbox://styles/mapbox/outdoors-v12",
@@ -418,9 +423,9 @@ const CommunitySectionCmtDetails: React.FC = () => {
         map.current.on("load", () => {
             
         bindMap();
+        setMapLoading(false);
         });
     }, [getmapPoints]);
-    
 
     // BIND MAP DATA
     const bindMap = async () => {
@@ -812,8 +817,8 @@ const CommunitySectionCmtDetails: React.FC = () => {
                 Remark:reason ?? '',
                 isBlocked:getCheckblock
             });
-        // alert("Report submitted successfully!");
-            console.log('blocked',response.data);
+       
+            // console.log('blocked',response.data);
 
             if (response.data.status === "success") {
                     Swal.fire({
@@ -1008,13 +1013,22 @@ const CommunitySectionCmtDetails: React.FC = () => {
             );
 
             const data = response.data?.data;
-            console.log('community/1',data);
-            console.log('reviews/1',data.reviews);
-            setMapPoints(mappointsData);
-            // setMapPoints(data?.mapPoints || []);
+            console.log('community/1',response.data.data.feed_fetails);
+            // setMapPoints(mappointsData);
+            // setMapPoints(data?.feed_fetails.mapPoints || []);
+            const apiMapPoints = data?.feed_fetails?.mapPoints;
+
+            setMapPoints(
+            Array.isArray(apiMapPoints) && apiMapPoints.length > 0
+                ? apiMapPoints.map((p: any) => ({
+                    latitude: Number(p.latitude ?? p.lat),
+                    longitude: Number(p.longitude ?? p.lng),
+                }))
+                : []  
+            );
             setProfileCommunity(data?.profile_Community || []);
-            setImagesArray(data?.following_by?.images || []);
-            setFollowingBy(data?.following_by || []);
+            setImagesArray(data?.feed_fetails?.images || []);
+            setFollowingBy(data?.feed_fetails || []);
             // sorting order
             const sortedReviews = (data?.reviews || []).sort(
             (a: any, b: any) =>
@@ -1023,10 +1037,10 @@ const CommunitySectionCmtDetails: React.FC = () => {
 
             setReviewListing(sortedReviews);
             // setReviewListing(data?.reviews || []);
-            setComments(data?.following_by?.comments || []);
+            setComments(data?.feed_fetails?.comments || []);
 
             let postDats: any[] = [];
-            const followingBy = data?.following_by;
+            const followingBy = data?.feed_fetails;
 
             if (Array.isArray(followingBy)) {
             followingBy.forEach(item => {
@@ -1882,7 +1896,26 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                 {/* <img src="/assets/images/trails/map.png" alt="" className="map-img"/> */}
                                     
                                 <div style={{ height: "75vh", width: "100%", position: "relative" }}>
-                                    <div ref={mapContainer}  style={{ height: "100%", width: "100%",borderRadius: "10px" }}/>                                      
+                                    {mapLoading && (
+                                        <div
+                                        style={{
+                                            position: "absolute",
+                                            inset: 0,
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            zIndex: 10,
+                                            background: "rgba(255,255,255,0.7)",
+                                        }}
+                                        >
+                                        <SyncLoader color="#FC673C" />
+                                        </div>
+                                    )}
+                                    {getmapPoints.length > 0 ? (
+                                    <div ref={mapContainer}  style={{ height: "100%", width: "100%",borderRadius: "10px" }}/>
+                                    ) : (
+                                     !mapLoading && <p style={{ textAlign: "center" }}>Map not available</p>
+                                    )}                                   
                                 </div>
  
 

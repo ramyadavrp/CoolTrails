@@ -42,7 +42,7 @@ const ResetForm = () => {
         }
         try {
             setLoading(true);
-            const response = await axios.post(`${BASE_URL}/Common/reset-password`, {
+            const response = await axios.post(`${BASE_URL}/Common/Reset-Password`, {
                 token, // 🔑 from URL
                 password,
                 confirmPassword,
