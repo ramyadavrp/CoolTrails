@@ -151,7 +151,7 @@ const AffiliateDetailTrail: React.FC = () => {
     const [showTextModal, setShowTextModal] = useState(false); // For Text this park modal
     const [phone, setPhone] = useState("");/* Text share*/ 
     const [showQR, setShowQR] = useState(false);
-    
+    const [mapLoading, setMapLoading] = useState(true);
     const qrRef = useRef<HTMLCanvasElement>(null);
     const [loginIdBased, setLoginIdBased] = useState("");
     const [userId, setUserId] = useState<string>("");
@@ -827,7 +827,8 @@ const AffiliateDetailTrail: React.FC = () => {
     };
 
     const fetchTrailDetail = async (title: any) =>{
-        if (!loginId || !title) return;
+        // if (!loginId || !title) return;
+        if (!title) return;
         try{
             const response = await axios.post(`${BASE_URL}/Trail/traildetail`, {
                 urlTitle: title,
@@ -835,19 +836,18 @@ const AffiliateDetailTrail: React.FC = () => {
             });
             
             setTrailDetail(response.data.data);
-            console.log('traildetail',response.data)
+            // console.log('traildetail',response.data)
             setNearTrails(response.data.data.nearTrails);
             setWeatherDays(response.data.data.weatherDays);
             setImages(response.data.data.imageUrls);
             setPlaceOffer(response.data.data.placeOffer);
             setItinerary(response.data.data.itinerary);
-            // console.log('nearTrails',response.data.data.nearTrails);
             setReviews(response.data.data.review);
             // console.log('review',response.data.data.review);
             setReviewImages(response.data.data.reviews_images);
             const points = response.data.data.mapPoints;
             setMapPoints(points);
-             console.log('points',points);
+            //  console.log('points',points);
             
         }catch(err){
             console.error('API Error:', err);
@@ -859,14 +859,18 @@ const AffiliateDetailTrail: React.FC = () => {
          
     }
     useEffect(() => {
-        if (loginId && title) {
+        if (title) {
             fetchTrailDetail(title);
         }
-    }, [loginId, title]);
+    }, [title]);
     
     useEffect(() => {
-        if (!getmapPoints.length || map.current) return;
-        // console.log(getmapPoints);
+        // if (!getmapPoints.length || map.current) return;
+        if (!getmapPoints.length || map.current ){
+            setMapLoading(false);
+            return;
+        }
+        setMapLoading(true);
         const firstPoint = getmapPoints[0];
         if (mapContainer.current) {
             map.current = new mapboxgl.Map({
@@ -878,14 +882,6 @@ const AffiliateDetailTrail: React.FC = () => {
             });
         }
 
-        // map.current = new mapboxgl.Map({
-        //     container: mapContainer.current,
-        //     style: 'mapbox://styles/mapbox/outdoors-v12',
-        //     center: [firstPoint.longitude, firstPoint.latitude],
-        //     zoom: 13,       
-        // });
-        // Zoom in zoom out (+, - button)
-        // map.current.addControl(new mapboxgl.NavigationControl());
         if (!map.current) return;
         map.current.on('load', async () => {
             //  setloading(true);
@@ -952,7 +948,7 @@ const AffiliateDetailTrail: React.FC = () => {
             el.style.borderRadius = '50%';
             el.style.border = '2px solid white';
             walkerMarker.current = new mapboxgl.Marker(el).setLngLat([0, 0]).addTo(map.current);
-
+             setMapLoading(false);
             await updateRoute(formattedPoints);
         });
     }, [getmapPoints]);
@@ -1681,7 +1677,22 @@ const AffiliateDetailTrail: React.FC = () => {
                                 </button> */}
                             </div>
 
-                          
+                        {mapLoading && (
+                            <div
+                            style={{
+                                position: "absolute",
+                                inset: 0,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                zIndex: 10,
+                                background: "rgba(255,255,255,0.7)",
+                            }}
+                            >
+                            <SyncLoader color="#FC673C" />
+                            </div>
+                        )}
+                        {getmapPoints.length > 0 ? (
                         <div className="rounded-3 shadow-sm" ref={mapContainer} style={{ height: '400px' }}  
                         onClick={() => {
                             const trailTitle = trailDetail.name || (title ? slugToTitle(title) : "");
@@ -1693,7 +1704,9 @@ const AffiliateDetailTrail: React.FC = () => {
                             window.open("/trail-map", "_self")
                         }}
                         />
-                                
+                        ) : (
+                            !mapLoading && <p style={{ textAlign: "center" }}>Map not available</p>
+                        )}   
                         
                         <div>
                             {/* <button onClick={() => setIsOpen(true)}>Share</button> */}

@@ -107,6 +107,7 @@ const AddPostSection: React.FC = () => {
         points:[],
     });
      const [loadingMap,setLoadingMap] = useState(true);
+     
      // map state
     const mapContainer = useRef<HTMLDivElement | null>(null);
     const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -121,7 +122,7 @@ const AddPostSection: React.FC = () => {
     const [showPrompt, setShowPrompt] = useState(false);
     const [promptValue, setPromptValue] = useState("");
     const [promptCallback, setPromptCallback] = useState<((value: string | null) => void) | null>(null);
-    
+    const [isMapOpen, setIsMapOpen] = useState(false);
     useEffect(() => {
         const { userId, token ,login,email} = getAuth();
             if (userId) setUserId(userId);
@@ -146,25 +147,94 @@ const AddPostSection: React.FC = () => {
     // Initialize map
     
 
-    useLayoutEffect(() => {
-  if (!mapContainer.current) return;
+    // useLayoutEffect(() => {
+    //     if (!mapContainer.current) return;
 
-  const map = new mapboxgl.Map({
-    container: mapContainer.current,
-    style: "mapbox://styles/mapbox/streets-v12",
-    center: [78.0421, 27.1751],
-    zoom: 16,
-    attributionControl:false,
-  });
+    //     const map = new mapboxgl.Map({
+    //         container: mapContainer.current,
+    //         style: "mapbox://styles/mapbox/streets-v12",
+    //         center: [78.0421, 27.1751],
+    //         zoom: 16,
+    //         attributionControl:false,
+    //     });
 
-  mapRef.current = map;
+    //     mapRef.current = map;
 
-  return () => map.remove();
-}, [mapContainer.current]);
+    //     return () => map.remove();
+    //     }, [mapContainer.current]);
+    useEffect(() => {
+        setTimeout(() => { 
+        if (!mapContainer.current) return;
+        setLoadingMap(true);
 
+        const map = new mapboxgl.Map({
+            container: mapContainer.current,
+            style: "mapbox://styles/mapbox/streets-v12",
+            center: [78.0421, 27.1751],
+            zoom: 16,
+            pitch: 0,
+            bearing: 0,
+            antialias: true,
+            attributionControl: false,
+        });
+
+        mapRef.current = map;
+
+        const geocoder = new MapboxGeocoder({
+            accessToken: mapboxgl.accessToken,
+            mapboxgl: mapboxgl,
+            marker: false,
+            placeholder: "Search location",
+        });
+
+        map.addControl(geocoder);
+
+        map.on("load", () => {
+            setLoadingMap(false);
+
+            map.addSource("route", {
+            type: "geojson",
+            data: {
+                type: "Feature",
+                properties: {},
+                geometry: { type: "LineString", coordinates: [] as [number, number][] },
+            },
+            });
+
+            map.addLayer({
+            id: "route-layer",
+            type: "line",
+            source: "route",
+            layout: { "line-join": "round", "line-cap": "round" },
+            paint: { "line-color": "#3b9ddd", "line-width": 5 },
+            });
+
+            // Walker marker
+            const el = document.createElement("div");
+            el.style.width = "30px";
+            el.style.height = "30px";
+            el.style.backgroundImage =
+            "url('https://img.icons8.com/color/48/person-male--v1.png')";
+            el.style.backgroundSize = "cover";
+            el.style.borderRadius = "50%";
+            el.style.border = "2px solid white";
+            
+            walkerMarkerRef.current = new mapboxgl.Marker(el).setLngLat([0, 0]).addTo(map);
+
+            loadMap();
+            setIsMapOpen(true);
+        });
+
+      return () => {
+        map.remove();
+        if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      };
+      }, 1000);
+    }, []);
     // console.log('mapContainer.current',mapContainer.current);
   // Map click handler
     useEffect(() => {
+        if (!isMapOpen) return;
         const map = mapRef.current;
         if (!map) return;
     
@@ -237,7 +307,7 @@ const AddPostSection: React.FC = () => {
         map.off("click", handleClick);
         };
         // return () => map.off("click", handleClick);
-    }, [points, loopClosed]); 
+    }, [points, loopClosed,isMapOpen]); 
 
     // Get route using Mapbox Directions API
     const getRoute = async (start: [number, number], end: [number, number]) => {
@@ -1057,8 +1127,15 @@ const AddPostSection: React.FC = () => {
                     </div>
                     <div className="col-xl-6 col-lg-6 col-md-6 col-sm-12 col-12 grid-item">
                         <p style={{margin:'0px',color:'#FC673C'}}>Please click the over map and set point.</p>
-                        <div ref={mapContainer} className="map-container"></div>
-                        {/* <div ref={mapContainer} style={{ width: "100%", height: "400px",borderRadius:'10px'}}></div> */}
+                        <div className="map-wrapper">
+                            {loadingMap && (
+                            <div className="map-loader">
+                                <SyncLoader color="#FC673C" />
+                            </div>
+                            )}
+
+                            <div ref={mapContainer} className="map-container" />
+                        </div>
                         <div className="my-4">
                             <button className="btn-style-1" onClick={handleProfileUpdate}>Add Post</button>
                             <button className="btn-style-0">Cancel</button>
