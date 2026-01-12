@@ -46,6 +46,7 @@ interface Itinerary {
 
 interface TrailDetail {
     id: number;
+    trailId: string;
     name: string;
     title: string;
     address?: string;
@@ -119,10 +120,12 @@ const AffiliateDetailTrail: React.FC = () => {
     const { country, state, city, title ,slug} = useParams();
     const location = useLocation();
     const stateTrailId = location.state?.trailId;
-    // console.log('get trail id',stateTrailId);
-    const [trailId, setTrailId] = useState(() => {
-        return stateTrailId || localStorage.getItem("trailId") || null;
+    // console.log('get trail id',location.state?.trailId);
+    // console.log('get trail trailId',stateTrailId);
+    const [trailId, setTrailId] = useState<string | null>(() => {
+    return localStorage.getItem("trailId");
     });
+    
     // const { id: encodedId, slug } = useParams(); // url link
      const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [trailDetail, setTrailDetail] = useState<TrailDetail | null>(null);
@@ -627,12 +630,13 @@ const AffiliateDetailTrail: React.FC = () => {
     };
 
 
-    useEffect(() => {
-        if (stateTrailId) {
-        localStorage.setItem("trailId", stateTrailId);
-        setTrailId(stateTrailId);
-        }
-    }, [stateTrailId]);
+    // useEffect(() => {
+    //     if (stateTrailId) {
+    //     localStorage.setItem("trailId", stateTrailId); trailDetail.trailId
+    //     setTrailId(stateTrailId);
+    //     }
+    // }, [stateTrailId]);
+   
     //  loader time set 
     // window.scrollTo(0,0);
     useLayoutEffect(() => {
@@ -709,6 +713,46 @@ const AffiliateDetailTrail: React.FC = () => {
     //     ? reviewDetails.filter((rev) => rev.userId === userId)
     //     : reviewDetails;
     // Add rating // 27-11-25
+    
+
+    const fetchTrailDetail = async (title: any) =>{
+        // if (!loginId || !title) return;
+        if (!title) return;
+        try{
+            const response = await axios.post(`${BASE_URL}/Trail/traildetail`, {
+                urlTitle: title,
+                
+            });
+            
+            setTrailDetail(response.data.data);
+            console.log('traildetail',response.data)
+            setNearTrails(response.data.data.nearTrails);
+            setWeatherDays(response.data.data.weatherDays);
+            setImages(response.data.data.imageUrls);
+            setPlaceOffer(response.data.data.placeOffer);
+            setItinerary(response.data.data.itinerary);
+            setReviews(response.data.data.review);
+            // console.log('review',response.data.data.review);
+            setReviewImages(response.data.data.reviews_images);
+            const points = response.data.data.mapPoints;
+            setMapPoints(points);
+            //  console.log('points',points);
+            
+        }catch(err){
+            console.error('API Error:', err);
+            setErrorDetailTrails('Unable to fetch detail trail');
+            
+        }finally{
+            setLoadingDetailTrails(false);
+        }
+         
+    }
+    useEffect(() => {
+        if (title) {
+            fetchTrailDetail(title);
+        }
+    }, [title]);
+    
     // console.log('tariliddd',trailId);
     const addReviewAPI = async () => {
         return axios.post(`${BASE_URL}/trail/addrating`, {
@@ -742,9 +786,10 @@ const AffiliateDetailTrail: React.FC = () => {
             // "Review": "this is trail review"
         });
     };
-        // console.log('PostId  handle',postId);
+    
     const handleSubmitReview = async () => {
-        
+        console.log('userIdssss',userId);
+        console.log('trailIdssss',trailId);
         if (!userId || !trailId ) {
             window.location.href = "/login";
             return;
@@ -807,8 +852,6 @@ const AffiliateDetailTrail: React.FC = () => {
                 }
                 
                 await fetchTrailDetail(title);
-                // loadReviewPost();
-                // setMessage("Review added successfully!");
             }
 
             if (response?.data?.status === "success") {
@@ -825,45 +868,25 @@ const AffiliateDetailTrail: React.FC = () => {
             alert("Failed to submit review");
         }
     };
-
-    const fetchTrailDetail = async (title: any) =>{
-        // if (!loginId || !title) return;
-        if (!title) return;
-        try{
-            const response = await axios.post(`${BASE_URL}/Trail/traildetail`, {
-                urlTitle: title,
-                
-            });
-            
-            setTrailDetail(response.data.data);
-            // console.log('traildetail',response.data)
-            setNearTrails(response.data.data.nearTrails);
-            setWeatherDays(response.data.data.weatherDays);
-            setImages(response.data.data.imageUrls);
-            setPlaceOffer(response.data.data.placeOffer);
-            setItinerary(response.data.data.itinerary);
-            setReviews(response.data.data.review);
-            // console.log('review',response.data.data.review);
-            setReviewImages(response.data.data.reviews_images);
-            const points = response.data.data.mapPoints;
-            setMapPoints(points);
-            //  console.log('points',points);
-            
-        }catch(err){
-            console.error('API Error:', err);
-            setErrorDetailTrails('Unable to fetch detail trail');
-            
-        }finally{
-            setLoadingDetailTrails(false);
-        }
-         
-    }
     useEffect(() => {
-        if (title) {
-            fetchTrailDetail(title);
+        // 1navigation state has highest priority
+        if (stateTrailId) {
+            localStorage.setItem("trailId", String(stateTrailId));
+            setTrailId(String(stateTrailId));
+            return;
         }
-    }, [title]);
-    
+
+        // 2 API response
+        if (trailDetail?.trailId) {
+            localStorage.setItem("trailId", String(trailDetail.trailId));
+            setTrailId(String(trailDetail.trailId));
+            return;
+        }
+
+        // 3 fallback already handled by useState
+        }, [stateTrailId, trailDetail]);
+
+
     useEffect(() => {
         // if (!getmapPoints.length || map.current) return;
         if (!getmapPoints.length || map.current ){
@@ -1350,7 +1373,7 @@ const AffiliateDetailTrail: React.FC = () => {
                 <div className="row">
                     <div className="col-xl-12">
                         <div className="trail-dt-top">
-                            <h1 className="trail-dt-title"> {trailDetail.name || (title ?  slugToTitle(title) : '')}</h1>
+                            <h1 className="trail-dt-title"> {trailDetail.name || (title ?  slugToTitle(title) : '')} </h1>
                             <p className="trail-dt-address text-grey mb-0">
                                 <span className="tdt-add">{trailDetail.address ?? 'N/A'}</span> <span className="tdt-separator">|</span> 
                                 <span className="t-dt-r-and-o"><i className="bi bi-star-fill"></i> {trailDetail.rating != null ? Number(trailDetail.rating.toFixed(1)) : 'N/A'}
@@ -2531,7 +2554,7 @@ const AffiliateDetailTrail: React.FC = () => {
 
                                             <div className="test-head">
                                             <h3 className="reviewer-name fw-normal mb-0">
-                                                {rev.userWithAddress ?? ""}
+                                                {rev.userWithAddress ?? ""} 
                                             </h3>
 
                                             <div className="rating">
@@ -2539,7 +2562,7 @@ const AffiliateDetailTrail: React.FC = () => {
                                             </div>
 
                                             <p className="mb-0">
-                                                {rev.ratingOn ?? ""} • Hiking
+                                                {rev.ratingOn ?? ""} • {rev.category ?? "Hiking"} 
                                             </p>
                                             </div>
 
