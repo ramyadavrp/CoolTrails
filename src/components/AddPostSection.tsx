@@ -8,10 +8,12 @@ import { SquareLoader } from "react-spinners";
 import { SyncLoader } from "react-spinners";
 import {getAuth} from '../utils/storage';
 import mapboxgl from "mapbox-gl";
+
 // import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 import "mapbox-gl/dist/mapbox-gl.css";
+import {useAlertMessage} from '../utils/useAlertMessage';
 
 mapboxgl.accessToken = "pk.eyJ1IjoiMTExMnZpcmVuZHJhIiwiYSI6ImNtYmE0emNyNjBwbHMyanNibHBpZHgxMjUifQ.5FSp2VZ1T1kXcGV38bC5jA";
 
@@ -75,6 +77,7 @@ interface Activity {
     date: number
 }
 const AddPostSection: React.FC = () => {
+    const navigate = useNavigate();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [file, setFileName] = useState<File|null>(null);
     const [preview, setPreview] = useState<string|null>(null);
@@ -237,77 +240,75 @@ const AddPostSection: React.FC = () => {
         if (!isMapOpen) return;
         const map = mapRef.current;
         if (!map) return;
-    
+
         const handleClick = (e: mapboxgl.MapMouseEvent) => {
-        if (loopClosed) return alert("Loop already closed.");
-
-        const coords: [number, number] = [e.lngLat.lng, e.lngLat.lat];
-
-        // Loop detection
-        if (points.length > 2) {
-            const first = points[0];
-            const dist =
-            Math.sqrt(Math.pow(first[0] - coords[0], 2) + Math.pow(first[1] - coords[1], 2));
-            if (dist < 0.0001) {
-            setLoopClosed(true);
-            alert("Loop closed!");
-            setPoints((prev) => {
-                const newPoints = [...prev, coords];
-                updateRoute(newPoints);
-                // handleAddMapPoints(newPoints);
-                return newPoints;
-            });
-            return;
+            if (loopClosed) {
+                alert("Loop already closed.");
+                return;
             }
-        }
 
-        // Prompt for title
-        openCustomPrompt((title) => {
-            if (!title) return;
-            // alert('hh');
+            const coords: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+
+            // Loop detection
+            if (points.length > 2) {
+                const first = points[0];
+                const dist = Math.sqrt(Math.pow(first[0] - coords[0], 2) + Math.pow(first[1] - coords[1], 2));
+                if (dist < 0.0001) {
+                    setLoopClosed(true);
+                    alert("Loop closed!");
+                    setPoints((prev) => {
+                        const newPoints = [...prev, coords];
+                        updateRoute(newPoints);
+                        return newPoints;
+                    });
+                    return;
+                }
+            }
+
             const index = points.length;
+            const title = `Point ${index + 1}`; // Dynamic title
 
-            const marker = new mapboxgl.Marker({ draggable: true })
-            .setLngLat(coords)
-            .setPopup(new mapboxgl.Popup().setText(title))
-            .addTo(mapRef.current!);
+            // Create marker with icon and popup (but don’t auto-open)
+            const el = document.createElement("div");
+            el.style.width = "30px";
+            el.style.height = "30px";
+            el.style.backgroundImage = "url('https://img.icons8.com/color/48/marker.png')"; 
+            el.style.backgroundSize = "cover";
+            el.style.borderRadius = "50%";
+            // el.style.border = "2px solid white";
 
-            marker.togglePopup();
+            const marker = new mapboxgl.Marker({ element: el, draggable: true })
+                .setLngLat(coords)
+                .setPopup(new mapboxgl.Popup().setText(title)) // attach popup, click to open
+                .addTo(map);
 
             // Drag update
             marker.on("dragend", () => {
-            const lngLat = marker.getLngLat();
-            setPoints((prev) => {
-                const updatedPoints = [...prev];
-                updatedPoints[index] = [lngLat.lng, lngLat.lat];
-                updateRoute(updatedPoints);
-                // handleAddMapPoints(updatedPoints); // 30-12-25
-                return updatedPoints;
-            });
+                const lngLat = marker.getLngLat();
+                setPoints((prev) => {
+                    const updatedPoints = [...prev];
+                    updatedPoints[index] = [lngLat.lng, lngLat.lat];
+                    updateRoute(updatedPoints);
+                    return updatedPoints;
+                });
             });
 
             // Update state
-            setPoints((prev) => {
-            const newPoints = [...prev, coords];
-            setTitles((prevTitles) => [...prevTitles, title]);
-            setMarkers((prevMarkers) => [...prevMarkers, marker]);
+            setPoints((prev) => [...prev, coords]);
+            setMarkers((prev) => [...prev, marker]);
+            setTitles((prev) => [...prev, title]);
 
-            updateRoute(newPoints);
-
-            // API call
-            handleAddMapPoints(newPoints);
-
-            return newPoints;
-            });
-        });
+            updateRoute([...points, coords]);
+            handleAddMapPoints([...points, coords]);
         };
 
         map.on("click", handleClick);
+
         return () => {
-        map.off("click", handleClick);
+            map.off("click", handleClick);
         };
-        // return () => map.off("click", handleClick);
-    }, [points, loopClosed,isMapOpen]); 
+    }, [points, loopClosed, isMapOpen]);
+
 
     // Get route using Mapbox Directions API
     const getRoute = async (start: [number, number], end: [number, number]) => {
@@ -566,8 +567,8 @@ const AddPostSection: React.FC = () => {
             if (name === "CountryId") {
             updatedData.StateId = "";
             updatedData.CityId = "";
-            // Check if country is India (adjust value as per your data)
-            updatedData.showStateCity = value === "kUmC3E3SjKUnOrfnRDZcGg==" || value === "India";
+            // Check if country is India (adjust value as per your data) 14-1-26
+            //updatedData.showStateCity = value === "kUmC3E3SjKUnOrfnRDZcGg==" || value === "India"; 
             }
 
             // When State changes → reset City
@@ -625,8 +626,15 @@ const AddPostSection: React.FC = () => {
             });
             console.log('add feed',response.data);
             if (response.data.status === "success") {
-                setMessage('Feed added successfully!');
-                // Reset form fields completely
+                useAlertMessage({
+                    icon: "success",
+                    title: "Done!",
+                    html: "<strong>Feed added successfully!</strong>",
+                    confirmButtonText: "Ok!",
+                    width: "350px",
+                    confirmButtonColor: "#fc673c",
+                    padding: "1rem",
+                });
                 setProfileData({
                     postTitle: "",
                     UserId: userId,
@@ -641,9 +649,19 @@ const AddPostSection: React.FC = () => {
                     showStateCity: true,
                     points: [],   
                 });
+                setTimeout(() => navigate("/profile"), 1500);
             } else {
-                //alert(response.data.message || "Unexpected response from server");
+                useAlertMessage({
+                    title: "Failed",
+                    html: `<strong style="color:red;">${response.data.message || "Something went wrong."}</strong>`,
+                    icon: "error",
+                    width: "350px",
+                    confirmButtonText: "OK",
+                    confirmButtonColor: "#dc3545",
+                    padding: "1rem",
+                });
             }
+            
         } catch (error: any) {
             if (error.response?.data?.errors) {
             // Flatten array of messages into single string per field
@@ -856,8 +874,8 @@ const AddPostSection: React.FC = () => {
                                 </div>
                                 ))} 
                                 
-                                <div className="upload-btn-wrapper" style={{display: "flex",alignItems: "center", gap: "100px"}}>
-                                    {/* <label htmlFor="imageInput"
+                                <div className="upload-btn-wrapper" style={{display: "flex",alignItems: "center", gap: "10px"}}>
+                                     {/* <label htmlFor="imageInput"
                                     style={{background: "#FC673C", border: "none",borderRadius: "50px", padding: "10px", width:'100px'}}
                                         className="btn btn-sm btn-primary ms-2"
                                     >Add Images</label>
@@ -1137,7 +1155,7 @@ const AddPostSection: React.FC = () => {
                             <div ref={mapContainer} className="map-container" />
                         </div>
                         <div className="my-4">
-                            <button className="btn-style-1" onClick={handleProfileUpdate}>Add Post</button>
+                            <button className="btn-style-1" onClick={handleProfileUpdate}>Create New Feed</button>
                             <button className="btn-style-0">Cancel</button>
                         </div>
                     </div>

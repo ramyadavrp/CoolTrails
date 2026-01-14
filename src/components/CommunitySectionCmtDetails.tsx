@@ -95,6 +95,11 @@ const CommunitySectionCmtDetails: React.FC = () => {
     });
     // console.log('postIdss',postId);
     const [activeTab, setActiveTab] = useState('');
+    // LIKE
+    const [likedPosts, setLikedPosts] = useState<{ [key: number]: boolean }>({});
+    const [likeCounts, setLikeCounts] = useState<{ [key: number]: number }>({});
+    const [loading, setLoading] = useState<Record<number, boolean>>({});
+    
     const [CommunityLoading,setCommunityLoading] = useState(true);
     const [getprofileCommunity, setProfileCommunity ]= useState<any[]>([]);
     const [getfollowingBy, setFollowingBy] = useState<FollowingBy | null>(null);
@@ -1176,7 +1181,57 @@ const CommunitySectionCmtDetails: React.FC = () => {
                 
             }
         };
+    const LikeHandle = useCallback(async (id: number) => {
+        //  setLoading(prev => ({ ...prev, [id]: true }));
+        //alert(userId);
+        if (id !== 0) {
+            // prevent double-like on frontend (optional safeguard)
+            // if (likedPosts[id]) {
+            //     // alert("You already liked this post!");
+            //     return;
+            // }
 
+            try {
+                const response = await axios.post(
+                    `${BASE_URL}/feed/like`,
+                    {
+                        PostId: id,
+                        UserId: userId, 
+                        // UserId: "e08ee354-20e2-4af6-a37f-c30127cf322d", 
+                    },
+                    {
+                        headers: {
+                            "Content-Type": "application/json",
+                            Accept: "application/json",
+                        },
+                    }
+                );
+
+                // console.log("API Response:", response.data);
+
+                if (response.data.status === "success") {
+                    // setLikedPosts((prev) => ({
+                    //     ...prev,
+                    //     [id]: true,
+                    // }));
+
+                    // setLikeCounts((prev) => ({
+                    //     ...prev,
+                    //     [id]: (prev[id] || 0) + 1,
+                    // }));
+                } else if (response.data.status === "already") {
+                    // alert("You already liked this post!");
+                } else {
+                    console.warn("Unhandled response:", response.data);
+                }
+            } catch (error) {
+                console.error("Error liking post", error);
+            } finally {
+                setCommunityLoading(false);
+                 setLoading(prev => ({ ...prev, [id]: true }));
+            }
+        }
+    }, [BASE_URL, likedPosts]); 
         // console.log( 'dsklfas',getComments);
     if (CommunityLoading) {
         return (
@@ -1218,7 +1273,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                     <div className="row">
                         <div className="col-xl-12">
                             <div className="trail-dt-top">
-                                <h1 className="trail-dt-title">{getfollowingBy?.title ?? ''}</h1>
+                                <h1 className="trail-dt-title">{getfollowingBy?.title ?? ''}ssss</h1>
                                 <p className="trail-dt-address text-grey mb-0">{getfollowingBy?.address ?? 'N/A'}<span className="tdt-add"> | <i className="bi bi-star-fill"></i> {getfollowingBy?.rating ? (Math.round(getfollowingBy.rating * 100) / 100).toFixed(1) : "0.00" } Moderate </span> <span className="tdt-separator">|</span> {getfollowingBy?.date??''}<span className="t-dt-r-and-o"></span></p>
                                 
                             </div>
@@ -1684,12 +1739,19 @@ const CommunitySectionCmtDetails: React.FC = () => {
                             <div className="single-feed position-relative">
                                 <div className="feed-footer d-flex">
                                     <button 
+                                       
+                                            // disabled={Boolean(loading[getfollowingBy.id] || likedPosts[getfollowingBy.id])}
+                                            // onClick={() => LikeHandle(getfollowingBy.id)}
+                                            // key={getfollowingBy.id}
+                                            // disabled={Boolean(loading[getfollowingBy.id] || likedPosts[getfollowingBy.id])}
+                                            // onClick={() => LikeHandle(getfollowingBy.id)}
                                         className="like-btn"
                                         style={{
                                             background: "transparent",
                                             padding: "6px 12px",
                                             cursor: "pointer",
                                         }}
+                                        
                                         >
                                         <svg 
                                             width="20" 
@@ -1705,7 +1767,8 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                             fill={getfollowingBy?.do_like===true  ? "#FC673C" : "#7D7D7D"}
                                             />
                                             
-                                        </svg>{getfollowingBy?.like_count?? 0}  {getfollowingBy?.do_like===true ? "Liked" : "Like"}  
+                                        </svg>
+                                        {getfollowingBy?.like_count?? 0}  {getfollowingBy?.do_like===true ? "Liked" : "Like"}  
                                         
                                     </button>
                                     <button className="comment-btn">
