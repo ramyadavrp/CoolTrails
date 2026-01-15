@@ -702,11 +702,19 @@ const AffiliateDetailTrail: React.FC = () => {
     //     }
     //     }, [reviewListing, userId]);
 
+    // useEffect(() => {
+    //     if (getReviews.length > 0 && userId) {
+    //         const myReview = getReviews.find(r => r.userId === userId);
+    //         setUserReview(myReview || null);
+    //     }
+    // }, [getReviews, userId]);
     useEffect(() => {
-        if (getReviews.length > 0 && userId) {
-            const myReview = getReviews.find(r => r.userId === userId);
-            setUserReview(myReview || null);
-        }
+    if (getReviews.length > 0 && userId) {
+        const myReview = getReviews.find(r => r.userId === userId);
+        setUserReview(myReview || null);
+    } else {
+        setUserReview(null); // no reviews yet
+    }
     }, [getReviews, userId]);
     
     // const finalReviews = userId
@@ -747,8 +755,10 @@ const AffiliateDetailTrail: React.FC = () => {
         }
          
     }
+    
     useEffect(() => {
         if (title) {
+            setLoadingDetailTrails(true);
             fetchTrailDetail(title);
         }
     }, [title]);
@@ -1049,6 +1059,69 @@ const AffiliateDetailTrail: React.FC = () => {
 
         animationFrame = requestAnimationFrame(step);
     };
+
+
+    const handleGetDirections = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        e.preventDefault();
+
+        if (!isLoggedIn) {
+        const currentPath = window.location.pathname + window.location.search;
+        window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+        return;
+        }
+
+        if (!getmapPoints.length) return;
+
+        const destination = getmapPoints[getmapPoints.length - 1];
+
+        if (!navigator.geolocation) {
+        alert("Geolocation is not supported by your browser");
+        return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+        (position) => {
+            const { latitude, longitude, accuracy } = position.coords;
+
+            const useAutoOrigin = accuracy > 1000;
+
+            const googleUrl = useAutoOrigin
+            ? `https://www.google.com/maps/dir/?api=1&destination=${destination.latitude},${destination.longitude}&travelmode=walking`
+            : `https://www.google.com/maps/dir/?api=1&origin=${latitude},${longitude}&destination=${destination.latitude},${destination.longitude}&travelmode=walking`;
+
+            window.open(googleUrl, "_blank");
+        },
+        () => {
+            const googleUrl = `https://www.google.com/maps/dir/?api=1&destination=${destination.latitude},${destination.longitude}&travelmode=walking`;
+            window.open(googleUrl, "_blank");
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0,
+        }
+        );
+    };
+
+    
+
+const handleTrailClick = async (trail: any, trailurl: string) => {
+  setLoadingDetailTrails(true);
+  try {
+    await fetchTrailDetail(trail.urlTitle); // updates getmapPoints
+    const trailTitle = trail.title || "";
+    localStorage.setItem("trailPoints", JSON.stringify(getmapPoints));
+    localStorage.setItem("trailTitle", trailTitle);
+
+    navigate(trailurl); // SPA navigation
+  } catch (err) {
+    console.error("Failed to load trail:", err);
+  } finally {
+    setLoadingDetailTrails(false);
+  }
+};
+
+
 
     useEffect(() => {
         // Initialize Owl Carousel only after data is loaded and component has rendered
@@ -2013,45 +2086,47 @@ const AffiliateDetailTrail: React.FC = () => {
                                     href="#"
                                     className="btn-style-3"
                                     style={{ cursor: "pointer" }}
-                                    onClick={(e) => {
+                                    onClick={handleGetDirections}
+                                    // onClick={(e) => {
                                         
-                                        e.preventDefault();
-                                    if (isLoggedIn) {
-                                        if (!getmapPoints.length) return;
+                                    //     e.preventDefault();
+                                    // if (isLoggedIn) {
+                                    //     if (!getmapPoints.length) return;
 
-                                        // Destination (last point)
-                                        const destination = getmapPoints[getmapPoints.length - 1];
+                                    //     // Destination (last point)
+                                    //     const destination = getmapPoints[getmapPoints.length - 1];
 
-                                        // Get current location
-                                        if (!navigator.geolocation) {
-                                            alert("Geolocation is not supported by your browser");
-                                            return;
-                                        }
+                                    //     // Get current location
+                                    //     if (!navigator.geolocation) {
+                                    //         alert("Geolocation is not supported by your browser");
+                                    //         return;
+                                    //     }
 
-                                        navigator.geolocation.getCurrentPosition(
-                                            (position) => {
-                                                const { latitude, longitude } = position.coords;
+                                    //     navigator.geolocation.getCurrentPosition(
+                                    //         (position) => {
+                                    //             const { latitude, longitude } = position.coords;
 
-                                                const googleUrl = `https://www.google.com/maps/dir/?api=1&origin=${latitude},${longitude}&destination=${destination.latitude},${destination.longitude}&travelmode=walking`;
+                                    //             const googleUrl = `https://www.google.com/maps/dir/?api=1&origin=${latitude},${longitude}&destination=${destination.latitude},${destination.longitude}&travelmode=walking`;
 
-                                                window.open(googleUrl, "_blank");
-                                            },
-                                            (error) => {
-                                                alert("Unable to fetch your current location");
-                                                console.error(error);
-                                            },
-                                            {
-                                                enableHighAccuracy: true,
-                                                timeout: 10000,
-                                                maximumAge: 0,
-                                            }
-                                        );
-                                    }else{
-                                        const currentPath = window.location.pathname + window.location.search;
-                                        window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
-                                            // window.location.href = "/login"; // redirect to login
-                                        }
-                                    }}
+                                    //             window.open(googleUrl, "_blank");
+                                    //         },
+                                    //         (error) => {
+                                    //             alert("Unable to fetch your current location");
+                                    //             console.error(error);
+                                    //         },
+                                    //         {
+                                    //             enableHighAccuracy: true,
+                                    //             timeout: 10000,
+                                    //             maximumAge: 0,
+                                    //         }
+                                    //     );
+                                    // }else{
+                                    //     const currentPath = window.location.pathname + window.location.search;
+                                    //     window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+                                    //         // window.location.href = "/login"; // redirect to login
+                                    //     }
+                                    // }}
+                                    
                                 >
                                     Get Directions
                                 </a>
@@ -2463,10 +2538,8 @@ const AffiliateDetailTrail: React.FC = () => {
                         <div className="col-12">
                             <div className="section-title review d-flex align-items-center">
                                 <h2 className="title">Reviews</h2>
-                                {/* {isLoggedIn ? (
-                                    <a href="" className="btn-style-review">Review trail</a>
-                                ):(null )} */}
-                                {isLoggedIn && !userReview &&(
+                                {/* {isLoggedIn && !userReview &&( */}
+                                {userId  && !userReview &&(
                                     <a href="#"
                                         style={{
                                             background: "#FC673C",
@@ -2494,33 +2567,7 @@ const AffiliateDetailTrail: React.FC = () => {
                                         
                                      Add Review
                                     </a>
-                                    // <a href="#"
-                                    //     style={{
-                                    //         background: "#FC673C",
-                                    //         border: "none",
-                                    //         borderRadius: "50px",
-                                    //         padding: "10px",
-                                    //         opacity: userReview ? 0.5 : 1,
-                                    //         pointerEvents: userReview ? "none" : "auto",
-                                    //         cursor: userReview ? "not-allowed" : "pointer",
-                                    //     }}
-                                    //     className="btn btn-sm btn-primary ms-2"
-                                    //     onClick={(e) => {
-                                    //         e.preventDefault();
-
-                                    //         if (userReview) {
-                                    //         setRating(userReview.rating);
-                                    //         setReview(userReview.decription);}
-                                    //         // } else {
-                                    //         // setRating(0);
-                                    //         // setReview("");
-                                    //         // }
-                                    //         setIsReviewOpen(true);
-                                    //     }}
-                                    // >
-                                    // {userReview ? "Review Submitted" : "Add Review"}
-                                    // </a>
-                                    )}
+                                )}
                             </div>
                         </div>
                     </div>
@@ -2926,7 +2973,9 @@ const AffiliateDetailTrail: React.FC = () => {
                                                                     <p className="lfc-tags"><i className="bi bi-star-fill"></i> {trail.rating}· Moderate · {trail.length} · Est. {trail.estimateTime}</p>
                                                                 </Link>
                                                                 {/* <a href="#!" className="btn-style-1 w-100">Check Details</a> */}
-                                                                <Link to={trail.type === 'Trail' ? trailurl : "#"}  className="btn-style-1 w-100">
+                                                                <Link to={trail.type === 'Trail' ? trailurl : "#"}  
+                                                                className="btn-style-1 w-100"
+                                                                >
                                                                 Check Details
                                                                 </Link>
                                                             </div>

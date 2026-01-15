@@ -554,31 +554,60 @@ const AddPostSection: React.FC = () => {
         setImages((prev) => prev.filter((_, i) => i !== index));
     };
 
+    // const handleInputChange = (
+    //     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    //     ) => {
+    //         const { name, value } = e.target;
+    //        console.log('add',profileData);
+    //         console.log('add',value);
+    //     setProfileData((prev) => {
+    //         let updatedData = { ...prev, [name]: value };
+
+    //         // When Country changes → reset State and City
+    //         if (name === "CountryId") {
+    //         updatedData.StateId = "";
+    //         updatedData.CityId = "";
+    //         // Check if country is India (adjust value as per your data) 14-1-26
+    //         //updatedData.showStateCity = value === "kUmC3E3SjKUnOrfnRDZcGg==" || value === "India"; 
+    //         }
+
+    //         // When State changes → reset City
+    //         if (name === "StateId") {
+    //         updatedData.CityId = "";
+    //         }
+
+    //         return updatedData;
+    //     });
+    // }; 
+
     const handleInputChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
         ) => {
-            const { name, value } = e.target;
-           console.log('add',profileData);
-            // console.log('add',value);
-        setProfileData((prev) => {
-            let updatedData = { ...prev, [name]: value };
+        const { name, value } = e.target;
 
-            // When Country changes → reset State and City
+        setProfileData(prev => {
+            // Avoid unnecessary state updates
+            if (prev[name as keyof typeof prev] === value) {
+            return prev;
+            }
+
+            const updatedData = {...prev,[name]: value,};
+
+            // Country change → reset State & City
             if (name === "CountryId") {
             updatedData.StateId = "";
             updatedData.CityId = "";
-            // Check if country is India (adjust value as per your data) 14-1-26
-            //updatedData.showStateCity = value === "kUmC3E3SjKUnOrfnRDZcGg==" || value === "India"; 
             }
 
-            // When State changes → reset City
+            // State change → reset City
             if (name === "StateId") {
             updatedData.CityId = "";
             }
 
+            console.log("Updated profileData:", updatedData);
             return updatedData;
         });
-    }; 
+    };
 
     const handleActivityToggle = (activity: string) => {
         setProfileData((prev) => {
@@ -617,7 +646,7 @@ const AddPostSection: React.FC = () => {
         }
         
 
-        console.log(formData);
+        console.log('formData',formData);
         try {
             const response = await axios.post(`${BASE_URL}/feed/create`, formData, {
                 headers: {
@@ -686,7 +715,6 @@ const AddPostSection: React.FC = () => {
                 console.error('API Error:', error);
                 // setErrorLocatTrails('Unable to fetch top local trails');
             } finally {
-                // setloadingExplore(false);
             }
         }
         fetchActivity();
