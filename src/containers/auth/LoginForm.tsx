@@ -1,15 +1,17 @@
 import axios from 'axios';
 import { useState, useEffect } from "react";
-import { Link, useNavigate, } from 'react-router-dom';
-
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import {validate,LoginFields,ErrorFields } from '../../utils/validation';
 const BASE_URL = import.meta.env.VITE_API_URL;
 
 const LoginForm = () => {
   const navigate = useNavigate();
-
+  const location = useLocation(); 
   // State for password visibility
   const [showPassword, setShowPassword] = useState(false); //
-  
+   // extract redirect URL if any
+  const params = new URLSearchParams(location.search);
+  const redirectUrl = params.get("redirect") || "/profile"; // default to profile
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -18,16 +20,35 @@ const LoginForm = () => {
   }, [navigate]);
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState<ErrorFields>({});
+  const [serverError, setServerError] = useState("");
+  // const [error, setError] = useState<string | null>(null);
+  
+  const [fieldErrors, setFieldErrors] = useState({
+    email: "",
+    password: ""
+  });
+
+ 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
+    const fields: LoginFields = { email, password };
 
+    const validationErrors = validate(fields);
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return; // stop login
+    }
+
+    setErrors({});
+    setLoading(true);
+    
+// https://api.cooltrails.purchaseitnow.shop/api
+// https://api.cooltrails.purchaseitnow.shop/api/auth/login
     try {
       const response = await axios.post(`${BASE_URL}/auth/login`, {
         Username: email,
@@ -37,20 +58,31 @@ const LoginForm = () => {
       });
 
       const data = response.data;
-      console.log(data);
+      console.log('login',data);
       if (data.status === "success") {
-        localStorage.setItem("token", data.token);
-        navigate('/profile');
+        
+        // localStorage.setItem("token", data.token);
+        // localStorage.setItem("email", email); 
+        // localStorage.setItem("id", data.user.id); 
+        // localStorage.setItem("login", data.user.loginid); 
+
+        sessionStorage.setItem("token", data.token);
+        sessionStorage.setItem("email", email);
+        sessionStorage.setItem("id", data.user.id);
+        sessionStorage.setItem("login", data.user.loginid);
+        navigate(redirectUrl, { replace: true });
+        // navigate('/profile');
       } else {
-        setError(data.message || "Login failed");
+        setServerError(data.message || "Login failed");
       }
     } catch (err: any) {
       const message = err.response?.data?.message || err.message || "Something went wrong.";
-      setError(message);
+      setServerError(message);
     } finally {
       setLoading(false);
     }
   };
+// console.log('BASE_URL',BASE_URL);
 
   const togglePasswordVisibility = () => {
       setShowPassword(prevShowPassword => !prevShowPassword);
@@ -70,11 +102,15 @@ const LoginForm = () => {
                       <h1 className="login-title text-center">Welcome ! <br /> Log in and start exploring.</h1>
                       <div className="login-form-container">
                           <form onSubmit={handleSubmit} className="login-form mb-4">
-                            {error && <p className="text-red-600 text-sm mb-2">{error}</p>}
+                            {serverError && <p  style={{color:'red',fontSize:'14px'}} className="server-error">{serverError}</p>}
                               <div className="form-floating">
                                   <input type="text" name="email" className="form-control" id="username"
-                                      placeholder="name@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+                                      placeholder="name@example.com" value={email} onChange={(e) => {
+                                        setEmail(e.target.value);
+                                        setErrors({ ...errors, email: "" }); // clear error on typing
+                                      }} />
                                   <label htmlFor="username">Email address</label>
+                                  {errors.email && <p style={{color:'red',fontSize:'12px'}}  className="error">{errors.email}</p>}
                               </div>
                               <div className="form-floating">
                                   {/* <input type="password" name="password" className="form-control form-control-password"
@@ -87,9 +123,15 @@ const LoginForm = () => {
                                       id="password"
                                       placeholder="Password"
                                       value={password}
-                                      onChange={(e) => setPassword(e.target.value)}
+                                      onChange={(e) => {
+                                          setPassword(e.target.value);
+                                          setErrors({ ...errors, password: "" });
+                                        }}
                                   />
                                   <label htmlFor="password">Password</label>
+                                  {errors.password && <p  style={{color:'red',fontSize:'12px'}} className="error">{errors.password}</p>}
+
+      
                                   {/* <i className="toggle-password bi bi-eye"></i> */}
                                   <i className={`toggle-password bi ${showPassword ? "bi-eye-slash" : "bi-eye"}`}
                                       onClick={togglePasswordVisibility} ></i>

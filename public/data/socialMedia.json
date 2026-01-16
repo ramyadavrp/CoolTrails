@@ -1,0 +1,24 @@
+{
+    "social_media":[
+        {
+            "name": "Facebook",
+            "url": "https://facebook.com/CoolTrails",
+            "icon": "/assets/images/icons/facebook.svg"
+        },
+        {
+            "name": "Instagram",
+            "url": "https://instagram.com/CoolTrails",
+            "icon": "/assets/images/icons/instagram.svg"
+        },
+        {
+            "name": "Twitter-X",
+            "url": "https://twitter.com/CoolTrails",
+            "icon": "/assets/images/icons/twitter-x.svg"
+        },
+        {
+            "name": "Linked IN",
+            "url": "https://linkedin.com/in/CoolTrails",
+            "icon": "/assets/images/icons/linkedin02.svg"
+        }
+    ]
+}

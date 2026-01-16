@@ -126,7 +126,7 @@ const HomeTrails: React.FC = () => {
                                         target.src = '/assets/images/not-found.jpg'; // fallback image
                                     }}
                                 />
-                                <Link to={`/explore-trail/${generateSlug(category.title || '' )}`} className="activity-overlay d-flex align-items-end h-100 w-100">
+                                <Link to={`/explore/${generateSlug(category.title || '' )}`} className="activity-overlay d-flex align-items-end h-100 w-100">
                                     <span className="overlay-title d-block w-100 text-center">
                                       {category.title}
                                     </span>

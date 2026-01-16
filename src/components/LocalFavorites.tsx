@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from "react-router-dom";
+
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { SyncLoader } from "react-spinners";
-
+import  {generateSlug} from '../utils/helpers';
+import {getAuth} from '../utils/storage';
 //import $ from 'jquery'; // Import jQuery
 import 'owl.carousel'; // Import OwlCarousel's JS (ensure this path is correct)
 
@@ -16,33 +19,156 @@ interface TrailDetail {
   title: string;
 }
 const LocalFavorites: React.FC = () => {
+  const navigate = useNavigate();
   const [topLocatTrails, setTopLocatTrails] = useState([]);
+  const [getBookmark, setBookmark] = useState([]);
   const [loadingLocatTrails, setLoadingLocatTrails] = useState(true);
   const [errorLocatTrails, setErrorLocatTrails] = useState('');
-  // genrate slug
-    const generateSlug = (title: string) => {
-        return title
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')  // Replace non-alphanumeric with hyphens
-            .replace(/(^-|-$)+/g, '');    // Trim hyphens from start/end
-    };
-  // Effect to fetch data
+  const [userId, setUserId] = useState<string>("");
+  const [token, setToken] = useState<string>("");
+  const [bookmarkedTrails, setBookmarkedTrails] = useState<number[]>([]);
+  
+  // Get id by helper
   useEffect(() => {
-      const fetchTopLocalTrail = async() =>{
-        try{
-          const response = await axios.get(`${BASE_URL}/home/toplocaltrail/3`);
-          setTopLocatTrails(response.data.data);
-          //console.log(response.data.data);
-        }catch(err){
-            console.error('API Error:', err);
-            setErrorLocatTrails('Unable to fetch top local trails');
-        } finally{
-            setLoadingLocatTrails(false);
+    const { userId, token } = getAuth();
+    if (userId) setUserId(userId);
+    if (token) setToken(token);
+  }, []);
+// console.log('ggg',userId)
+
+//   useEffect(() => {
+//   const fetchTopLocalTrail = async () => {
+//     setLoadingLocatTrails(true);
+//     console.log('userIduserIduserId',userId);
+//     try {
+//       const apiUrl = userId
+//         ? `${BASE_URL}/home/toplocaltrail/10/${userId}`
+//         : `${BASE_URL}/home/toplocaltrail/10`; // No userId if not logged in 
+
+//       const response = await axios.get(apiUrl);
+//       const data = response.data.data || [];
+
+//       setTopLocatTrails(data);
+//       console.log('datadata',data);
+      
+
+//       if (userId) {
+//         // Extract bookmarked trails only if user logged in
+//         const bookmarked = data
+//           .filter(
+//             (item: any) =>
+//               item.do_bookmark === true ||
+//               item.do_bookmark === "true" ||
+//               item.do_bookmark === 1
+//           )
+//           .map((item: any) => Number(item.trailid));
+
+//         setBookmarkedTrails(bookmarked);
+//       } else {
+//         setBookmarkedTrails([]); // Guest user: no bookmarks
+//       }
+
+//     } catch (error) {
+//       console.error("API Error:", error);
+//       setErrorLocatTrails("Unable to fetch top local trails");
+//     } finally {
+//       setLoadingLocatTrails(false);
+//     }
+//   };
+
+//   fetchTopLocalTrail();
+// }, [userId, BASE_URL]);
+
+
+  useEffect(() => {
+      const fetchTopLocalTrail = async () => {
+        try {
+          const response = await axios.get(`${BASE_URL}/home/toplocaltrail/10/${userId}`);
+          const data = response.data.data;
+          // console.log('datadata',data);
+          // console.log('userIduserId',userId);
+          setTopLocatTrails(data);
+          // Extract bookmarked trailIds from response
+          const bookmarked = data
+            .filter((item: any) => item.do_bookmark === true)
+            .map((item: any) => item.trailid);
+
+          setBookmarkedTrails(bookmarked);
+          
+        } catch (error) {
+          console.error("API Error:", error);
+          setErrorLocatTrails("Unable to fetch top local trails");
+        } finally {
+          setLoadingLocatTrails(false);
         }
-      }  
-        fetchTopLocalTrail();
-    }, []); // Empty dependency array means this runs once on mount
-    //console.log(topLocatTrails);
+      };
+
+      fetchTopLocalTrail();
+  }, [userId, BASE_URL]);
+  // Bookmark
+  const handleBookmark = async (trailid: any) => {
+        if (!token || !userId) {
+          navigate("/login", { replace: true });
+          return;
+        }
+         // Check current bookmark status
+        const isAlreadyBookmarked = bookmarkedTrails.includes(trailid);
+       
+        try {
+         
+            const response = await axios.post(`${BASE_URL}/trail/bookmark`, {
+                TrailId: trailid,
+                UserId: userId,
+                do_bookmark: !isAlreadyBookmarked
+              }
+            
+            );
+             console.log('bookmark',response.data);
+            if (response.data.status === "success") {
+            // Toggle bookmark state locally
+            setBookmarkedTrails((prev) =>
+                isAlreadyBookmarked
+                ? prev.filter((id) => id !== trailid)
+                : [...prev, trailid]
+            );
+            } else {
+            alert("Error bookmarking trail.");
+            }
+        } catch (error) {
+            console.error("Error submitting report:", error);
+            alert("Failed to submit report");
+        }
+    };
+ 
+    
+
+
+//    useEffect(() => {
+//   if (!userId) return;
+
+//   const fetchTopLocalTrail = async () => {
+//     try {
+//       const response = await axios.get(
+//         // `https://api.cooltrails.purchaseitnow.shop/api/home/toplocaltrail/10/${userId}`
+//         `https://api.cooltrails.purchaseitnow.shop/api/home/toplocaltrail/10/20c8a597-25b7-414d-8b9c-c9575f40b9fc`
+//       );
+
+//       console.log("toplocal Listing", response.data.data);
+//       setTopLocatTrails(response.data.data);
+//     } catch (err) {
+//       console.error("API Error:", err);
+//       setErrorLocatTrails("Unable to fetch top local trails");
+//     } finally {
+//       setLoadingLocatTrails(false);
+//     }
+//   };
+
+//   fetchTopLocalTrail();
+// }, [userId]);
+
+
+
+  console.log('sss',topLocatTrails);
   // Effect to initialize Owl Carousel
   useEffect(() => {
     // Initialize Owl Carousel only after data is loaded and component has rendered
@@ -104,7 +230,7 @@ const LocalFavorites: React.FC = () => {
         return () => {
           if ($owlElement.data('owl.carousel')) {
             $owlElement.owlCarousel('destroy');
-          }
+          }  
         };
       }
     }
@@ -127,7 +253,7 @@ if (topLocatTrails.length === 0) return <p>No local favorites found.</p>;
         <div className="row">
           <div className="col-12">
             <div className="cooltrails-title text-center">
-              <h2 className="title">Local Favorites near <span>Dubai</span></h2>
+              <h2 className="title">Local Favorites near <span>India</span></h2>
             </div>
           </div>
         </div>
@@ -136,11 +262,20 @@ if (topLocatTrails.length === 0) return <p>No local favorites found.</p>;
             <div className="custom-slider position-relative">
               <div className="slider-container">
                 <div className="local-favorite-slider owl-carousel owl-theme br-20 overflow-hidden" id="localFavorite">
-                  {topLocatTrails.map((locatTrail: any, index: number) => (
+                  {topLocatTrails.map((locatTrail: any, index: number) => {
+                      const city    = locatTrail.city    ?? "Lucknow";
+                      const state   = locatTrail.state   ?? "UTTAR PRADESH";
+                      const country = locatTrail.country ?? "India";
+                      const type = "trail";
+                      const slugTitle = locatTrail.urltitle ?? generateSlug(locatTrail.title);
+                      const trailurl = `/${generateSlug(type)}s/${generateSlug(country)}/${generateSlug(state)}/${generateSlug(city)}/${slugTitle}`;
+                      // const parkUrl = `/${generateSlug(locatTrail.type)}s/${generateSlug(country)}/${generateSlug(state)}/${generateSlug(city)}/${slugTitle}`;
+
+                    return(
                     <div key={index} className="slider-item-single">
                       <div className="local-favorite-single">
                         <div className="lfc-thumb position-relative">
-                          {/* Fix image source path - add leading slash for public assets */}
+                          <Link to={trailurl}  >
                           <img
                               src={locatTrail.image || '/assets/images/not-found.jpg'}
                               alt="locat Trail" className="img-fluid img-fixed-size" 
@@ -150,32 +285,44 @@ if (topLocatTrails.length === 0) return <p>No local favorites found.</p>;
                                   target.src = '/assets/images/not-found.jpg'; // fallback image
                               }}
                           />
-                          <a href="#!" className="bookmark-btn" title="Save">
-                            <i className="bi bi-bookmark"></i>
-                          </a>
+                          </Link>
+
+                         <a
+                          href="#!"
+                          className="bookmark-btn"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleBookmark(locatTrail.trailid);
+                          }}
+                        >
+                          <i
+                            className={`bi ${
+                              bookmarkedTrails.includes(locatTrail.trailid)
+                                ? "bi-bookmark-fill bookmarked-icon"
+                                : "bi-bookmark"
+                            }`}
+                          ></i>
+                        </a>
+
                         </div>
+                         
                         <div className="lfc-content">
-                          <h3 className="lfc-title">{locatTrail.title}</h3>
-                          <p className="lfc-location mb-1">{locatTrail.address}</p>
-                          <p className="lfc-tags">
-                            <i className="bi bi-star-fill"></i> 4.6 · Moderate · {locatTrail.distance} · Est. {locatTrail.time_duration || 'N/A'}
-                          </p>
-                          {/* <Link to={`/affiliate-details/${locatTrail.trailId}/${generateSlug(locatTrail.title)}`} className="btn-style-1 w-100">
-                              Check Details
-                          </Link> */}
-                          {/* <Link to={`/affiliate-details/${locatTrail.urltitle}`} className="btn-style-1 w-100">
-                              Check Details
-                          </Link> */}
-                          <Link to={`/affiliate-details/${locatTrail.urltitle || generateSlug(locatTrail.title || '')}`}
+                          <Link to={trailurl}  >
+                            <h3 className="lfc-title">{locatTrail.title}</h3>
+                            <p className="lfc-location mb-1">{locatTrail.address} </p>
+                            <p className="lfc-tags">
+                              <i className="bi bi-star-fill"></i> 4.6 · Moderate · {locatTrail.distance} · Est. {locatTrail.time_duration || 'N/A'} {locatTrail.trailid}
+                            </p>
+                          </Link>
+                          <Link to={trailurl} 
                             className="btn-style-1 w-100"
                           >
                             Check Details
                           </Link>
-                          {/* <a href="#!" className="btn-style-1 w-100"></a> */}
                         </div>
                       </div>
                     </div>
-                  ))}
+                    )})}
                 </div>
               </div>
 

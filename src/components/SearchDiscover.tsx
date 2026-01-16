@@ -1,6 +1,8 @@
 // src/components/SearchDiscover.tsx
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
+
 import 'owl.carousel'; // Import OwlCarousel's JS (ensure this path is correct)
 
 // IMPORTANT: Make sure these CSS imports are present either here or in your main.tsx
@@ -9,9 +11,11 @@ import 'owl.carousel/dist/assets/owl.theme.default.min.css';
 import axios from 'axios';
 import { SyncLoader } from "react-spinners";
 import { encodeId, generateSlug } from '../utils/helpers';
+import {getAuth} from '../utils/storage';
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 const SearchDiscover: React.FC = () => {
+    const navigate = useNavigate();
     //const [nearbytrails,setNearbytrails] =useState([]);
     const [loadingNearbytrails, setloadingNearbytrails] = useState(true);
     const [errorNearbytrails, setErrorNearbytrails] = useState('');
@@ -22,7 +26,60 @@ const SearchDiscover: React.FC = () => {
     //const [nearbytrails,setNearbytrails] =useState([]);
     const [nearbytrails, setNearbytrails] = useState<any[]>([]);
     const [latitude, setLatitude] = useState<number | null>(null);
-    const [longitude, setLongitude] = useState<number | null>(null)
+    const [longitude, setLongitude] = useState<number | null>(null);
+    const [userId, setUserId] = useState<string>("");
+    const [bookmarkedTrails, setBookmarkedTrails] = useState<number[]>([]);
+    const [token, setToken] = useState<string>("");
+    
+    // Get id by helper
+      useEffect(() => {
+        const { userId, token } = getAuth();
+        if (userId) setUserId(userId);
+        if (token) setToken(token);
+      }, []);
+    // Bookmark
+
+    const handleBookmark = async (trailId: number) => {
+        if (!token || !userId) {
+            navigate("/login", { replace: true });
+            return;
+        }
+
+        // Check current bookmark status
+        const isAlreadyBookmarked = bookmarkedTrails.includes(trailId);
+        // console.log(isAlreadyBookmarked);
+        try {
+            // Send true for new bookmark, false for remove
+            const response = await axios.post(`${BASE_URL}/trail/bookmark`, {
+            TrailId: trailId,
+            UserId: userId,
+            do_bookmark: !isAlreadyBookmarked
+            }//,
+            // {
+            //   headers: {
+            //     Authorization: `Bearer ${token}`,   // send token
+            //   },
+            // }
+        );
+            console.log('bookmark',response.data);
+            if (response.data.status === "success") {
+            // Update local state
+            setBookmarkedTrails((prev) =>
+                isAlreadyBookmarked
+                ? prev.filter((id) => id !== trailId)
+                : [...prev, trailId]
+            );
+            } else {
+            console.error("Bookmark error:", response.data);
+            alert("Error bookmarking trail.");
+            }
+        } catch (error) {
+            console.error("Error submitting bookmark:", error);
+            alert("Failed to submit bookmark");
+        }
+    };
+
+
     
     // const fetchNearbyname = async() =>{
     //     try{
@@ -54,13 +111,22 @@ const SearchDiscover: React.FC = () => {
             const response = await axios.post(`${BASE_URL}/trail/NearTrailsByLatAndLan`, {
                 take: take,
                 skip: skip,
-                // lat: latitude,
-                // lon: longitude,
-                lat: 27.1719517170742,
-                lon: 78.0420843000696,
-                maxDistance: maxDistance
+                lat: latitude,
+                lon: longitude,
+                // lat: 27.1719517170742,
+                // lon: 78.0420843000696,
+                maxDistance: maxDistance,
+                userId:userId
             });
-            setNearbytrails(response.data.data);
+            const data = response.data.data;
+            console.log('near by',response.data.data);
+            setNearbytrails(data);
+            // Extract bookmarked trailIds from response
+          const bookmarked = data
+            .filter((item: any) => item.do_bookmark === true)
+            .map((item: any) => item.trailId);
+
+          setBookmarkedTrails(bookmarked);
             //console.log('Server response:', response.data.data);
         }catch(err){
             console.error('Failed your location:',err);
@@ -95,8 +161,8 @@ const SearchDiscover: React.FC = () => {
         if (latitude !== null && longitude !== null) {
         postLocation();
         }
-    }, [latitude, longitude, take, skip,maxDistance]);
-    //console.log(nearbytrails );
+    }, [latitude, longitude, take, skip,maxDistance,BASE_URL,userId]);
+    // console.log('sdh',nearbytrails );
     useEffect(() => {
         // Initialize Owl Carousel only after data is loaded and component has rendered
         //if (!loadingLocatTrails && topLocatTrails.length > 0) {
@@ -192,38 +258,77 @@ const SearchDiscover: React.FC = () => {
                           id="bestViewSl">
                 
                                 {
-                                    nearbytrails.map((nTrails:any,index:number)=>(
+                                    nearbytrails.map((nTrails:any,index:number)=>{
+                                        const city    = nTrails.city    ?? "Lucknow";
+                                        const state   = nTrails.state   ?? "UTTAR PRADESH";
+                                        const country = nTrails.country ?? "India";
+    
+                                        const slugTitle = nTrails.urlTitle ?? generateSlug(nTrails.title);
+                                        const trailurl = `/${generateSlug(nTrails.type)}s/${generateSlug(country)}/${generateSlug(state)}/${generateSlug(city)}/${slugTitle}`;
+                                        const parkUrl = `/${generateSlug(nTrails.type)}s/${generateSlug(country)}/${generateSlug(state)}/${generateSlug(city)}/${slugTitle}`;
+    
+                                        return (
                                         <div key={index} className="slider-item-single">
+                                            {/* <Link to={`/${generateSlug(nTrails.title)}`} state={{ trail: nTrails }}>                                        */}
                                             <div className="local-favorite-single">
                                                 <div className="lfc-thumb position-relative">
-                                                    <img
-                                                        src={nTrails.imagePath}
-                                                        alt="explorer" className="img-fluid img-fixed-size" 
-                                                        onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                                                            const target = e.currentTarget;
-                                                            target.onerror = null; // prevent infinite loop
-                                                            target.src = '/assets/images/not-found.jpg'; // fallback image
+                                                    <Link 
+                                                    to={nTrails.type === 'Trail' ? trailurl : "#"} 
+                                                    // to={`/${generateSlug(nTrails.title)}`} 
+                                                    state={{ trail: nTrails }}>   
+                                                        <img
+                                                            src={nTrails.imagePath}
+                                                            alt="explorer" className="img-fluid img-fixed-size" 
+                                                            onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                                                const target = e.currentTarget;
+                                                                target.onerror = null; // prevent infinite loop
+                                                                target.src = '/assets/images/not-found.jpg'; // fallback image
+                                                            }}
+                                                        />
+                                                    </Link>
+                                                    {/* <a href="#!" className="bookmark-btn" title="Save"
+                                                      onClick={(e) => handleBookmark(nTrails.trailId)}
+                                                    >
+                                                        <i className="bi bi-bookmark"></i>
+                                                    </a> */}
+                                                    
+                                                    <a href="#!" className="bookmark-btn" title="Save"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            handleBookmark(nTrails.trailId);
                                                         }}
-                                                    />
-                                                    <a href="#!" className="bookmark-btn" title="Save"><i
-                                                            className="bi bi-bookmark"></i></a>
+                                                    >
+                                                    <i className={`bi ${
+                                                        bookmarkedTrails.includes(nTrails.trailId)
+                                                            ? "bi-bookmark-fill bookmarked-icon" 
+                                                            : "bi-bookmark" 
+                                                        }`}
+                                                    ></i>
+                                                    </a>
+
                                                 </div>
                                                 <div className="lfc-content">
+                                                    <Link 
+                                                    to={nTrails.type === 'Trail' ? trailurl : "#"} 
+                                                    state={{ trail: nTrails }}>  
                                                     <h3 className="lfc-title">{nTrails.title ?? 'N/A'}</h3>
                                                     <p className="lfc-location mb-1">{nTrails.address ?? 'N/A'}
                                                     </p>
                                                     <p className="lfc-tags"><i className="bi bi-star-fill"></i> {nTrails.rating} · Moderate ·
                                                         {nTrails.length} · Est. {nTrails.estimateTime}
                                                     </p>
-                                                    
-                                                    <Link to={`/affiliate-details/${generateSlug(nTrails.title)}`} state={{ trail: nTrails }} className="btn-style-1 w-100">
+                                                    </Link>
+                                                    <Link 
+                                                    to={nTrails.type === 'Trail' ? trailurl : "#"}  
+                                                    state={{ trail: nTrails }} className="btn-style-1 w-100">
                                                         Check Details
                                                     </Link>
                                                     
                                                 </div>
                                             </div>
+                                             {/* </Link> */}
                                         </div>
-                                    ))   
+                                    )})   
                                 }
                               {/* <div className="slider-item-single">
                                   <div className="local-favorite-single">

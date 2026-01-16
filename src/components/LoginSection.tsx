@@ -3,6 +3,7 @@ import React, { useState }  from 'react';
 
 const LoginSection: React.FC = () => {
     const [isSignUp, setIsSignUp] = useState(true);
+    window.scrollTo(0,0);
   return (
       
     <section className="section-login py-3">
