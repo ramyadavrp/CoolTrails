@@ -59,7 +59,7 @@ const AppRoute = () => {
         <Route path="*" element={<NotFound />} /> 
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<Forgot />} />
-        <Route path="/reset-password" element={<Reset />} />
+       
         <Route path="/signup" element={<Signup />} /> 
         <Route path="/affiliates" element={<Affiliate />} />
         <Route path="/Trails/:country/:state?/:city?/:title" element={<AffiliateDetails />} />
@@ -105,6 +105,7 @@ const AppRoute = () => {
         <Route element={<PrivateRoute />}>
           <Route path="/create-map" element={<CreateMap />} /> 
           <Route path="/profile" element={<ProfilePage />} />
+           <Route path="/reset-password" element={<Reset />} />
           <Route path="/edit-profile" element={<ProfileEdit />} />
           {/* <Route path="/profile-feed" element={<ProfilePage />} /> */}
           <Route path="/profile-feed" element={<ProfilefeedPage />} />

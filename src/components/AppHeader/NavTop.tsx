@@ -250,6 +250,11 @@ const NavTop: React.FC = () => {
                                                     <img src="/assets/images/icons/user.png" alt="" /> Profile
                                                 </Link>
                                             </li>
+                                            <li>
+                                                <Link to={'/reset-password'} className="dropdown-item">
+                                                    <img src="/assets/images/icons/user.png" alt="" /> Change Password
+                                                </Link>
+                                            </li>
                                             {/* <li>
                                                 <a className="dropdown-item" href="#"><img src="/assets/images/icons/info.png"
                                                         alt="" /> Help Center</a>

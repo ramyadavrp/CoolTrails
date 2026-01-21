@@ -3,26 +3,49 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {validate,LoginFields,ErrorFields } from '../../utils/validation';
 import { useAutoClearMessage } from '../../utils/useAutoClearMessage';
+import { useAlertMessage } from '../../utils/useAlertMessage';
+import { getAuth } from '../../utils/storage'; 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
+
+type PasswordField = 'old' | 'new' | 'confirm';
 const ResetForm = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string>("");
     const [message, setMessage] = useState<string | null>(null);
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
-    const [showPassword, setShowPassword] = useState(false);
-
+    const [oldPassword, setOldPassword] = useState("");
+    // const [showPassword, setShowPassword] = useState(false);
+    const [userId, setUserId] = useState<string>("");
     useAutoClearMessage(message, setMessage, 3000);
+    const [showPassword, setShowPassword] = useState<Record<PasswordField, boolean>>({
+        old: false,
+        new: false,
+        confirm: false,
+    });
+
     const token = new URLSearchParams(window.location.search).get("token");
 
-    const togglePasswordVisibility = () => {
-        setShowPassword(prev => !prev);
+    // const togglePasswordVisibility = () => {
+    //     setShowPassword(prev => !prev);
+    // };
+    const togglePasswordVisibility = (field:PasswordField) => {
+        setShowPassword((prev) => ({
+            ...prev,
+            [field]: !prev[field],
+        }));
     };
 
+    useEffect(() => {
+        const { userId} = getAuth();
+                if (userId) setUserId(userId);
+    }, []);
+    // console.log('uuu',userId);
     const passwordRegex =/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&_#-])[A-Za-z\d@$!%*?&_#-]{6,}$/;
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+         if (!userId) return;
         setError("");
         setMessage("");
         if (!password || !confirmPassword) {
@@ -42,21 +65,31 @@ const ResetForm = () => {
         }
         try {
             setLoading(true);
-            const response = await axios.post(`${BASE_URL}/Common/Reset-Password`, {
-                token, // 🔑 from URL
-                password,
-                confirmPassword,
+            const response = await axios.post(`${BASE_URL}/user/Reset-Password`, {
+                userid: userId,
+                old_password:oldPassword,
+                new_password:password,
             });
+            console.log(response);
             if (response.data.status === "success") {
-                setMessage(response.data.message || "Password reset successfully");
-                setPassword("");
+                useAlertMessage({
+                    icon: "success",
+                    title: "Done!",
+                    html: "<strong>Password updated successfully</strong>",
+                    confirmButtonText: "Ok!",
+                    width: "350px",
+                    confirmButtonColor: "#fc673c",
+                    padding: "1rem",
+                });
+                setOldPassword(""); 
+                setPassword(""); 
                 setConfirmPassword("");
-            } else {
-                setError(response.data.message || "Something went wrong");
+            } else{
+                setError(response.data.message);
             }
 
-        } catch (err) {
-            setError("Something went wrong. Please try again.");
+        } catch (err: any) {
+            setError(err.response.data?.message || "Something went wrong. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -75,8 +108,20 @@ const ResetForm = () => {
                                 <div className="login-form-container">
                                     <form onSubmit={handleSubmit} className="login-form mb-4">
                                         <div className="form-floating">
+                                            <input type={showPassword.old ? "text" : "password"}
+                                            name="oldPassword" className="form-control" id="oldPassword"
+                                                placeholder="Old Password" value={oldPassword} onChange={(e) => {
+                                                    setOldPassword(e.target.value);
+                                                    setError("");
+                                                }} />
+                                            <label htmlFor="oldPassword">Old Password</label>
+                                            <i className={`toggle-password bi ${showPassword.old ? "bi-eye-slash" : "bi-eye" }`}
+                                                onClick={() => togglePasswordVisibility("old")}
+                                            />
+                                        </div>
+                                        <div className="form-floating">
                                             <input
-                                                type={showPassword ? "text" : "password"}
+                                                type={showPassword.new ? "text" : "password"}
                                                 name="password"
                                                 className="form-control"
                                                 id="password"
@@ -85,19 +130,24 @@ const ResetForm = () => {
                                                 onChange={(e) => setPassword(e.target.value)}
                                             />
                                             <label htmlFor="password">New Password</label>
-                                            <i className={`toggle-password bi ${showPassword ? "bi-eye-slash" : "bi-eye"}`}
+                                            <i className={`toggle-password bi ${showPassword.new ? "bi-eye-slash" : "bi-eye" }`}
+                                                onClick={() => togglePasswordVisibility("new")}
+                                            />
+                                            {/* <i className={`toggle-password bi ${showPassword ? "bi-eye-slash" : "bi-eye"}`}
                                                 onClick={togglePasswordVisibility}
-                                            ></i>
+                                            ></i> */}
                                         </div>
                                         <div className="form-floating">
-                                            <input type={showPassword ? "text" : "password"} 
+                                            <input type={showPassword.confirm ? "text" : "password"} 
                                             name="confirmPassword" className="form-control" id="confirmPassword"
                                                 placeholder="Confirm Password" value={confirmPassword} onChange={(e) => {
                                                     setConfirmPassword(e.target.value);
                                                     setError("");
                                                 }} />
                                             <label htmlFor="confirmPassword">Confirm Password</label>
-                                            
+                                            <i className={`toggle-password bi ${showPassword.confirm ? "bi-eye-slash" : "bi-eye" }`}
+                                                onClick={() => togglePasswordVisibility("confirm")}
+                                            />
                                         </div>
                                         {error && <p style={{color:'red',fontSize:'14px'}}  className="error">{error}</p>}
                                         <button type="submit" className="btn-style-1 w-100" disabled={loading}>{loading ? "Updating..." : "Reset Password"}</button>

@@ -304,7 +304,7 @@ const GiftMembershipSection: React.FC = () => {
             <div className="container-fluid">
                 <div className="row">
                     <div className="col-12">
-                        <div className="ready-to-gift br-20 bg-image position-relative overflow-hidden">
+                        <div className="ready-to-gift br-20 bg-image position-relative overflow-hidden" style={{height:'auto'}}>
                             <div className="rtg-content text-center">
                                 <h2 className="text-almost-white">Ready to Gift?</h2>
                                 <p className="text-white mb-3">Surprise someone with the outdoors, wherever they are.</p>
