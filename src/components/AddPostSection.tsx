@@ -829,7 +829,7 @@ const AddPostSection: React.FC = () => {
             percentPosition: true
         });
         }
-    }, []);
+    }, [profileData,images,getActivity]);
    
     if (loadingFeed) {
             return (
@@ -903,16 +903,16 @@ const AddPostSection: React.FC = () => {
                                 ))} 
                                 
                                 <div className="upload-btn-wrapper" style={{display: "flex",alignItems: "center", gap: "10px"}}>
-                                     {/* <label htmlFor="imageInput"
-                                    style={{background: "#FC673C", border: "none",borderRadius: "50px", padding: "10px", width:'100px'}}
+                                     <label htmlFor="imageInput"
+                                    style={{background: "#FC673C", border: "none",borderRadius: "50px"}}
                                         className="btn btn-sm btn-primary ms-2"
                                     >Add Images</label>
                                     <input id="imageInput" type="file" accept="image/*" multiple
                                     onChange={handleFileChange}
                                     style={{ display: "none" }}
-                                    /> */}
+                                    />
                                     {/* <label htmlFor="thumbnail" style={{ minWidth: "150px" }}>Thumbnail Image</label> */}
-                                    <input type="file"  multiple ref={fileInputRef} onChange={handleFileChange} /> 
+                                    {/* <input type="file"  multiple ref={fileInputRef} onChange={handleFileChange} />  21-1-26 */}
                                 </div>
                                 <div>
                                      {imgMessage && <div style={{color:'#FC673C' , fontSize: "11px",textAlign:'center'}}>{imgMessage}</div>}
