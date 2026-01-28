@@ -84,6 +84,7 @@ const AddPostSection: React.FC = () => {
     const [message, setMessage] = useState<string | null>(null);
     const [imgMessage, setImgMessage] = useState<string | null>(null);
     const [userId, setUserId] = useState<string>("");
+    const [token, setToken] = useState<string>("");
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [loadingFeed,setLoadingFeed] = useState(true);
     const [errorsFeed,setErrorsFeed] = useState('');
@@ -129,10 +130,11 @@ const AddPostSection: React.FC = () => {
     useEffect(() => {
         const { userId, token ,login,email} = getAuth();
             if (userId) setUserId(userId);
-            // if (token) setToken(token);
+            if (token) setToken(token);
             // if (login) setLoginIdBased(login);
             // if (email) setLoginId(email);
     }, []);
+    // console.log('token TTT',token);
     // Function you will call instead of prompt()
     const openCustomPrompt = (callback: (value: string | null) => void) => {
         setPromptCallback(() => callback);
@@ -649,8 +651,10 @@ const AddPostSection: React.FC = () => {
         console.log('formData',formData);
         try {
             const response = await axios.post(`${BASE_URL}/feed/create`, formData, {
+                // 
                 headers: {
-                    "Content-Type": "multipart/form-data"
+                    "Content-Type": "multipart/form-data",
+                    "Authorization": `Bearer ${token}`
                 }
             });
             console.log('add feed',response.data);

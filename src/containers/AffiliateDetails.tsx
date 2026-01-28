@@ -10,7 +10,7 @@ const AffiliateDetails: React.FC = () => {
   
   return (
     <>
-    <SeoMeta/>
+    <SeoMeta page="trail" pagetitle="Cooltrails | Trail"/>
      {/* <Helmet>
         <title>Affiliate Details | Cooltrails</title>
       </Helmet> */}

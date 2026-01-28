@@ -1,77 +1,109 @@
-
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Helmet } from "react-helmet-async";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
-interface Meta {
-  pageUrl: string;
-  title: string;
-  metaDescription: string;
-  metaKeywords?: string;    
-  canonicalUrl?: string;     
-  customScript?: string;     
-  metaTags?: MetaTag[];  
-}
 interface MetaTag {
   tagName: string;
   tagContent: string;
   tagType: "meta" | "og" | "twitter" | "script";
 }
 
+interface Meta {
+  title: string;
+  metaDescription: string;
+  metaKeywords?: string;
+  canonicalUrl?: string;
+  metaTags?: MetaTag[];
+}
+interface SeoMetaProps {
+  page: string;
+  pagetitle?: string; 
+}
 
-const SeoMeta: React.FC = () => {
+const SeoMeta: React.FC<SeoMetaProps> = ({  page, pagetitle }) => {
+    console.log('page',page);
+    console.log('pagetitle',pagetitle);
   const [seo, setSeo] = useState<Meta | null>(null);
-  const [loading,setLoading] = useState(true);
-
     useEffect(() => {
+        if (!page) return; 
         const fetchSeo = async() =>{
             try{
-            const response = await axios.get(`${BASE_URL}/SeoMetaTags/home`);
-            setSeo(response.data);
+            const response = await axios.get(`${BASE_URL}/SeoMetaTags/${page}`);
+                if (response.data) {
+                setSeo(response.data);
+                }
             
-            //  console.log(response.data);
+             console.log('response',response.data);
             
             }catch(err){
-                console.error('API Error:', err);
+                console.error('SEO API Error:', err);
                 
             } finally{
-                setLoading(false);
             }
         }  
             fetchSeo();
-    }, []);
-
-  
-
+    }, [page]);
+    const finalTitle = seo?.title?.trim() ||pagetitle || "Cooltrails | Home";
     if (!seo) return null;
-
     return (
-        <Helmet>
-        {/* Default fields */}
-            {/* <title>{seo.title}</title> */}
+        <Helmet  key={page}>
+            <title>{finalTitle}</title>
+        {seo.metaDescription && (
             <meta name="description" content={seo.metaDescription} />
+        )}
+
+        {seo.metaKeywords && (
             <meta name="keywords" content={seo.metaKeywords} />
+        )}
+
+        {seo.canonicalUrl && (
             <link rel="canonical" href={seo.canonicalUrl} />
-        {/* Robots meta tag */}
-        {/* Loop over metaTags */}
-            {seo.metaTags?.map((tag, i) => {
-                if (tag.tagType === "meta") {
-                return <meta key={i} name={tag.tagName} content={tag.tagContent} />;
-                }
-                if (tag.tagType === "og") {
-                return <meta key={i} property={tag.tagName} content={tag.tagContent} />;
-                }
-                if (tag.tagType === "twitter") {
-                return <meta key={i} name={tag.tagName} content={tag.tagContent} />;
-                }
-                if (tag.tagType === "script") {
-                return <script key={i} dangerouslySetInnerHTML={{ __html: tag.tagContent }} />;
-                }
+        )}
+
+        {seo.metaTags?.map((tag, index) => {
+            switch (tag.tagType) {
+            case "meta":
+                return (
+                <meta
+                    key={index}
+                    name={tag.tagName}
+                    content={tag.tagContent}
+                />
+                );
+
+            case "og":
+                return (
+                <meta
+                    key={index}
+                    property={tag.tagName}
+                    content={tag.tagContent}
+                />
+                );
+
+            case "twitter":
+                return (
+                <meta
+                    key={index}
+                    name={tag.tagName}
+                    content={tag.tagContent}
+                />
+                );
+
+            case "script":
+                return (
+                <script
+                    key={index}
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{ __html: tag.tagContent }}
+                />
+                );
+
+            default:
                 return null;
-            })}
-        
+            }
+        })}
         </Helmet>
     );
 };

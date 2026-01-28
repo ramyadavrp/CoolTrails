@@ -3,6 +3,7 @@ import axios from 'axios';
 import NavTop from '../components/AppHeader/NavTop';
 import ProfileSection from '../components/ProfileSection';
 import Footer from '../components/AppFooter/Footer';
+import SeoMeta from './SeoMeta';
 
 const ProfilePage: React.FC = () => {
   //const [profile, setProfile] = useState(null);
@@ -26,14 +27,16 @@ const ProfilePage: React.FC = () => {
   // if (!profile) return <div>Loading...</div>;
   
   return (
-    <div className="main-wrapper wrapper-profile-feed">
-      <NavTop />
-      
-        <ProfileSection />
-      
-      <Footer />
-      
-    </div>
+    <>
+    <SeoMeta page="profile" pagetitle="Cooltrails | Profile"/>
+      <div className="main-wrapper wrapper-profile-feed">
+        <NavTop />
+          <ProfileSection />
+        <Footer />
+        
+      </div>
+    </>
+    
   );
 };
 

@@ -35,7 +35,7 @@ const NationalParkGuideSection: React.FC = () => {
     // Add more button
     const [expandedPosts, setExpandedPosts] = useState<{ [key: number]: boolean }>({});
 
-    usePageTitle("Cooltrails | National Park Guides");
+    // usePageTitle("Cooltrails | National Park Guides");
     
     
     const toggleExpand = (index: number) => {

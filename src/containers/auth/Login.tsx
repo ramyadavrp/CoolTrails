@@ -8,6 +8,7 @@ import AppPromotion from '../../components/AppPromotion';
 import Footer from '../../components/AppFooter/Footer';
 
 import LoginForm from './LoginForm';
+import SeoMeta from '../SeoMeta';
 
 const About: React.FC = () => {
   const handleClick = () => {
@@ -15,14 +16,17 @@ const About: React.FC = () => {
   };
 
   return (
-    
-    <div className="main-wrapper wrapper-login">
+    <>
+      <SeoMeta page="login" pagetitle="Cooltrails | Login"/>
+      <div className="main-wrapper wrapper-login">
         <NavTop />
         <main className="mainContent">
           <LoginForm />
         </main>
         <Footer />
     </div>
+    </>
+    
   );
 };
 
