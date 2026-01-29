@@ -3,16 +3,21 @@ import React from 'react';
 import NavTop from '../components/AppHeader/NavTop';
 import CreateMapSection from '../components/maps/CreateMapSection';
 import Footer from '../components/AppFooter/Footer';
+import SeoMeta from './SeoMeta';
 
 const CreateMap: React.FC = () => {
   
   return (
-    <div>
-      <NavTop />
-      <CreateMapSection />
-      <Footer />
-      
-    </div>
+    <>
+      <SeoMeta page="create-map" pagetitle="Cooltrails | Explore"/>
+      <div>
+        <NavTop />
+        <CreateMapSection />
+        <Footer />
+        
+      </div>
+    </>
+    
   );
 };
 

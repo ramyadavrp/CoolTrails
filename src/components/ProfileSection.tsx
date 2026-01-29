@@ -233,7 +233,7 @@ const ProfileSection: React.FC = () => {
                                                 <img src="assets/images/icons/Star.svg" alt="" />
                                                 <img src="assets/images/icons/Star.svg" alt="" />
                                             </div>
-                                            <p className="text-midnight-navy">{post.descriptions || 'N/A'}</p>
+                                            <p className="text-midnight-navy">{post.content || 'N/A'}</p>
                                         </div>
                                         <div className="feed-footer d-flex">
                                             <button className="like-btn"> 

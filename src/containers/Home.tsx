@@ -17,6 +17,7 @@ import { SquareLoader } from "react-spinners";
 import { Helmet } from 'react-helmet-async';
 import axios from 'axios';
 import { decodeId,encodeId, generateSlug ,slugToTitle,usePageTitle } from '../utils/helpers';
+import SeoMeta from './SeoMeta';
 
 // import SeoMeta from '../containers/SeoMeta'
 const BASE_URL = import.meta.env.VITE_API_URL;
@@ -26,7 +27,7 @@ const Home: React.FC = () => {
   const handleClick = () => {
     alert('Button clicked!');
   };
- usePageTitle("Cooltrails | Home");
+//  usePageTitle("Cooltrails | Home");
   // Loader
   // window.scrollTo(0,0);
 
@@ -44,8 +45,7 @@ const Home: React.FC = () => {
 //function Home(){
   return (
     <>
-    {/* SEO Meta Tags */}
-    {/* <SeoMeta/> */}
+    <SeoMeta page="home" pagetitle="Cooltrails | Home"/>
     <div className="main-wrapper wrapper-home">
       <NavTop />
       <main className="mainContent">

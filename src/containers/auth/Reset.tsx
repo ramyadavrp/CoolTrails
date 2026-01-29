@@ -3,6 +3,7 @@ import React from 'react';
 import NavTop from '../../components/AppHeader/NavTop';
 import Footer from '../../components/AppFooter/Footer';
 import ResetForm from './ResetForm';
+import SeoMeta from '../SeoMeta';
 
 const Reset: React.FC = () => {
   const handleClick = () => {
@@ -10,14 +11,17 @@ const Reset: React.FC = () => {
   };
 
   return (
+    <>
+      <SeoMeta page="reset-password" pagetitle="Cooltrails | Reset Password"/>
+      <div className="main-wrapper wrapper-login">
+          <NavTop />
+          <main className="mainContent">
+              <ResetForm/>
+          </main>
+          <Footer />
+      </div>
+    </>
     
-    <div className="main-wrapper wrapper-login">
-        <NavTop />
-        <main className="mainContent">
-            <ResetForm/>
-        </main>
-        <Footer />
-    </div>
   );
 };
 

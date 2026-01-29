@@ -108,7 +108,8 @@ const ProfileLeftSection: React.FC = () => {
                         <ul className="list-unstyled profile-menu">
                             <li className={isActive('/profile-feed')}><Link to={'/profile-feed'} >Feed</Link></li>
                             <li className={isActive('/profile-photo')}><Link to={'/profile-photo'}>Photos</Link></li>
-                            <li className={isActive('/report-an-issue')}><Link to={'/report-an-issue'}>Reported an issue Feed</Link></li>
+                            <li className={isActive('/activities')}><Link to={'/activities'}>Activities</Link></li>
+                            {/* <li className={isActive('/report-an-issue')}><Link to={'/report-an-issue'}>Reported an issue Feed</Link></li>
                             <li className={isActive('/report-an-issue-comment')}><Link to={'/report-an-issue-comment'}>Reported an issue Comment</Link></li>
                             <li className={isActive('/blocked-user')}><Link to={'/blocked-user'}>Blocked Feed User</Link></li>
                             <li className={isActive('/blocked-comment')}><Link to={'/blocked-comment'}>Blocked Comment Feed</Link></li>
@@ -118,7 +119,7 @@ const ProfileLeftSection: React.FC = () => {
                             <li className={isActive('/dismissed-user')}><Link to={'/dismissed-user'}>Dismissed User</Link></li>
                             <li className={isActive('/review')}><Link to={'/review'}>Reviews</Link></li>
                             <li className={isActive('/activities')}><Link to={'/activities'}>Activities</Link></li>
-                            <li className={isActive('/complete')}><Link to={'/complete'}>Completed</Link></li>
+                            <li className={isActive('/complete')}><Link to={'/complete'}>Completed</Link></li> */}
                             
                             {/* <li><a href="">Reviews</a></li>
                             <li><a href="">Activities</a></li> */}

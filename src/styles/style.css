@@ -4577,3 +4577,40 @@ input[type="radio"]:checked::after {
   background: rgba(255, 255, 255, 0.7);
 }
 
+/* activity page 28-1-26*/
+
+
+.activity-log {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-width: 600px;
+}
+
+.activity-log li {
+    background: #ffffff;
+    border-left: 4px solid #4CAF50;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.activity-log strong {
+    font-size: 14px;
+    color: #333;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.activity-log div {
+    font-size: 13px;
+    color: #555;
+}
+
+.activity-log small {
+    display: block;
+    margin-top: 6px;
+    font-size: 11px;
+    color: #999;
+}
