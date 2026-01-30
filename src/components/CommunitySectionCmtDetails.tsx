@@ -96,10 +96,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
     });
     // console.log('postIdss',postId);
     const [activeTab, setActiveTab] = useState('');
-    // // LIKE
-    // const [likedPosts, setLikedPosts] = useState<{ [key: number]: boolean }>({});
-    // const [likeCounts, setLikeCounts] = useState<{ [key: number]: number }>({});
-    // const [loading, setLoading] = useState<Record<number, boolean>>({});
     const [likeLoading, setLikeLoading] = useState(false);
     const [likedPosts, setLikedPosts] = useState<number[]>([]);
 
@@ -189,9 +185,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
         { latitude: 28.633714724673695, longitude: 77.21910966616741 },
         { latitude: 28.631233154913488, longitude: 77.21910966616741 },
     ];
-    // const handleRemoveImage = (index: number) => {
-    //     setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
-    // };
      // Get id by helper
     useEffect(() => {
         const { userId, token ,login,email} = getAuth();
@@ -200,15 +193,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
             if (login) setLoginIdBased(login);
             if (email) setLoginId(email);
     }, []);
-    // review details 31-12-25 old code
-    // useEffect(() => {
-    //     if (reviewDetails.length > 0 && userId) {
-    //         const myReview = reviewDetails.find(r => r.userId === userId);
-    //         setUserReview(myReview || null);
-    //     }
-    // }, [reviewDetails, userId]);
-
-    // review details 31 -12-25
     useEffect(() => {
         if (Array.isArray(reviewListing) && reviewListing.length > 0 && userId) {
             const myReview = reviewListing.find(
@@ -221,18 +205,9 @@ const CommunitySectionCmtDetails: React.FC = () => {
     }, [reviewListing, userId]);
 
     useEffect(() => {
-        // Check if token exists in localStorage
-        // const token = localStorage.getItem("token");
         const token = sessionStorage.getItem("token");
         setIsLoggedIn(!!token);
     }, []);
-    // useEffect(() => {
-    //     const storeLocal = localStorage.getItem("login");
-    //     console.log('logggg',storeLocal)
-    //     if (storeLocal) {
-    //         setLoginIdBased(storeLocal);
-    //     }
-    // }, []);
 
     useEffect(() => {
         if (statePostId) {
@@ -241,11 +216,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
         }
     }, [statePostId]);
     
-    // useEffect(() => {
-    // if (statePostId) localStorage.setItem("postId", statePostId);
-    //     setPostId(statePostId);
-    // }, [statePostId])
-    // console.log('ss',statePostId)
      const handleShowPostMore = () => {
         setPostVisibleCount((prev) => prev + 5); // Show 2 more each time
     };
@@ -282,10 +252,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
         }
         setMultipleImages((prev) => [...prev, ...validFiles]);
         setPreviewUrls((prev) => [...prev, ...validImageURLs]);
-        // const imageURLs = selectedFiles.map((file) => URL.createObjectURL(file));
-        // Update UI
-        // setMultipleImages((prev) => [...prev, ...selectedFiles]);
-        // setPreviewUrls((prev) => [...prev, ...imageURLs]);
         await handleUploadImages(selectedFiles);
         
     };
@@ -331,11 +297,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
                 });
             }
 
-            // if (response.data.status === "success") {
-            //     setMessageUpload("Images uploaded successfully!");
-            // } else {
-            //     alert("Upload failed - server rejected");
-            // }
         } catch (error: any) {
             useAlertMessage({
                 title: "Upload Failed",
@@ -393,9 +354,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
             }
             
         }catch (error: any) {
-            // console.log("DELETE ERROR FULL:", error);
-            // console.log("RESPONSE:", error?.response);
-            // console.log("DATA:", error?.response?.data);
 
             useAlertMessage({
                 title: "Upload Failed",
@@ -424,8 +382,8 @@ const CommunitySectionCmtDetails: React.FC = () => {
         container: mapContainer.current,
         style: "mapbox://styles/mapbox/outdoors-v12",
         center: [firstPoint.longitude, firstPoint.latitude],
-        zoom: 13,
-        attributionControl: false,
+        zoom: 5,
+        antialias: true,
         });
 
         // map.current.addControl(new mapboxgl.NavigationControl());
@@ -452,16 +410,18 @@ const CommunitySectionCmtDetails: React.FC = () => {
         markersRef.current = [];
 
         const bounds = new mapboxgl.LngLatBounds();
-
-        points.forEach((coords, index) => {
-        const marker = new mapboxgl.Marker()
-            .setLngLat(coords)
-            .setPopup(new mapboxgl.Popup().setText(`Point ${index + 1}`))
-            .addTo(map.current!);
-
-        markersRef.current.push(marker);
+        points.forEach(coords => {
         bounds.extend(coords);
         });
+        // points.forEach((coords, index) => {
+        // const marker = new mapboxgl.Marker()
+        //     .setLngLat(coords)
+        //     .setPopup(new mapboxgl.Popup().setText(`Point ${index + 1}`))
+        //     .addTo(map.current!);
+
+        // markersRef.current.push(marker);
+        // bounds.extend(coords);
+        // });
 
         map.current.fitBounds(bounds, { padding: 50, maxZoom: 16 });
         
@@ -503,7 +463,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
         type: "line",
         source: "route",
         paint: {
-            "line-color": "#3b9ddd",
+            "line-color": "#d32f2f",
             "line-width": 5,
         },
         });
@@ -516,7 +476,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
         "url('https://img.icons8.com/color/48/person-male--v1.png')";
         el.style.backgroundSize = "cover";
         el.style.borderRadius = "50%";
-        el.style.border = "2px solid white";
+        // el.style.border = "2px solid white";
 
         walkerMarker.current = new mapboxgl.Marker(el)
         .setLngLat(points[0])
@@ -552,43 +512,11 @@ const CommunitySectionCmtDetails: React.FC = () => {
         geometry: { type: "LineString", coordinates: fullRoute },
         });
 
-        animateAlongPath(fullRoute);
+        // animateAlongPath(fullRoute);
     };
 
-    // ANIMATION
-    const animateAlongPath = (coords: [number, number][]) => {
-        if (!walkerMarker.current) return;
+   
 
-        let i = 0;
-
-        const step = () => {
-        if (i >= coords.length - 1) return;
-
-        const start = coords[i];
-        const end = coords[i + 1];
-        const startTime = performance.now();
-        const duration = 200;
-
-        const animate = (t: number) => {
-            const progress = Math.min((t - startTime) / duration, 1);
-            const lng = start[0] + (end[0] - start[0]) * progress;
-            const lat = start[1] + (end[1] - start[1]) * progress;
-
-            walkerMarker.current!.setLngLat([lng, lat]);
-
-            if (progress < 1) {
-            requestAnimationFrame(animate);
-            } else {
-            i++;
-            requestAnimationFrame(step);
-            }
-        };
-
-        requestAnimationFrame(animate);
-        };
-
-        step();
-    };
 
     // CLEANUP
     useEffect(() => {
@@ -614,9 +542,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
                 setPreviewUrls(response.data.data); // this is your images array
             }
 
-            // if (response.data?.images) {
-            //     setPreviewUrls(response.data.data);
-            // }
         } catch (error: any) {
             useAlertMessage({
                 title: "Failed",
@@ -627,8 +552,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
                 confirmButtonColor: "#dc3545",
                 padding: "1rem",
             });
-            // console.error("Fetch Images Error:", error.response?.data || error);
-            // alert("Failed to load images");
         }
     };
 
@@ -639,41 +562,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
     }, [userId, loginIdBased]);
 
     
-    // const handleSubmitReview = async () => {
-    //     // alert(postId);
-    //     // console.log('ratting',rating ); 
-    //     // console.log('review',review );
-    //     // console.log('userId',userId );
-    //     // console.log('postIdaaasss',statePostId );
-    //     try {
-    //         if (userId && postId) {
-    //         const response = await axios.post(`${BASE_URL}/feed/addrating`, {
-    //             FeedId: postId,
-    //             UserId: userId,
-    //             // UserId: "e08ee354-20e2-4af6-a37f-c30127cf322d",
-    //             Rating: rating,
-    //             Review: review,
-    //         });
-    //         if (response.data.status === "success") {
-    //             setMessage("Review added successfully!");
-    //         } else {
-    //             setMessage("Error submitting report.");
-    //         }
-    //         } else {
-    //         alert("Missing user or post ID");
-    //         }
-    //     } catch (error) {
-    //         console.error("Error submitting report:", error);
-    //         alert("Failed to submit report");
-    //     }
-    // };
-
-    // Start map creation
-    // Initialize map
-    
- 
-  // End map creation
-     // 1) SVG icon components
     const IconCopy = () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
         <path d="M8 8h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z" stroke="#05073D" strokeWidth="1.8" />
@@ -706,14 +594,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
             icon: copied ? <IconCheck /> : <IconCopy />,
             action: handleCopy,
         }, 
-        // {
-        //     label: "Text",
-        //     icon: <IconChat />,
-        //     action: () => {
-        //     setShareIsOpen(false);
-        //     // setShowTextModal(true);
-        //     },
-        // }
+        
     
     ];
     
@@ -753,30 +634,13 @@ const CommunitySectionCmtDetails: React.FC = () => {
     
     
 
-    // useEffect(() => {
-    //     const storeLocal = localStorage.getItem("email");
-    //     if (storeLocal) {
-    //         setLoginId(storeLocal);
-    //     }
-    // }, []);
-    // useEffect(() => {
-    // if (statePostId) localStorage.setItem("postId", statePostId);
-    //     setPostId(statePostId);
-    // }, [statePostId])
-    // console.log('ss',statePostId)
+    
 
     // image arraw move
     const handleNextImage = useCallback(() => {
         setCurrentIndex(i => (i + 1) % getImagesArray.length);
     }, [getImagesArray.length]);
 
-    // useEffect(() => {
-    //         const storedId = localStorage.getItem("id");
-    //         //  console.log("Stored IDss:", storedId); // should print the ID string
-    //         if (storedId) {
-    //             setUserId(storedId.trim());
-    //         }  
-    // }, []);
 
 
 
@@ -794,8 +658,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
          setCheckedUsers((prev) => ({ ...prev, [BlockedUserId]: checked }));
         // alert(` User ID: ${BlockedUserId}  blockedBy ID: ${userId} admin: ${reasonvalue}`);
     };
-    // Submit report API call
-    //commentreportanissue
         const handleSubmitReport = async (getBlockedUserId:any,getBlockedId:any) => {
              
              const reason = reasonValue[getBlockedUserId];
@@ -811,16 +673,9 @@ const CommunitySectionCmtDetails: React.FC = () => {
             return;
             }
             
-        //    if (!reasonvalue.trim()) {
-        //     setBlocekedTextValidation("This field is required!");
-        //     return;
-        //     }
 
             try {
             const response = await axios.post(`${BASE_URL}/user/commentreportanissue`, {
-                // CommentId:2,
-                // issueRaisedBy:'20c8a597-25b7-414d-8b9c-c9575f40b9fc',
-                // UserId:'360ccff6-2f3b-4f27-9d06-692ca03657c3',
                 CommentId: getBlockedId,
                 issueRaisedBy: userId,
                 UserId: getBlockedUserId,
@@ -860,17 +715,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
                 });
             }
         };
-        // blocked user mess hide
-        // useEffect(() => {
-        //     if (message) {
-        //         const timer = setTimeout(() => {
-        //         setMessage(null); 
-        //         }, 3000); 
-
-        //         return () => clearTimeout(timer);
-        //     }
-        // }, [message]);
-        // Show comment
         const handleShowMore = () => {
             setVisibleCount((prev) => prev + 5); // Show 5 more each time
         };
@@ -879,10 +723,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
         const handleShowReviewMore = () => {
             setReviewVisibleCount((prev) => prev + 2); // Show 2 more each time
         };
-        
-        //  console.log('PostId  handle',postId);
-        //  console.log('UserId',userId)
-        //  console.log('loginId',loginId)
     
         const handleCommentSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
             e.preventDefault();
@@ -1341,41 +1181,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                         {/* <button className="btn-style-3">Keep</button> */}
                                     </div>
                                     
-                                    {/* <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                                        {options.map((opt, idx) => (
-                                            <li
-                                            key={idx}
-                                            style={{
-                                                padding: "15px",
-                                                borderBottom: "1px solid #eee",
-                                                cursor: "pointer",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "space-between", // <- push SVG to right
-                                                
-                                            }}
-                                            onClick={opt.action}
-                                            >
-                                            <span>{opt.label}</span>
-                                            
-                                            <svg
-                                                width="20"
-                                                height="20"
-                                                viewBox="0 0 20 20"
-                                                fill="none"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                            >
-                                                <path
-                                                d="M6 4L14 10L6 16"
-                                                stroke="#05073D"
-                                                strokeWidth="2"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                />
-                                            </svg>
-                                            </li>
-                                        ))}
-                                        </ul> */}
 
 
                                     </div>
@@ -1444,13 +1249,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                 <textarea
                                                  value={reasonValue[getBlockedUserId] || ""}
                                                  onChange={(e) => handleTextareaChange(getBlockedUserId, e.target.value)}
-                                                // onChange={(e) => {
-                                                //  const value = e.target.value.trim(); 
-                                                //     setCheckedUsers((prev) => ({
-                                                //         ...prev,
-                                                //         [getBlockedUserId]: value, // only this user
-                                                //         }));    
-                                                // }}
                                                 placeholder="Enter text"
                                                 style={{
                                                     background: '#ccc',
@@ -1477,19 +1275,9 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                         checked={checkedUsers[getBlockedUserId] || false}
                                                         
                                                         onChange={(e) => handleBlocked(getBlockedId,getBlockPostId, getBlockedUserId,e.target.checked)}
-                                                        // onChange={(e) => {
-                                                        //     handleBlocked(getBlockPostId, getBlockedUserId, reasonvalue,); // your API call or logic
-                                                        //     setCheckedUsers((prev) => ({
-                                                        //     ...prev,
-                                                        //     [getBlockedUserId]: e.target.checked, // only this user
-                                                        //     }));    
-                                                        // }}
+                                                        
                                                     />
 
-                                                        {/* <input type="checkbox" 
-                                                        onClick={() => handleBlocked(getBlockPostId,getBlockedUserId,reasonvalue)}
-
-                                                        /> */}
                                                         <span className="slider"></span>
                                                     </label>
                                                 </div>
@@ -1586,19 +1374,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                 </ul>
                             <div className="trail-cover position-relative" id="overviewData">
                                                        
-                                {/* <img 
-                                    src={
-                                        trailDetail.imageUrls?.[0]
-                                        ? `${BASE_URL}/uploads/${trailDetail.imageUrls[0]}`
-                                        : '/assets/images/not-found.jpg'
-                                    }
-                                    alt="Near Trail" className="w-100 br-20 coverImage" 
-                                    onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                                        const target = e.currentTarget;
-                                        target.onerror = null; // prevent infinite loop
-                                        target.src = '/assets/images/not-found.jpg'; // fallback image
-                                    }}
-                                /> */}
+                               
                                 {
                                     getImagesArray.length > 0 ? (
                                         getImagesArray.map((image: any, index: number) => {
@@ -1682,11 +1458,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                         </svg>
                                     </a>
     
-                                    {/* <a href="" className="arrow-btn d-flex align-items-center justify-content-center rounded-circle">
-                                        <svg width="18" height="16" viewBox="0 0 18 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <path d="M10.6188 15L16.4788 9.23744C17.1737 8.55402 17.1737 7.44598 16.4788 6.76256L10.6188 0.999999M15.9575 8L1 8" stroke="#C6C6D1" strokeWidth="1.5" strokeLinecap="round" />
-                                        </svg>
-                                    </a> */}
                                 </div>
                             </div>
 
@@ -1801,15 +1572,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                         </svg>
                                             {getfollowingBy?.comment_count?? 0} Comment
                                     </button>
-                                    {/* <button className="share-btn">
-                                        <svg width="21" height="22" viewBox="0 0 21 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <path
-                                                d="M20.4601 7.96745L12.4501 1.32995C12.2278 1.14185 11.9555 1.02254 11.6665 0.986577C11.3775 0.950618 11.0842 0.999567 10.8226 1.12745C10.5648 1.2485 10.3468 1.44044 10.194 1.68083C10.0413 1.92123 9.96015 2.20014 9.96009 2.48495V3.98495C7.04123 5.00521 4.51317 6.91027 2.72794 9.43487C0.942708 11.9595 -0.0108345 14.9779 9.28794e-05 18.0699C-0.000854163 18.8512 0.0618532 19.6313 0.187593 20.4024C0.212056 20.5575 0.284563 20.701 0.394897 20.8127C0.505231 20.9244 0.647828 20.9986 0.802593 21.0249H0.930093C1.06577 21.0246 1.19881 20.9874 1.31504 20.9174C1.43126 20.8474 1.52632 20.7472 1.59009 20.6274C2.44778 19.0138 3.63682 17.5997 5.07928 16.4778C6.52173 15.3559 8.18501 14.5515 9.96009 14.1174V15.7374C9.96015 16.0223 10.0413 16.3012 10.194 16.5416C10.3468 16.782 10.5648 16.9739 10.8226 17.0949C11.029 17.1924 11.2543 17.2436 11.4826 17.2449C11.8375 17.2432 12.1803 17.1156 12.4501 16.8849L16.0951 13.8849L16.1626 13.8324L20.4601 10.2699C20.6273 10.1291 20.7618 9.95349 20.854 9.75527C20.9463 9.55706 20.994 9.34107 20.994 9.12245C20.994 8.90382 20.9463 8.68784 20.854 8.48963C20.7618 8.29141 20.6273 8.11575 20.4601 7.97495V7.96745ZM15.2626 12.6174L15.1951 12.6699L11.4451 15.7449V13.1799C11.4494 13.1602 11.4494 13.1397 11.4451 13.1199C11.4451 13.1199 11.4451 13.0749 11.4451 13.0524C11.4451 13.0299 11.4451 12.9999 11.4076 12.9699C11.3934 12.9237 11.3758 12.8786 11.3551 12.8349C11.3279 12.7887 11.2923 12.748 11.2501 12.7149C11.2263 12.6773 11.1958 12.6442 11.1601 12.6174C11.1208 12.5831 11.0781 12.5529 11.0326 12.5274L10.9201 12.4749H10.7551H10.6801H10.6201H10.5526C6.94145 13.0978 3.70388 15.0747 1.50009 18.0024C1.50308 15.1499 2.41916 12.3733 4.11423 10.079C5.80929 7.7847 8.19431 6.09331 10.9201 5.25245H10.9576C11.0071 5.23451 11.0548 5.21191 11.1001 5.18495C11.1527 5.15668 11.2029 5.12407 11.2501 5.08745L11.3401 4.98245C11.3719 4.94716 11.3973 4.90654 11.4151 4.86245C11.4346 4.82167 11.4497 4.77892 11.4601 4.73495C11.4643 4.68254 11.4643 4.62986 11.4601 4.57745V2.52245L19.5001 9.11495L15.2626 12.6174Z"
-                                                fill="#7D7D7D"
-                                            />
-                                        </svg>
-                                        {getfollowingBy?.share_count?? 0}  Share
-                                    </button> */}
 
                                 </div>
                                 
@@ -1917,11 +1679,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    // <div className="text-center mt-3">
-                                    // <button className="btn btn-link text-orange" onClick={handleShowMore}>
-                                    //     Show Comment more
-                                    // </button>
-                                    // </div>
                                 )}
                             </div>
                             
@@ -1965,17 +1722,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                     <circle cx="12.125" cy="14.625" r="1.875" stroke="#05073D" strokeWidth="1.125"/>
                                     </svg>
                                     </button>
-                                    {/* <button className="btn-rounded-white rounded-circle" type="button" title="Bookmark">                                        
-                                        <svg width="12" height="15" viewBox="0 0 12 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M10.0601 0.25H1.93993C1.63227 0.25 1.33722 0.372216 1.11967 0.589763C0.902124 0.807309 0.779907 1.10237 0.779907 1.41002V14.1703C0.779959 14.2738 0.80771 14.3754 0.860281 14.4646C0.912852 14.5537 0.988327 14.6272 1.07887 14.6774C1.16942 14.7275 1.27174 14.7525 1.37522 14.7498C1.47869 14.7471 1.57955 14.7167 1.66732 14.6618L6.00001 11.9539L10.3334 14.6618C10.4212 14.7165 10.522 14.7467 10.6253 14.7494C10.7287 14.752 10.8309 14.7269 10.9213 14.6768C11.0118 14.6267 11.0871 14.5533 11.1397 14.4642C11.1922 14.3752 11.22 14.2737 11.2201 14.1703V1.41002C11.2201 1.10237 11.0979 0.807309 10.8804 0.589763C10.6628 0.372216 10.3678 0.25 10.0601 0.25ZM10.0601 13.1241L6.30669 10.7787C6.21451 10.721 6.10799 10.6905 5.99929 10.6905C5.89058 10.6905 5.78406 10.721 5.69188 10.7787L1.93993 13.1241V1.41002H10.0601V13.1241Z" fill="#05073D"/>
-                                        </svg>
-                                    </button>
-                                    <button className="btn-rounded-white rounded-circle" type="button" title="Location">
-                                        <svg width="15.16" height="18" viewBox="0 0 10 13" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M8.68182 5.21429C8.68182 4.19131 8.29391 3.21023 7.60344 2.48687C6.91296 1.76352 5.97648 1.35714 5 1.35714C4.02352 1.35714 3.08704 1.76352 2.39656 2.48687C1.70609 3.21023 1.31818 4.19131 1.31818 5.21429C1.31818 6.79657 2.52664 8.85886 5 11.3291C7.47336 8.85886 8.68182 6.79657 8.68182 5.21429ZM5 12.5C1.99973 9.64314 0.5 7.214 0.5 5.21429C0.5 3.96398 0.974106 2.76488 1.81802 1.88078C2.66193 0.996682 3.80653 0.5 5 0.5C6.19347 0.5 7.33807 0.996682 8.18198 1.88078C9.02589 2.76488 9.5 3.96398 9.5 5.21429C9.5 7.214 8.00027 9.64314 5 12.5Z" fill="#05073D"/>
-                                        <path d="M5.00004 6.5C5.32554 6.5 5.6377 6.36454 5.86786 6.12342C6.09802 5.8823 6.22732 5.55528 6.22732 5.21428C6.22732 4.87329 6.09802 4.54626 5.86786 4.30515C5.6377 4.06403 5.32554 3.92857 5.00004 3.92857C4.67455 3.92857 4.36239 4.06403 4.13223 4.30515C3.90207 4.54626 3.77277 4.87329 3.77277 5.21428C3.77277 5.55528 3.90207 5.8823 4.13223 6.12342C4.36239 6.36454 4.67455 6.5 5.00004 6.5ZM5.00004 7.35714C4.45756 7.35714 3.93729 7.13138 3.55369 6.72951C3.17009 6.32765 2.95459 5.7826 2.95459 5.21428C2.95459 4.64596 3.17009 4.10092 3.55369 3.69905C3.93729 3.29719 4.45756 3.07143 5.00004 3.07143C5.54253 3.07143 6.0628 3.29719 6.4464 3.69905C6.83 4.10092 7.0455 4.64596 7.0455 5.21428C7.0455 5.7826 6.83 6.32765 6.4464 6.72951C6.0628 7.13138 5.54253 7.35714 5.00004 7.35714Z" fill="#05073D"/>
-                                        </svg>
-                                    </button> */}
                                 </div>
                                 {/* <!-- <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d194474.440444268!2d55.959295174859626!3d25.08154936413991!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ef5a8616e5ca149%3A0x75d4f4005126006a!2sShawkah%20Dam!5e0!3m2!1sen!2sin!4v1749891263519!5m2!1sen!2sin"   allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe> --> */}
                                 {/* <img src="/assets/images/trails/map.png" alt="" className="map-img"/> */}
@@ -2004,31 +1750,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                 </div>
  
 
-                                {/* <a href="/assets/images/trails/map.png" data-fancybox="mapImg"
-                                    className="arrow-btn d-flex align-items-center justify-content-center rounded-circle">
-                                    <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path
-                                            d="M6.15005 13.5003H3.68251C3.30557 13.5003 3 13.1947 3 12.8178L3 10.3503M3.52497 12.9754L7.20003 9.30033M13.5 6.15005V3.68251C13.5 3.30557 13.1944 3 12.8175 3L10.35 3M12.975 3.52503L9.29993 7.20009"
-                                            stroke="#717171" strokeLinecap="round" />
-                                    </svg>
-                                </a> */}
                             </div>
-                                {/* <div className="trail-sidebar-widget bg-almost-white br-20">
-                                    <h3 className="text-midnight-navy">What this place offers</h3>
-                                    <ul className="trail-side-nav list-unstyled mt-0">
-                                        <li><a href=""><img src="/assets/images/icons/scamble.svg" alt=""/> Scramble </a></li>
-                                        <li><a href=""><img src="/assets/images/icons/off-trail.svg" alt=""/> Off-trail
-                                                (bushwhack) </a></li>
-                                        <li><a href=""><img src="/assets/images/icons/lakes.svg" alt=""/> Lakes </a></li>
-                                        <li><a href=""><img src="/assets/images/icons/views.svg" alt=""/> Views </a></li>
-                                        <li><a href=""><img src="/assets/images/icons/hiking.svg" alt=""/> Hiking </a></li>
-                                        <li><a href=""><img src="/assets/images/icons/walking.svg" alt=""/> Walking </a></li>
-                                    </ul> 
-                                    <div className="d-flex flex-wrap align-items-center">
-                                        <a href="" className="btn-style-3">Get Directions</a>
-                                        <a href="" className="btn-style-1">Hit the Trail</a>
-                                    </div>
-                                </div> */}
                         </div> 
                         
                     </div>
@@ -2154,27 +1876,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                      Add Review
                                     </a>
 
-                                    // <a
-                                    //     href="#"
-                                    //     style={{background:'#FC673C',border:'none',borderRadius:'50px',padding:'10px'}}
-                                    //     className="btn btn-sm btn-primary ms-2"
-                                    //     onClick={(e) => {
-                                    //     e.preventDefault();
-                                    //     // pre-fill if editing
-                                    //     if (userReview) {
-                                    //         setRating(userReview.rating);
-                                    //         setReview(userReview.decription);
-                                    //     } else {
-                                    //         setRating(0);
-                                    //         setReview("");
-                                    //     }
-                                    //     setIsReviewOpen(true);
-                                    //     }}
-                                    //      disabled={!!userReview} 
-                                    // >
-                                    //      {userReview ? "Review Submitted" : "Add Review"}
-                                    //     {/* {userReview ? "Edit Review" : "Add Review"} */}
-                                    // </a>
                                 )}
 
                                 </div>
@@ -2230,11 +1931,6 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                                     setIsReviewOpen(true);
                                                                     }}
                                                                     >
-                                                                    {/* edit icon */}
-                                                                        {/* <svg width="19" height="18" viewBox="0 0 19 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                            <path d="M10.5137 0.80598C11.5867 -0.268666 13.3274 -0.269589 14.4014 0.804027L16.8936 3.29621C17.958 4.36095 17.9687 6.08414 16.918 7.16243L7.68555 16.6361C6.98003 17.3599 6.01137 17.7679 5.00098 17.7679H2.25C1.05069 17.7678 0.0774547 16.8306 0.00488281 15.6595L0.00292969 15.4232L0.120117 12.6146C0.159615 11.6756 0.550055 10.7843 1.21387 10.1195L10.5137 0.80598ZM17.5146 16.1947C17.9286 16.1947 18.2646 16.5304 18.2646 16.9447C18.2646 17.359 17.9287 17.6947 17.5146 17.6947H11.3936L11.3164 17.6907C10.9386 17.6521 10.6436 17.333 10.6436 16.9447C10.6436 16.5564 10.9386 16.2372 11.3164 16.1986L11.3936 16.1947H17.5146ZM2.27441 11.181C1.87636 11.5798 1.64186 12.1138 1.61816 12.6771L1.50098 15.4857V15.5657C1.52555 15.9556 1.84974 16.2676 2.24902 16.2679H5.00195C5.60809 16.2678 6.18906 16.0225 6.6123 15.5882L13.1436 8.88508L8.85059 4.59309L2.27441 11.181ZM13.3418 1.86555C12.8536 1.37755 12.062 1.37805 11.5742 1.86653L9.91113 3.53157L14.1914 7.81184L15.8447 6.11555C16.3222 5.62547 16.3176 4.84171 15.834 4.35774L13.3418 1.86555Z"
-                                                                                fill="#7D7D7D"/>
-                                                                        </svg> */}
                                                                     </a>
                                                                 )
                                                             }
