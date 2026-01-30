@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom'; // Import useNavigate for redire
 import { Trash2, Upload } from "lucide-react";
 import  {useAutoClearMessage} from '../utils/useAutoClearMessage';
 import {getAuth} from '../utils/storage';
-import {useAlertMessage}  from '../utils/useAlertMessage';
+import {useAlertMessage,closeLoader,useLoader}  from '../utils/useAlertMessage';
 
 declare const Masonry: any;
 const BASE_URL = import.meta.env.VITE_API_URL;
@@ -319,9 +319,11 @@ const ProfileEditSection: React.FC = () => {
         //if (Object.keys(newErrors).length > 0) return; // stop submission if errors exist
 
         try {
+            useLoader("Please wait...", "Profile Updating...");
             const response = await axios.post(`${BASE_URL}/user/profileupdate`, payload, {
                 headers: { "Content-Type": "application/json" }
             });
+            closeLoader();
             // console.log('profile update',response.data.data);
             if (response.data.status === "success") {
                 useAlertMessage({
@@ -333,6 +335,7 @@ const ProfileEditSection: React.FC = () => {
                     confirmButtonColor: "#fc673c",
                     padding: "1rem",
                 });
+                setTimeout(() => {}, 1500);
             } else {
                 useAlertMessage({
                     title: "Failed",
@@ -345,6 +348,7 @@ const ProfileEditSection: React.FC = () => {
                 });
             }
         } catch (error: any) {
+            closeLoader();
             useAlertMessage({
                 title: "Update failed",
                 html: "<strong>Error updating profile. Please try again.</strong>",

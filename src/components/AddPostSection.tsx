@@ -13,7 +13,7 @@ import mapboxgl from "mapbox-gl";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 import "mapbox-gl/dist/mapbox-gl.css";
-import {useAlertMessage} from '../utils/useAlertMessage';
+import {useAlertMessage,closeLoader,useLoader} from '../utils/useAlertMessage';
 
 mapboxgl.accessToken = "pk.eyJ1IjoiMTExMnZpcmVuZHJhIiwiYSI6ImNtYmE0emNyNjBwbHMyanNibHBpZHgxMjUifQ.5FSp2VZ1T1kXcGV38bC5jA";
 
@@ -626,6 +626,19 @@ const AddPostSection: React.FC = () => {
             setMessage('User ID not loaded yet!');
             return;
         }
+         setErrors({});
+        const newErrors: { [key: string]: string } = {};
+        if (!profileData.postTitle?.trim()) newErrors.Title = "Title is required!";
+        if (!profileData.Content?.trim()) newErrors.Content = "Content is required!";
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+
+            // Scroll required field
+            const firstErrorField = document.querySelector(".is-invalid");
+            firstErrorField?.scrollIntoView({ behavior: "smooth", block: "center" });
+            return; // Stop here, don't show loader
+        }
+
 
         const formData = new FormData();
         formData.append("UserId", userId);
@@ -650,16 +663,17 @@ const AddPostSection: React.FC = () => {
 
         console.log('formData',formData);
         try {
+            useLoader("Please wait...", "Adding feed...");
             const response = await axios.post(`${BASE_URL}/feed/create`, formData, {
-                // 
                 headers: {
                     "Content-Type": "multipart/form-data",
                     "Authorization": `Bearer ${token}`
                 }
             });
-            console.log('add feed',response.data);
+            closeLoader();
+            // console.log('add feed',response.data);
             if (response.data.status === "success") {
-                useAlertMessage({
+                await useAlertMessage({
                     icon: "success",
                     title: "Done!",
                     html: "<strong>Feed added successfully!</strong>",
@@ -684,7 +698,7 @@ const AddPostSection: React.FC = () => {
                 });
                 setTimeout(() => navigate("/profile"), 1500);
             } else {
-                useAlertMessage({
+                await useAlertMessage({
                     title: "Failed",
                     html: `<strong style="color:red;">${response.data.message || "Something went wrong."}</strong>`,
                     icon: "error",
@@ -696,6 +710,7 @@ const AddPostSection: React.FC = () => {
             }
             
         } catch (error: any) {
+            closeLoader();
             if (error.response?.data?.errors) {
             // Flatten array of messages into single string per field
             const formattedErrors: { [key: string]: string } = {};
@@ -966,7 +981,6 @@ const AddPostSection: React.FC = () => {
                                     {errors.Title && <div  style={{color:'#FC673C'}} className="invalid-feedback">{errors.Title}</div>}
                                 </div>
                                 <div className="form-floating mb-3">
-                                    
                                     <textarea
                                         className={`form-control ${errors.Title ? "is-invalid" : ""}`}
                                         name="Content"

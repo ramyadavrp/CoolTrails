@@ -136,10 +136,25 @@ const NavTop: React.FC = () => {
                                         </Link>
                                     </li>
                                     <li>
-                                        <Link to={'/community'} className="dropdown-item">
+                                        {/* <Link to={'/community'} className="dropdown-item">
                                             <img src="/assets/images/icons/Users.svg" alt="" />
                                             Community
-                                        </Link>
+                                        </Link> */}
+                                        <button
+                                            type="button"
+                                            className="dropdown-item"
+                                            onClick={() => {
+                                                if (!isLoggedIn) {
+                                                navigate(`/login?redirect=${encodeURIComponent("/community")}`);
+                                                } else {
+                                                navigate("/community");
+                                                }
+                                            }}
+                                            >
+                                            <img src="/assets/images/icons/Users.svg" alt="" />
+                                            Community
+                                        </button>
+
                                     </li>
                                     {/* <li>
                                         <a href="/explore-trail" className="dropdown-item"><img src="assets/images/icons/Users.svg" alt="" />Explore Trail</a>

@@ -9,7 +9,7 @@ interface AlertOptions {
   width?: string;
   padding?: string;
 }
-
+// message show
 export const useAlertMessage = (options: AlertOptions) => {
   return Swal.fire({
     icon: options.icon || "info",
@@ -20,4 +20,21 @@ export const useAlertMessage = (options: AlertOptions) => {
     width: options.width || "400px",
     padding: options.padding || "1.5rem",
   });
+};
+
+// loader show
+export const useLoader = (title = "Please wait...", html = "") => {
+    Swal.fire({
+        title,
+        html,
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+
+        },
+    });
+};
+// close loader
+export const closeLoader = () => {
+    Swal.close();
 };

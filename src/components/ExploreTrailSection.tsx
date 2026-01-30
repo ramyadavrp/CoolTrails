@@ -352,7 +352,7 @@ function ExploreTrailSection() {
 
 
    
-    //    console.log(sortedData);
+       console.log('sortedData',sortedData);
     // console.log('ex',getTrails);
 
     useEffect(() => {

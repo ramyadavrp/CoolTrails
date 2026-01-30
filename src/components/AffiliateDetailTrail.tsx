@@ -136,7 +136,9 @@ const AffiliateDetailTrail: React.FC = () => {
     const [getImages, setImages] = useState([]);    
     const mapContainer = useRef<HTMLDivElement | null>(null);
     const map = useRef<mapboxgl.Map | null>(null);
-    const walkerMarker = useRef(null);
+    // const walkerMarker = useRef(null);
+    const walkerMarker = useRef<mapboxgl.Marker | null>(null);
+        const markersRef = useRef<mapboxgl.Marker[]>([]);
     const [points, setPoints] = useState<any>([]);
     const [loopClosed, setLoopClosed] = useState(false);
     const [getmapPoints, setMapPoints] = useState<MapPoint[]>([]);
@@ -897,169 +899,188 @@ const AffiliateDetailTrail: React.FC = () => {
         }, [stateTrailId, trailDetail]);
 
 
+     // INIT MAP
     useEffect(() => {
-        // if (!getmapPoints.length || map.current) return;
-        if (!getmapPoints.length || map.current ){
+        if (!getmapPoints.length || map.current || !mapContainer.current){
             setMapLoading(false);
             return;
         }
         setMapLoading(true);
         const firstPoint = getmapPoints[0];
-        if (mapContainer.current) {
-            map.current = new mapboxgl.Map({
-                container: mapContainer.current,
-                style: 'mapbox://styles/mapbox/outdoors-v12',
-                center: [firstPoint.longitude, firstPoint.latitude],
-                zoom: 13,
-                attributionControl: false // remove © Mapbox © OpenStreetMap Improve this map
-            });
-        }
+        map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: "mapbox://styles/mapbox/outdoors-v12",
+        center: [firstPoint.longitude, firstPoint.latitude],
+        zoom: 5,
+        antialias: true,
+        });
 
-        if (!map.current) return;
-        map.current.on('load', async () => {
-            //  setloading(true);
-            const formattedPoints = getmapPoints.map(p => [p.longitude, p.latitude]);
-            // console.log('map',formattedPoints);
-            setPoints(formattedPoints);
+        // map.current.addControl(new mapboxgl.NavigationControl());
 
-            const bounds = new mapboxgl.LngLatBounds();
-
-            formattedPoints.forEach((coords:any, index) => {
-                new mapboxgl.Marker()
-                .setLngLat(coords)
-                .setPopup(new mapboxgl.Popup().setText(`Point ${index + 1}`))
-                .addTo(map.current);
-
-                bounds.extend(coords);
-            });
-
-            map.current.fitBounds(bounds, { padding: 50, maxZoom: 17 });
-            /* CLICK MAP → OPEN FULL PAGE */
-            map.current.getCanvas().style.cursor = "pointer";
-            map.current.on("click", () => {
-                navigate("/trail/full");
-            });
-            // Route source
-            map.current.addSource('route', {
-                type: 'geojson',
-                data: { type: 'Feature', geometry: { type: 'LineString', coordinates: [] } },
-            });
-
-            // Arrow icon
-            map.current.loadImage("https://cdn-icons-png.flaticon.com/512/271/271228.png", (error, image) => {
-                if (error || !image) return;
-                if (!map.current.hasImage('arrow')) map.current.addImage('arrow', image);
-
-                map.current.addLayer({
-                id: 'arrow-layer',
-                type: 'symbol',
-                source: 'route',
-                layout: {
-                    'symbol-placement': 'line',
-                    'symbol-spacing': 60,
-                    'icon-image': 'arrow',
-                    'icon-size': 0.05,
-                    'icon-allow-overlap': true,
-                    'icon-rotation-alignment': 'map',
-                },
-                });
-            });
-
-            map.current.addLayer({
-                id: 'route-layer',
-                type: 'line',
-                source: 'route',
-                layout: { 'line-join': 'round', 'line-cap': 'round' },
-                paint: { 'line-color': '#3b9ddd', 'line-width': 5 },
-            });
-
-            const el = document.createElement('div');
-            el.style.width = '30px';
-            el.style.height = '30px';
-            el.style.backgroundImage = "url('https://img.icons8.com/color/48/person-male--v1.png')";
-            el.style.backgroundSize = 'cover';
-            el.style.borderRadius = '50%';
-            el.style.border = '2px solid white';
-            walkerMarker.current = new mapboxgl.Marker(el).setLngLat([0, 0]).addTo(map.current);
-             setMapLoading(false);
-            await updateRoute(formattedPoints);
+        map.current.on("load", () => {
+            
+        bindMap();
+        setMapLoading(false);
         });
     }, [getmapPoints]);
-
-    const getRoute = async (start, end) => {
-        const url = `https://api.mapbox.com/directions/v5/mapbox/walking/${start[0]},${start[1]};${end[0]},${end[1]}?geometries=geojson&access_token=${mapboxgl.accessToken}`;
-        const res = await fetch(url);
-        const json = await res.json();
-        return json.routes?.[0]?.geometry?.coordinates || null;
-    };
-
-    const updateRoute = async (points) => {
-        //alert('hit');
-        if (points.length < 2) return;
-
-        let fullRoute = [];
-
-        for (let i = 0; i < points.length - 1; i++) {
-            const route = await getRoute(points[i], points[i + 1]);
-            if (!route) return;
-            if (i > 0) route.shift();
-            fullRoute = [...fullRoute, ...route];
-        }
-
-        if (points.length > 2) {
-        const [first, last] = [points[0], points[points.length - 1]];
-        const dist = Math.sqrt((first[0] - last[0]) ** 2 + (first[1] - last[1]) ** 2);
-            if (dist < 0.0001) {
-                setLoopClosed(true);
-                const closeRoute = await getRoute(last, first);
-                if (closeRoute) {
-                closeRoute.shift();
-                fullRoute = [...fullRoute, ...closeRoute];
+        const bindMap = async () => {
+            if (!map.current) return;
+    
+            // normalize to [lng, lat]
+            const points: [number, number][] = getmapPoints.map(p => [
+            p.longitude ?? p.lng ?? p.lon!,
+            p.latitude ?? p.lat!,
+            ]);
+    
+            // clear old markers
+            markersRef.current.forEach(m => m.remove());
+            markersRef.current = [];
+    
+            const bounds = new mapboxgl.LngLatBounds();
+            points.forEach(coords => {
+            bounds.extend(coords);
+            });
+            // points.forEach((coords, index) => {
+            // const marker = new mapboxgl.Marker()
+            //     .setLngLat(coords)
+            //     .setPopup(new mapboxgl.Popup().setText(`Point ${index + 1}`))
+            //     .addTo(map.current!);
+    
+            // markersRef.current.push(marker);
+            // bounds.extend(coords);
+            // });
+    
+            map.current.fitBounds(bounds, { padding: 50, maxZoom: 16 });
+            
+            // ROUTE SOURCE
+            map.current.addSource("route", {
+                type: "geojson",
+                data: {
+                    type: "Feature",
+                    properties: {}, // REQUIRED
+                    geometry: {
+                    type: "LineString",
+                    coordinates: points, // FIX never[]
+                    // coordinates: [] as [number, number][], // FIX never[]
+                    },
+                },
+            });
+            
+             // Arrow icon
+            const mapInstance = map.current;
+                if (!mapInstance) return;
+    
+                mapInstance.loadImage(
+                "https://cdn-icons-png.flaticon.com/512/271/271228.png",
+                (error, image) => {
+                    if (error || !image) return;
+    
+                    if (!mapInstance.hasImage("arrow")) {
+                    mapInstance.addImage("arrow", image);
+                    }
+    
+                    mapInstance.addLayer({
+                    id: "arrow-layer",
+                    type: "symbol",
+                    source: "route",
+                    layout: {
+                        "symbol-placement": "line",
+                        "symbol-spacing": 60,
+                        "icon-image": "arrow",
+                        "icon-size": 0.04,
+                        "icon-allow-overlap": true,
+                        "icon-rotation-alignment": "map",
+                    },
+                    });
                 }
-            }
-        }
-
-        map.current.getSource('route').setData({
-            type: 'Feature',
-            geometry: { type: 'LineString', coordinates: fullRoute },
-        });
-
-        walkerMarker.current.setLngLat(fullRoute[0]);
-        animateAlongPath(fullRoute);
-    };
-
-    const animateAlongPath = (coords) => {
-        let i = 0;
-        let animationFrame;
-
-    const step = () => {
-      if (i >= coords.length - 1) return;
-      const start = coords[i];
-      const end = coords[i + 1];
-      let progress = 0;
-      const duration = 200;
-      const startTime = performance.now();
-
-        const animate = (t) => {
-            progress = Math.min((t - startTime) / duration, 1);
-            const lng = start[0] + (end[0] - start[0]) * progress;
-            const lat = start[1] + (end[1] - start[1]) * progress;
-            walkerMarker.current.setLngLat([lng, lat]);
-
-            if (progress < 1) {
-            animationFrame = requestAnimationFrame(animate);
-            } else {
-            i++;
-            animationFrame = requestAnimationFrame(step);
-            }
+                );
+    
+            // map.current.loadImage("https://cdn-icons-png.flaticon.com/512/271/271228.png", (error, image) => {
+            //     if (error || !image) return;
+            //     if (!map.current.hasImage('arrow')) map.current.addImage('arrow', image);
+    
+            //     map.current.addLayer({
+            //     id: 'arrow-layer',
+            //     type: 'symbol',
+            //     source: 'route',
+            //     layout: {
+            //         'symbol-placement': 'line',
+            //         'symbol-spacing': 60,
+            //         'icon-image': 'arrow',
+            //         'icon-size': 0.05,
+            //         'icon-allow-overlap': true,
+            //         'icon-rotation-alignment': 'map',
+            //     },
+            //     });
+            // });
+    
+            map.current.addLayer({
+            id: "route-layer",
+            type: "line",
+            source: "route",
+            paint: {
+                "line-color": "#d32f2f",
+                "line-width": 3,
+            },
+            });
+            
+            // WALKER MARKER
+            const el = document.createElement("div");
+            el.style.width = "30px";
+            el.style.height = "30px";
+            el.style.backgroundImage =
+            "url('https://img.icons8.com/color/48/person-male--v1.png')";
+            el.style.backgroundSize = "cover";
+            el.style.borderRadius = "50%";
+            // el.style.border = "2px solid white";
+    
+            walkerMarker.current = new mapboxgl.Marker(el)
+            .setLngLat(points[0])
+            .addTo(map.current);
+    
+            // await updateRoute(points);
         };
-
-        animationFrame = requestAnimationFrame(animate);
-        };
-
-        animationFrame = requestAnimationFrame(step);
-    };
-
+    
+        // GET ROUTE
+        // const getRoute = async (start: [number, number], end: [number, number]) => {
+        //     const url = `https://api.mapbox.com/directions/v5/mapbox/walking/${start[0]},${start[1]};${end[0]},${end[1]}?geometries=geojson&access_token=${mapboxgl.accessToken}`;
+        //     const res = await fetch(url);
+        //     const json = await res.json();
+        //     return json.routes?.[0]?.geometry?.coordinates || [];
+        // };
+    
+        // BUILD FULL ROUTE
+        // const updateRoute = async (points: [number, number][]) => {
+        //     if (!map.current || points.length < 2) return;
+    
+        //     let fullRoute: [number, number][] = [];
+    
+        //     for (let i = 0; i < points.length - 1; i++) {
+        //     const segment = await getRoute(points[i], points[i + 1]);
+        //     if (i > 0) segment.shift();
+        //     fullRoute.push(...segment);
+        //     }
+    
+        //     const source = map.current.getSource("route") as mapboxgl.GeoJSONSource;
+        //     source.setData({
+        //     type: "Feature",
+        //     properties: {},
+        //     geometry: { type: "LineString", coordinates: fullRoute },
+        //     });
+    
+        //     // animateAlongPath(fullRoute);
+        // };
+    
+       
+    
+    
+        // CLEANUP
+        useEffect(() => {
+            return () => {
+            map.current?.remove();
+            map.current = null;
+            };
+        }, []);
 
     const handleGetDirections = (e: React.MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault();

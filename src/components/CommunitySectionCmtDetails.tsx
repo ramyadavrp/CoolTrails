@@ -178,13 +178,13 @@ const CommunitySectionCmtDetails: React.FC = () => {
     const [isUploading, setIsUploading] = useState<boolean>(false)
     const [postVisibleCount, setPostVisibleCount] = useState(10);
     const [deleting, setDeleting] = useState(false);
-    const mappointsData: MapPoint[] = [
-        { latitude: 28.631233154913488, longitude: 77.21910966616741 },
-        { latitude: 28.631953033233273, longitude: 77.21928688873709 },
-        { latitude: 28.632340101444015, longitude: 77.2206593332844 },
-        { latitude: 28.633714724673695, longitude: 77.21910966616741 },
-        { latitude: 28.631233154913488, longitude: 77.21910966616741 },
-    ];
+    // const mappointsData: MapPoint[] = [
+    //     { latitude: 28.631233154913488, longitude: 77.21910966616741 },
+    //     { latitude: 28.631953033233273, longitude: 77.21928688873709 },
+    //     { latitude: 28.632340101444015, longitude: 77.2206593332844 },
+    //     { latitude: 28.633714724673695, longitude: 77.21910966616741 },
+    //     { latitude: 28.631233154913488, longitude: 77.21910966616741 },
+    // ];
      // Get id by helper
     useEffect(() => {
         const { userId, token ,login,email} = getAuth();
@@ -433,30 +433,58 @@ const CommunitySectionCmtDetails: React.FC = () => {
                 properties: {}, // REQUIRED
                 geometry: {
                 type: "LineString",
-                coordinates: [] as [number, number][], // FIX never[]
+                coordinates: points, // FIX never[]
+                // coordinates: [] as [number, number][], // FIX never[]
                 },
             },
         });
         
          // Arrow icon
-        map.current.loadImage("https://cdn-icons-png.flaticon.com/512/271/271228.png", (error, image) => {
-            if (error || !image) return;
-            if (!map.current.hasImage('arrow')) map.current.addImage('arrow', image);
+        const mapInstance = map.current;
+            if (!mapInstance) return;
+            mapInstance.loadImage(
+            "https://cdn-icons-png.flaticon.com/512/271/271228.png",
+            (error, image) => {
+                if (error || !image) return;
 
-            map.current.addLayer({
-            id: 'arrow-layer',
-            type: 'symbol',
-            source: 'route',
-            layout: {
-                'symbol-placement': 'line',
-                'symbol-spacing': 60,
-                'icon-image': 'arrow',
-                'icon-size': 0.05,
-                'icon-allow-overlap': true,
-                'icon-rotation-alignment': 'map',
-            },
-            });
-        });
+                if (!mapInstance.hasImage("arrow")) {
+                mapInstance.addImage("arrow", image);
+                }
+
+                mapInstance.addLayer({
+                id: "arrow-layer",
+                type: "symbol",
+                source: "route",
+                layout: {
+                    "symbol-placement": "line",
+                    "symbol-spacing": 60,
+                    "icon-image": "arrow",
+                    "icon-size": 0.04,
+                    "icon-allow-overlap": true,
+                    "icon-rotation-alignment": "map",
+                },
+                });
+            }
+            );
+
+        // map.current.loadImage("https://cdn-icons-png.flaticon.com/512/271/271228.png", (error, image) => {
+        //     if (error || !image) return;
+        //     if (!map.current.hasImage('arrow')) map.current.addImage('arrow', image);
+
+        //     map.current.addLayer({
+        //     id: 'arrow-layer',
+        //     type: 'symbol',
+        //     source: 'route',
+        //     layout: {
+        //         'symbol-placement': 'line',
+        //         'symbol-spacing': 60,
+        //         'icon-image': 'arrow',
+        //         'icon-size': 0.05,
+        //         'icon-allow-overlap': true,
+        //         'icon-rotation-alignment': 'map',
+        //     },
+        //     });
+        // });
 
         map.current.addLayer({
         id: "route-layer",
@@ -464,7 +492,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
         source: "route",
         paint: {
             "line-color": "#d32f2f",
-            "line-width": 5,
+            "line-width": 3,
         },
         });
         
@@ -1482,8 +1510,9 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                     </div>
                                     <div className="tusc-cn-2 text-center">
                                         
-                                        <p className="mb-0 text-midnight-navy"><span className="d-block review-no">31</span>
-                                            {/* <span>{getfollowingBy?.total_reviews ?? ''}</span> */}
+                                        <p className="mb-0 text-midnight-navy">
+                                        {/* <span className="d-block review-no">31</span> */}
+                                            <span>{getfollowingBy?.total_reviews ?? ''}</span>
                                         </p>
                                     </div>
                                     <div className="tusc-cn-3">
@@ -1602,7 +1631,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
                                                     </div>
                                                     <div className="test-head">
                                                        
-                                                        <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">{cmt.name ?? 'N/A'}<span style={{color:'gray',fontSize:'14px'}} className="d-inline-block mx-1">•  {timeAgo(cmt.createdOn)}</span> </h3>
+                                                        <h3 className="reviewer-name fw-normal text-midnight-navy mb-0">{cmt.name ?? 'N/A'}<span style={{color:'gray',fontSize:'14px'}} className="d-inline-block mx-1">•  {timeAgo(cmt.createdOn,cmt.time)}</span> </h3>
                                                         {/* <StarRating rating={Number(review.rating)}/> */}
                                                         <p className="mb-0">{cmt.commentText ?? 'N/A'}</p>
                                                     </div>
