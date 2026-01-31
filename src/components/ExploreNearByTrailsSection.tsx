@@ -74,7 +74,7 @@ function ExploreNearByTrailsSection() {
 
     const mapContainer = useRef<HTMLDivElement | null>(null);
     const mapRef = useRef<mapboxgl.Map | null>(null);
-    usePageTitle("Cooltrails | Explore");
+    // usePageTitle("Cooltrails | Explore");
     useEffect(() => {
         if (loadingExplore) return;
         if (!mapContainer.current) return;

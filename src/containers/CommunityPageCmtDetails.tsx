@@ -3,16 +3,25 @@ import React from 'react';
 import NavTop from '../components/AppHeader/NavTop';
 import Footer from '../components/AppFooter/Footer';
 import CommunitySectionCmtDetails from '../components/CommunitySectionCmtDetails';
-
+import { useParams } from 'react-router-dom';
+import SeoMeta from './SeoMeta';
+interface SeoMetaProps {
+  page: string;
+  pagetitle: string;
+}
 const CommunityPageCmtDetails: React.FC = () => {
-  
+  const { slug } = useParams<{ slug: string }>();
+    // alert(slug);
   return (
-    <div className="main-wrapper wrapper-community">
-      <NavTop />
-      <CommunitySectionCmtDetails></CommunitySectionCmtDetails>
-      <Footer />
-      
+    <>
+      <SeoMeta  page={ slug ?? '' } pagetitle="Cooltrails | community"/>
+      <div className="main-wrapper wrapper-community">
+        <NavTop />
+        <CommunitySectionCmtDetails></CommunitySectionCmtDetails>
+        <Footer />
     </div>
+    </>
+    
   );
 };
 

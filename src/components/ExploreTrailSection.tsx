@@ -122,7 +122,8 @@ function ExploreTrailSection() {
                     type: "Feature",
                     geometry: {
                         type: "LineString",
-                        coordinates: routeCoordinates
+                        // coordinates: routeCoordinates
+                        coordinates: [],
                     }
                 }
             });
@@ -149,7 +150,7 @@ function ExploreTrailSection() {
     }, [loadingExplore, getTrailDetail]);
 
 
-     usePageTitle("Cooltrails | Explore ");
+    //  usePageTitle("Cooltrails | Explore ");
     const [filters, setFilters] = useState({
         distance: [],    // e.g., ["near", "away"]
         activity: [],    // e.g., ["running", "walking"]

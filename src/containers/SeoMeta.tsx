@@ -27,7 +27,8 @@ const SeoMeta: React.FC<SeoMetaProps> = ({  page, pagetitle }) => {
     // console.log('pagetitle',pagetitle);
   const [seo, setSeo] = useState<Meta | null>(null);
     useEffect(() => {
-        if (!page) return; 
+        // if (!page) return; 
+        if (!page || typeof page !== 'string' || page.trim() === '') return; // page null check
         const fetchSeo = async() =>{
             try{
             const response = await axios.get(`${BASE_URL}/SeoMetaTags/${page}`);

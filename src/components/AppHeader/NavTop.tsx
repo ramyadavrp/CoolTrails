@@ -250,6 +250,7 @@ const NavTop: React.FC = () => {
                                                 src={profile?.picturePath || '/assets/images/profile/profile-md.png'}
                                                 alt="logo not"
                                                 className="user-profile-img" 
+                                                style={{borderRadius:'50%'}}
                                                 onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                                                     const target = e.currentTarget;
                                                     target.onerror = null; // prevent infinite loop

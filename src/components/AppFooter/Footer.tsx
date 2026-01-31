@@ -5,25 +5,29 @@ import SupportSection from './SupportSection';
 import SubscribeSection from './SubscribeSection';
 // import data from '../data/socialMedia.json';
 import data from '../../../public/data/socialMedia.json'
+import axios from 'axios';
 
 // import Banner from '../components/AppHeader/Banner';
 import { Link } from 'react-router-dom';
-
+import { fetchStaticPage,StaticPage  } from '../../utils/footerstaticPages';
 interface Media{
     name:string,
     url:string,
     icon:string
 }
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 const Footer: React.FC = () => {
     const [getMedia, setMedia ]= useState<Media[]>([]);
-
+    const [pages, setPages] = useState<Record<string, StaticPage>>({});
     const handleClick = () => {
         alert('Button clicked!');
     };
+
     useEffect(()=>{
         const fetchMedia= async () => {
                 try {
+                    
                     const response = await fetch('/data/socialMedia.json'); 
                     const json = await response.json();
                     setMedia(json.social_media);
@@ -34,6 +38,29 @@ const Footer: React.FC = () => {
         };
         fetchMedia();
     },[]);
+   
+    useEffect(() => {
+    const slugs = ["privacy-policy", "terms", "cookie-policy", "manage-cookies"];
+
+    const fetchStaticAll = async () => {
+      try {
+        const results = await Promise.all(slugs.map((slug) => fetchStaticPage(slug)));
+        const pagesMap: Record<string, StaticPage> = {};
+        // console.log('pagesMap',pagesMap);
+        results.forEach((res, index) => {
+          pagesMap[slugs[index]] = res;
+        });
+        setPages(pagesMap);
+      } catch (err: any) {
+        // setError(err.message || "Error loading footer pages");
+      } finally {
+        // setLoading(false);
+      }
+    };
+
+    fetchStaticAll();
+  }, []);
+
     return (
     // <footer className="bg-[#3d3d3d] text-white py-12 pt-0">
     //     <div className="container mx-auto px-6">
@@ -89,6 +116,14 @@ const Footer: React.FC = () => {
                                     <li><a href="#!">Trail </a></li>
                                     <li><a href="#!">Trail Features</a></li> */}
                                 </ul>
+                                <ul className="list-unstyled footer-nav">
+                                    <li>
+                                        <Link to={`/page/cookie-policy`}>
+                                            {pages["cookie-policy"]?.title || "Cookie Policy"}
+                                        </Link>
+                                    </li>
+                                    
+                                </ul>
                             </div>
                         </div>
                     </div>
@@ -109,13 +144,25 @@ const Footer: React.FC = () => {
                                 <ul className="list-unstyled footer-nav">
                                     {/* <li><a href="#!">My Maps </a></li> */}
                                     <li>
-                                        <Link to={'/create-map'} className="dropdown-item"> 
+                                        {/* <Link to={'/create-map'} className="dropdown-item"> 
+                                             Create Map
+                                        </Link> */}
+                                        <Link to={'/add-post'} className="dropdown-item"> 
                                              Create Map
                                         </Link>
                                         {/* <a href="#!">Create Map</a> */}
                                     </li>
                                     {/* <li><a href="#!">Print Maps </a></li>
                                     <li><a href="#!">Route Converter</a></li> */}
+                                </ul>
+                                <ul className="list-unstyled footer-nav">
+                                    {/* <li><a href="#!">My Maps </a></li> */}
+                                    <li>
+                                        <Link to={`/page/manage-cookies`}>
+                                            {pages["manage-cookies"]?.title || "Manage Cookies"}
+                                        </Link>
+                                        {/* <a href="#!">Create Map</a> */}
+                                    </li>
                                 </ul>
                             </div>
                         </div>
@@ -141,7 +188,12 @@ const Footer: React.FC = () => {
                                     <li><a href="#!">Ambassadors</a></li> */}
                                     <li><Link to={'/affiliates'}>Affiliates</Link></li>
                                     {/* <li><a href="#!">Affiliates</a></li> */}
-                                </ul>
+                                </ul> 
+                                 <ul className="list-unstyled footer-nav">
+                                    <li><Link to={`/page/privacy-policy`}>
+                                        {pages["privacy-policy"]?.title || "Privacy Policy"}
+                                    </Link></li>
+                                </ul> 
                             </div>
                         </div>
                     </div>
@@ -164,6 +216,12 @@ const Footer: React.FC = () => {
                                     <li><Link to={'/gift-membership'} >Gift membership</Link></li>
                                     {/* <li><a href="#!">Gears</a></li> */}
                                 </ul>
+                                <ul className="list-unstyled footer-nav">
+                                    <li><Link to={`/page/terms`}>
+                                        {pages["terms"]?.title || "Terms"}
+                                    </Link></li>
+                                </ul>
+
                             </div>
                         </div>
                     </div>
