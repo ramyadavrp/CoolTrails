@@ -41,23 +41,25 @@ const FullTrailMapSection: React.FC = () => {
       // ADD MARKERS
       points.forEach((p) => {
         const coord: [number, number] = [p.longitude, p.latitude];
-        new mapboxgl.Marker().setLngLat(coord).addTo(mapRef.current!);
+        new mapboxgl.Marker().setLngLat(coord).addTo(mapRef.current!); // map icon points
         bounds.extend(coord);
       });
 
-      // BUILD DIRECTIONS REQUEST
-      const coordsString = points
-        .map((p) => `${p.longitude},${p.latitude}`)
-        .join(";");
+      // BUILD DIRECTIONS REQUEST 30-1-26 old limit error
+      // const coordsString = points
+      //   .map((p) => `${p.longitude},${p.latitude}`)
+      //   .join(";");
 
-      const directionsUrl = `https://api.mapbox.com/directions/v5/mapbox/walking/${coordsString}?geometries=geojson&overview=full&access_token=${mapboxgl.accessToken}`;
+      // const directionsUrl = `https://api.mapbox.com/directions/v5/mapbox/walking/${coordsString}?geometries=geojson&overview=full&access_token=${mapboxgl.accessToken}`;
 
-      const res = await fetch(directionsUrl);
-      const data = await res.json();
+      // const res = await fetch(directionsUrl);
+      // const data = await res.json();
+      
 
-      if (!data.routes?.length) return;
+      // if (!data.routes?.length) return;
 
-      const routeCoords = data.routes[0].geometry.coordinates;
+      // const routeCoords = data.routes[0].geometry.coordinates; 30-1-26 old
+      const routeCoords = points.map(p => [p.longitude, p.latitude]);
 
       // ADD ROUTE SOURCE
       mapRef.current!.addSource("route", {
@@ -81,7 +83,7 @@ const FullTrailMapSection: React.FC = () => {
           "line-cap": "round",
         },
         paint: {
-          "line-color": "#1e90ff",
+          "line-color": "#d32f2f",
           "line-width": 5,
         },
       });

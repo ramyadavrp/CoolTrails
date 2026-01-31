@@ -85,8 +85,9 @@ const AppRoute = () => {
         <Route path="/activities" element={<ActivitiesList />} />
         <Route path="/complete" element={<Complete />} />
         <Route path="/trail-map" element={<FullTrailMapSection />} />
-        
-        
+        {/* 30-1-26 add  */}
+        <Route path="/community" element={<CommunityPage />} /> 
+          
         
 {/* <Route path="/guides/:country/:title" element={<ParkDetails />} />  15-12-25*/} 
         <Route path="/gift" element={<GiftPage />} />
@@ -111,7 +112,7 @@ const AppRoute = () => {
           <Route path="/profile-feed" element={<ProfilefeedPage />} />
           {/* <Route path="/complete-trail" element={<CompleteTrailPage />} /> */}
           <Route path="/profile-photo" element={<ProfilePhotos />} />
-          <Route path="/community" element={<CommunityPage />} />
+          {/* <Route path="/community" element={<CommunityPage />} /> */}
           <Route path="/explore/recording/:slug" element={<CommunityPageCmtDetails />} />
           <Route path="/add-post" element={<AddPost />} />
           

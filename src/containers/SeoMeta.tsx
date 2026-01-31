@@ -23,8 +23,8 @@ interface SeoMetaProps {
 }
 
 const SeoMeta: React.FC<SeoMetaProps> = ({  page, pagetitle }) => {
-    console.log('page',page);
-    console.log('pagetitle',pagetitle);
+    // console.log('page',page);
+    // console.log('pagetitle',pagetitle);
   const [seo, setSeo] = useState<Meta | null>(null);
     useEffect(() => {
         if (!page) return; 

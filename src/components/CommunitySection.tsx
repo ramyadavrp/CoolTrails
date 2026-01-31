@@ -86,7 +86,7 @@ const CommunitySection: React.FC = () => {
    
 
     
-    usePageTitle("Cooltrails | Community");
+    // usePageTitle("Cooltrails | Community");
     // Use hook for each Clear  message after success
     useAutoClearMessage(message, setMessage, 3000);
     useAutoClearMessage(messageblock, setmessageblock, 3000);
@@ -872,27 +872,31 @@ const CommunitySection: React.FC = () => {
                                                                            {/* </a> */}
                                                                             
                                                                         </div>
-                                                                        <div className="user-feed-options dropdown dropdown-no-arrow">
-                                                                            <a className="dropdown-toggle text-midnight-navy" href="#!" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                                                                <i className="bi bi-three-dots"></i>
-                                                                            </a>
-                                                                            <ul className="dropdown-menu dropdown-sm dropdown-rounded custom-dropdown">
-                                                                                <li>
-                                                                                <a className="dropdown-item"  
-                                                                                onClick={() => {
-                                                                                    setSelectedName({ id: getSug.id, name: getSug.name,post_by_userid:getSug.post_by_userid}); 
-                                                                                    setIsOpen(true);
-                                                                                }}
-                                                                                >Report an issue</a></li>
-                                                                                {/* <li><a className="dropdown-item" href="#" 
-                                                                                onClick={() => {
-                                                                                    setSelectedName({ id: getSug.id, name: getSug.name,post_by_userid:getSug.post_by_userid}); 
-                                                                                    setIsBlock(true);
-                                                                                }}
-                                                                                >Block</a></li> */}
-                                                                                {/* <li><a className="dropdown-item" href="#">Action 2</a></li> */}
-                                                                            </ul>
-                                                                        </div>
+                                                                        {/* {getSug.post_by_userid !== userId &&( */}
+                                                                                <div className="user-feed-options dropdown dropdown-no-arrow">
+                                                                                    <a className="dropdown-toggle text-midnight-navy" href="#!" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                                                        <i className="bi bi-three-dots"></i>
+                                                                                    </a>
+                                                                                    <ul className="dropdown-menu dropdown-sm dropdown-rounded custom-dropdown">
+                                                                                        <li>
+                                                                                        <a className="dropdown-item" 
+                                                                                        
+                                                                                        onClick={() => {
+                                                                                            setSelectedName({ id: getSug.id, name: getSug.name,post_by_userid:getSug.post_by_userid}); 
+                                                                                            setIsOpen(true);
+                                                                                        }}
+                                                                                        >Report an issue</a></li>
+                                                                                        {/* <li><a className="dropdown-item" href="#" 
+                                                                                        onClick={() => {
+                                                                                            setSelectedName({ id: getSug.id, name: getSug.name,post_by_userid:getSug.post_by_userid}); 
+                                                                                            setIsBlock(true);
+                                                                                        }}
+                                                                                        >Block</a></li> */}
+                                                                                        {/* <li><a className="dropdown-item" href="#">Action 2</a></li> */}
+                                                                                    </ul>
+                                                                                </div>
+                                                                            {/* )} */}
+                                                                        
                                                                     </div>
                                                                     <div className="feed-image">
                                                         
