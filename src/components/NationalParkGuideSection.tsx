@@ -1,23 +1,110 @@
-import React, { useState,useEffect } from 'react';
+import React, { useState,useEffect,useMemo } from 'react';
 import { Link as ScrollLink } from 'react-scroll';
 import { Link as RouterLink } from 'react-router-dom';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
+import { SquareLoader } from "react-spinners";
 import { SyncLoader } from "react-spinners";
+import data from '../data/park.json';
+import { encodeId, generateSlug ,slugToTitle,usePageTitle} from '../utils/helpers';
+import Select from "react-select";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
+
+interface Park{
+    title:string,
+    description:string
+
+}
+
+interface Parklist{
+    park_image:string,
+    park_title:string,
+    park_address:string,
+    park_trail:string,
+    country:string
+}
 const NationalParkGuideSection: React.FC = () => {
     const [nationalParks,setNationalParks] = useState([]);
+    const[getPark,setPrak] = useState<Park[]>([]);
+    const[getParkList,setPrakList] = useState<Parklist[]>([]);
     const [loadingNParks,setLoadingNParks] = useState(true);
     const [errorsNParks,setErrorsNParks] = useState('');
+    const [country, setCountry] = useState("india");
+    const [Loading, setLoading] = useState(false);
+    // Add more button
+    const [expandedPosts, setExpandedPosts] = useState<{ [key: number]: boolean }>({});
 
+    // usePageTitle("Cooltrails | National Park Guides");
+    
+    
+    const toggleExpand = (index: number) => {
+        setExpandedPosts(prev => ({
+        ...prev,
+        [index]: !prev[index],
+        }));
+    };
+
+    const limit = 150;
+
+    // window.scrollTo(0,0);
+    useEffect(()=>{
+        const timer = setTimeout(()=>
+            setLoadingNParks(false),5000);
+        return()=>clearTimeout(timer);
+    },[]);
+
+        // useEffect(()=>{
+        //     const fetchParkData= async () => {
+        //         try {
+        //             const response = await fetch('/data/park.json'); 
+        //             const json: Park[] = await response.json();
+        //             setPrak(json.parks);
+        //             setPrakList(json.Parklist);
+        //             console.log(getPark);
+                    
+        //         }catch (error) {
+        //         console.error('Error fetching JSON:', error);
+        //     }
+        //     };
+        //     fetchParkData();
+        // },[]);
+
+        // Unique country list
+        const countryOptions = useMemo(() => {
+            return [...new Set(getParkList.map((p) => p.country))];
+        }, []);
+        const handleMatchChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+            const newValue = e.target.value;
+            setLoading(true);
+            setCountry(newValue);
+            setTimeout(() => setLoading(false), 300);
+        };
+        // Filter countries only when region changes
+        // const filteredCountries = useMemo(() => {
+        //     return country === "All"
+        //     ? getParkList
+        //     : getParkList.filter((c) => c.country === country);
+        // }, [country, getParkList]);
+        
+
+        const filteredCountries = useMemo(() => {
+            if (!country) return getParkList; // no country selected → show all
+            return getParkList.filter((p) => p.country.toLowerCase() === country);
+            }, [getParkList, country]);
+        
     // Effect to fetch data
     useEffect(() => {
         const fetchNParks= async ()=>{
             try{
-                const response = await axios.get(`${BASE_URL}/home/topparks/10`);
-                setNationalParks(response.data.data);
+                setLoadingNParks(true); // show loader every time fetch starts
+                setErrorsNParks("");
+                const response = await axios.get(`${BASE_URL}/park/list/10/0`);
+                console.log(response.data.data);
+                setPrakList(response.data.data.parklist);
+                setPrak(response.data.data.parks);
             }catch(err){
-                console.error('API Error:', err);
+                // console.error('API Error:', err);
                 setErrorsNParks('Unable to fetch National Parks');
             } finally{
                 setLoadingNParks(false);
@@ -26,19 +113,33 @@ const NationalParkGuideSection: React.FC = () => {
         fetchNParks();
     }, []);
     
-    //console.log(nationalParks);
+
     // if(loadingNParks) return <p>Loading Parks....</p>;
     // if(errorsNParks) return <p>{errorsNParks}</p>;
     // if(nationalParks.length === 0) return <p>NO National Parks found</p>;
-    if (errorsNParks) return <p>{errorsNParks}</p>;
     if (loadingNParks) {
-    return (
-        <div className="section-explore-park d-flex justify-content-center align-items-center" style={{ minHeight: '100px' }}>
-        <SyncLoader color="#FC673C" size={20} />
-        </div>
-    );
+        return (
+            <div
+                style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                width: "100vw",
+                height: "100vh",
+                background: "#FFF5E9",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 9999,
+                }}
+            >
+                <SquareLoader color="#FC673C" size={80} speedMultiplier={1.5} />
+            </div>
+        );
     }
-    if (nationalParks.length === 0) return <p>NO National Parks found.</p>;
+    if (errorsNParks) return <p>{errorsNParks}</p>;
+    
+    if (getParkList.length === 0) return <p>NO National Parks found.</p>;
     return (
         <main className="mainContent">
             <section className="section-explore-park">
@@ -80,318 +181,160 @@ const NationalParkGuideSection: React.FC = () => {
                         </div>
                     </div>
                     <div className="row sep-foot-row">
-                        <div className="col-xl-4 col-lg-4 col-md-4 col-sm-12 col-12">
-                            <div className="sep-foot">
-                                <p className="sep-title text-midnight-navy mb-0">Trails we love</p>
-                                <p className="mb-0 text-grey">From top picks to hidden gems, find your favorite trails with
-                                    our curated collections.</p>
-                            </div>
-                        </div>
-                        <div className="col-xl-4 col-lg-4 col-md-4 col-sm-12 col-12">
-                            <div className="sep-foot">
-                                <p className="sep-title text-midnight-navy mb-0">All the details you need</p>
-                                <p className="mb-0 text-grey">Get guidance from AllTrails experts, informed by our community
-                                    of 80 million trail-goers.</p>
-                            </div>
-                        </div>
-                        <div className="col-xl-4 col-lg-4 col-md-4 col-sm-12 col-12">
-                            <div className="sep-foot">
-                                <p className="sep-title text-midnight-navy mb-0">Insider tips and tricks</p>
-                                <p className="mb-0 text-grey">Come prepared with helpful info like fees, reservations, and
-                                    the best times to visit.</p>
-                            </div>
-                        </div>
+                        
+                            {
+                                getPark.length > 0 ?(
+                                    getPark.map((pk:any, index:number)=>{
+                                        const rawDescription = pk.description ?? '';
+                                        const cleanDescription = rawDescription
+                                            .replace(/<[^>]+>/g, '')  // Remove HTML tags
+                                            .replace(/&nbsp;| /g, '') // Remove HTML entities
+                                            .trim();
+
+                                        const shouldTruncate = cleanDescription.length > limit;
+                                        const shortText = cleanDescription.slice(0, limit);
+                                        const isExpanded = expandedPosts[index];
+
+                                        return(
+                                            <div className="col-xl-4 col-lg-4 col-md-4 col-sm-12 col-12">
+                                                <div key={index} className="sep-foot">
+                                                    <p className="sep-title text-midnight-navy mb-0">{pk.title ?? ''}</p>
+                                                    <p className="mb-0 text-grey" style={{ textAlign: 'justify'}}>
+                                                    {isExpanded || !shouldTruncate ? cleanDescription : `${shortText}...`}
+                                                    {shouldTruncate && (
+                                                        <a
+                                                        href="#"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            toggleExpand(index);
+                                                        }}
+                                                        className="text-orange fw-bold ms-1"
+                                                        >
+                                                        {isExpanded ? 'Read less' : 'Read more'}
+                                                        </a>
+                                                    )}
+                                                    </p>
+
+                                                </div>
+                                            </div>
+                                    )})
+                                ) : (
+                                    <p>Not found</p>
+                                )
+                            }
+                        
+                        
                     </div>
                 </div>
             </section>
             <section className="section-to-dest default-padding">
                 <div className="container"> 
-                    <div className="row">
+                    {/* <div className="row">
                         <div className="col-12">
                             
                             <div className="cooltrails-title text-center">
-                                <h2 className="title title-sm title-dropdown d-flex align-items-center justify-content-center">
-                                    <span className="me-2 text-midnight-navy">Guides to</span>  
-                                    <select name="" id="" className="advance-select" defaultValue="">
-                                        {/* <option value="" selected>Austraila</option> */}
-                                        <option value="">Austraila</option>
-                                        <option value="america">America</option>
-                                        <option value="india">India</option>
-                                    </select> 
-                                </h2>
+                                <h2 className="title title-sm title-dropdown d-flex align-items-center justify-content-center"><span class="me-2 text-midnight-navy">Guides to</span>  <select name="" id="" class="advance-select">
+                                    <option value="" selected>Austraila</option>
+                                    <option value="">America</option>
+                                    <option value="">India</option>
+                                </select> </h2>
                                 <p className="text-center text-grey">29 Parks • 29 Guides</p>
                             </div>
 
                         </div>
+                    </div> */}
+                    <div className="row">
+                        <div className="col-12">
+                            
+                            <div className="cooltrails-title text-center" >
+                                <h2 className="title title-sm title-dropdown d-flex align-items-center justify-content-center">
+                                    <span className="me-2 text-midnight-navy">Guides to</span>  
+                                    <div>
+                                    <select name="" 
+                                        value={country}
+                                        onChange={handleMatchChange} 
+                                        id="" className="form-select advance-select">
+                                        {/* <option value="" disabled hidden>Select</option> */}
+                                        <option value="austraila">Austraila</option>
+                                        <option value="america">America</option>
+                                        <option value="india">India</option>
+                                    </select> 
+                                    </div>
+                                </h2>
+
+                                <p className="text-center text-grey">
+                                   {filteredCountries.length }  Parks • {filteredCountries.length }  Guides</p>
+                            </div>
+
+                        </div>
                     </div>
+                    
                     <div className="row">
                             {
-                                nationalParks.map((nparks:any,index:number)=>(
-                                <div key = {index} className="col-xl-4 col-lg-6 col-md-6 col-sm-12 col-12">
-                                    <div className="guide-to-single d-flex align-items-center position-relative">
-                                        <div className="gds-thumb">
-                                            <img
-                                                src={nparks.image || '/assets/images/not-found.jpg'}
-                                                alt="Weather" 
-                                                className="w-100"
-                                                onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                                                    const target = e.currentTarget;
-                                                    target.onerror = null; // prevent infinite loop
-                                                    target.src = '/assets/images/not-found.jpg'; // fallback image
-                                                }}
-                                            />
-                                        </div>
-                                        <div className="gds-cn">
-                                            <h4 className="mb-0 text-midnight-navy">{nparks.name}</h4>
-                                            <p className="mb-0 text-grey">Tasmania • National Park</p>
-                                            <p className="mb-0 text-grey">7 Trails</p>
-                                        </div>
-                                        <div className="gds-btn">
-                                            <a href="" className="stretched-link">
-                                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
-                                                    xmlns="http://www.w3.org/2000/svg">
-                                                    <path
-                                                        d="M6.7 2.99988L10.3306 7.2356C10.7158 7.68498 10.7158 8.34811 10.3306 8.79749L6.7 13.0332"
-                                                        stroke="#717171" strokeWidth="1.1" strokeLinecap="round" />
-                                                </svg>
-                                            </a>
-                                        </div>
+                                Loading ? (
+                                    <div className="section-local-favorite d-flex justify-content-center align-items-center" style={{ minHeight: '100px' }}>
+                                        <SyncLoader color="#FC673C" size={20} />
                                     </div>
-                                </div>
-                               ))
+                                ):(
+                                    filteredCountries.map((nparks:any,index:number)=>{
+                                        const type    = generateSlug(nparks.type) || "park";
+                                        const country = generateSlug(nparks.country || "India");
+                                        const state   = nparks.state ? generateSlug(nparks.state) : null;
+                                        const city    = nparks.city ? generateSlug(nparks.city) : null;
+                                        const title   = nparks.urlTitle ?? generateSlug(nparks.parkTitle);
+
+                                        let trailurl = `/${type}s/${country}`;
+
+                                        if (state) trailurl += `/${state}`;
+                                        if (city)  trailurl += `/${city}`;
+
+                                        trailurl += `/${title}`;
+                                        return(
+                                        <div key = {index} className="col-xl-4 col-lg-6 col-md-6 col-sm-12 col-12">
+                                            <div className="guide-to-single d-flex align-items-center position-relative">
+                                                <div className="gds-thumb">
+                                                    <img
+                                                        src={nparks.parkImage || '/assets/images/not-found.jpg'}
+                                                        alt="Weather" 
+                                                        className="w-100"
+                                                        onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                                            const target = e.currentTarget;
+                                                            target.onerror = null; // prevent infinite loop
+                                                            target.src = '/assets/images/not-found.jpg'; // fallback image
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="gds-cn">
+                                                    <h4 className="mb-0 text-midnight-navy">{nparks.parkTitle ??''}</h4>
+                                                    <p className="mb-0 text-grey">{nparks.parkAddress ??''}</p>
+                                                    <p className="mb-0 text-grey">{nparks.parkTrail ??''}</p>
+                                                </div>
+                                                <div className="gds-btn">
+                                                    
+                                                    {/* <Link className="stretched-link" to={`/guides/${nparks.country}/${generateSlug(nparks.parkTitle || '' )}`}> */}
+                                                    <Link className="stretched-link" to={trailurl}>
+                                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
+                                                            xmlns="http://www.w3.org/2000/svg">
+                                                            <path
+                                                                d="M6.7 2.99988L10.3306 7.2356C10.7158 7.68498 10.7158 8.34811 10.3306 8.79749L6.7 13.0332"
+                                                                stroke="#717171" strokeWidth="1.1" strokeLinecap="round" />
+                                                        </svg>                          
+                                                     </Link>
+                                                    {/* <a href="" >
+                                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
+                                                            xmlns="http://www.w3.org/2000/svg">
+                                                            <path
+                                                                d="M6.7 2.99988L10.3306 7.2356C10.7158 7.68498 10.7158 8.34811 10.3306 8.79749L6.7 13.0332"
+                                                                stroke="#717171" strokeWidth="1.1" strokeLinecap="round" />
+                                                        </svg>
+                                                    </a> */}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )})
+                                )
+                                
                             }
-                            
-                        {/* <div className="col-xl-4 col-lg-6 col-md-6 col-sm-12 col-12">
-                            <div className="guide-to-single d-flex align-items-center position-relative">
-                                <div className="gds-thumb"><img src="assets/images/guide-to/2.png" alt="" className="w-100"/>
-                                </div>
-                                <div className="gds-cn">
-                                    <h4 className="mb-0 text-midnight-navy">Springbook</h4>
-                                    <p className="mb-0 text-grey">Queensland • National Park</p>
-                                    <p className="mb-0 text-grey">7 Trails</p>
-                                </div>
-                                <div className="gds-btn">
-                                    <a href="" className="stretched-link">
-                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
-                                            xmlns="http://www.w3.org/2000/svg">
-                                            <path
-                                                d="M6.7 2.99988L10.3306 7.2356C10.7158 7.68498 10.7158 8.34811 10.3306 8.79749L6.7 13.0332"
-                                                stroke="#717171" stroke-width="1.1" stroke-linecap="round" />
-                                        </svg>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-xl-4 col-lg-6 col-md-6 col-sm-12 col-12">
-                            <div className="guide-to-single d-flex align-items-center position-relative">
-                                <div className="gds-thumb"><img src="assets/images/guide-to/3.png" alt="" className="w-100"/>
-                                </div>
-                                <div className="gds-cn">
-                                    <h4 className="mb-0 text-midnight-navy">Cradle Mountain-Lake St Clair </h4>
-                                    <p className="mb-0 text-grey">Tasmania • National Park</p>
-                                    <p className="mb-0 text-grey">7 Trails</p>
-                                </div>
-                                <div className="gds-btn">
-                                    <a href="" className="stretched-link">
-                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
-                                            xmlns="http://www.w3.org/2000/svg">
-                                            <path
-                                                d="M6.7 2.99988L10.3306 7.2356C10.7158 7.68498 10.7158 8.34811 10.3306 8.79749L6.7 13.0332"
-                                                stroke="#717171" stroke-width="1.1" stroke-linecap="round" />
-                                        </svg>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-xl-4 col-lg-6 col-md-6 col-sm-12 col-12">
-                            <div className="guide-to-single d-flex align-items-center position-relative">
-                                <div className="gds-thumb"><img src="assets/images/guide-to/2.png" alt="" className="w-100"/>
-                                </div>
-                                <div className="gds-cn">
-                                    <h4 className="mb-0 text-midnight-navy">Springbook </h4>
-                                    <p className="mb-0 text-grey">Tasmania • National Park</p>
-                                    <p className="mb-0 text-grey">7 Trails</p>
-                                </div>
-                                <div className="gds-btn">
-                                    <a href="" className="stretched-link">
-                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
-                                            xmlns="http://www.w3.org/2000/svg">
-                                            <path
-                                                d="M6.7 2.99988L10.3306 7.2356C10.7158 7.68498 10.7158 8.34811 10.3306 8.79749L6.7 13.0332"
-                                                stroke="#717171" stroke-width="1.1" stroke-linecap="round" />
-                                        </svg>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-xl-4 col-lg-6 col-md-6 col-sm-12 col-12">
-                            <div className="guide-to-single d-flex align-items-center position-relative">
-                                <div className="gds-thumb"><img src="assets/images/guide-to/5.png" alt="" className="w-100"/>
-                                </div>
-                                <div className="gds-cn">
-                                    <h4 className="mb-0 text-midnight-navy">Glass House Mountains </h4>
-                                    <p className="mb-0 text-grey">New South Wales • National Park</p>
-                                    <p className="mb-0 text-grey">8 Trails</p>
-                                </div>
-                                <div className="gds-btn">
-                                    <a href="" className="stretched-link">
-                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
-                                            xmlns="http://www.w3.org/2000/svg">
-                                            <path
-                                                d="M6.7 2.99988L10.3306 7.2356C10.7158 7.68498 10.7158 8.34811 10.3306 8.79749L6.7 13.0332"
-                                                stroke="#717171" stroke-width="1.1" stroke-linecap="round" />
-                                        </svg>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-xl-4 col-lg-6 col-md-6 col-sm-12 col-12">
-                            <div className="guide-to-single d-flex align-items-center position-relative">
-                                <div className="gds-thumb"><img src="assets/images/guide-to/6.png" alt="" className="w-100"/>
-                                </div>
-                                <div className="gds-cn">
-                                    <h4 className="mb-0 text-midnight-navy">Lane Cove </h4>
-                                    <p className="mb-0 text-grey">Queensland • National Par</p>
-                                    <p className="mb-0 text-grey">8 Trails</p>
-                                </div>
-                                <div className="gds-btn">
-                                    <a href="" className="stretched-link">
-                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
-                                            xmlns="http://www.w3.org/2000/svg">
-                                            <path
-                                                d="M6.7 2.99988L10.3306 7.2356C10.7158 7.68498 10.7158 8.34811 10.3306 8.79749L6.7 13.0332"
-                                                stroke="#717171" stroke-width="1.1" stroke-linecap="round" />
-                                        </svg>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-xl-4 col-lg-6 col-md-6 col-sm-12 col-12">
-                            <div className="guide-to-single d-flex align-items-center position-relative">
-                                <div className="gds-thumb"><img src="assets/images/guide-to/9.png" alt="" className="w-100"/>
-                                </div>
-                                <div className="gds-cn">
-                                    <h4 className="mb-0 text-midnight-navy">Glass House Mountains </h4>
-                                    <p className="mb-0 text-grey">Queensland • National Par</p>
-                                    <p className="mb-0 text-grey">8 Trails</p>
-                                </div>
-                                <div className="gds-btn">
-                                    <a href="" className="stretched-link">
-                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
-                                            xmlns="http://www.w3.org/2000/svg">
-                                            <path
-                                                d="M6.7 2.99988L10.3306 7.2356C10.7158 7.68498 10.7158 8.34811 10.3306 8.79749L6.7 13.0332"
-                                                stroke="#717171" stroke-width="1.1" stroke-linecap="round" />
-                                        </svg>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-xl-4 col-lg-6 col-md-6 col-sm-12 col-12">
-                            <div className="guide-to-single d-flex align-items-center position-relative">
-                                <div className="gds-thumb"><img src="assets/images/guide-to/8.png" alt="" className="w-100"/>
-                                </div>
-                                <div className="gds-cn">
-                                    <h4 className="mb-0 text-midnight-navy">Dandenong Ranges </h4>
-                                    <p className="mb-0 text-grey">New South Wales • National Park</p>
-                                    <p className="mb-0 text-grey">8 Trails</p>
-                                </div>
-                                <div className="gds-btn">
-                                    <a href="" className="stretched-link">
-                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
-                                            xmlns="http://www.w3.org/2000/svg">
-                                            <path
-                                                d="M6.7 2.99988L10.3306 7.2356C10.7158 7.68498 10.7158 8.34811 10.3306 8.79749L6.7 13.0332"
-                                                stroke="#717171" stroke-width="1.1" stroke-linecap="round" />
-                                        </svg>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-xl-4 col-lg-6 col-md-6 col-sm-12 col-12">
-                            <div className="guide-to-single d-flex align-items-center position-relative">
-                                <div className="gds-thumb"><img src="assets/images/guide-to/8.png" alt="" className="w-100"/>
-                                </div>
-                                <div className="gds-cn">
-                                    <h4 className="mb-0 text-midnight-navy">Kosciuszko </h4>
-                                    <p className="mb-0 text-grey">New South Wales • National Park</p>
-                                    <p className="mb-0 text-grey">8 Trails</p>
-                                </div>
-                                <div className="gds-btn">
-                                    <a href="" className="stretched-link">
-                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
-                                            xmlns="http://www.w3.org/2000/svg">
-                                            <path
-                                                d="M6.7 2.99988L10.3306 7.2356C10.7158 7.68498 10.7158 8.34811 10.3306 8.79749L6.7 13.0332"
-                                                stroke="#717171" stroke-width="1.1" stroke-linecap="round" />
-                                        </svg>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-xl-4 col-lg-6 col-md-6 col-sm-12 col-12">
-                            <div className="guide-to-single d-flex align-items-center position-relative">
-                                <div className="gds-thumb"><img src="assets/images/guide-to/7.png" alt="" className="w-100"/>
-                                </div>
-                                <div className="gds-cn">
-                                    <h4 className="mb-0 text-midnight-navy">Dandenong Ranges </h4>
-                                    <p className="mb-0 text-grey">New South Wales • National Par</p>
-                                    <p className="mb-0 text-grey">8 Trails</p>
-                                </div>
-                                <div className="gds-btn">
-                                    <a href="" className="stretched-link">
-                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
-                                            xmlns="http://www.w3.org/2000/svg">
-                                            <path
-                                                d="M6.7 2.99988L10.3306 7.2356C10.7158 7.68498 10.7158 8.34811 10.3306 8.79749L6.7 13.0332"
-                                                stroke="#717171" stroke-width="1.1" stroke-linecap="round" />
-                                        </svg>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-xl-4 col-lg-6 col-md-6 col-sm-12 col-12">
-                            <div className="guide-to-single d-flex align-items-center position-relative">
-                                <div className="gds-thumb"><img src="assets/images/guide-to/9.png" alt="" className="w-100"/>
-                                </div>
-                                <div className="gds-cn">
-                                    <h4 className="mb-0 text-midnight-navy">Dandenong Ranges </h4>
-                                    <p className="mb-0 text-grey">New South Wales • National Par</p>
-                                    <p className="mb-0 text-grey">8 Trails</p>
-                                </div>
-                                <div className="gds-btn">
-                                    <a href="" className="stretched-link">
-                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
-                                            xmlns="http://www.w3.org/2000/svg">
-                                            <path
-                                                d="M6.7 2.99988L10.3306 7.2356C10.7158 7.68498 10.7158 8.34811 10.3306 8.79749L6.7 13.0332"
-                                                stroke="#717171" stroke-width="1.1" stroke-linecap="round" />
-                                        </svg>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-xl-4 col-lg-6 col-md-6 col-sm-12 col-12">
-                            <div className="guide-to-single d-flex align-items-center position-relative">
-                                <div className="gds-thumb"><img src="assets/images/guide-to/6.png" alt="" className="w-100"/>
-                                </div>
-                                <div className="gds-cn">
-                                    <h4 className="mb-0 text-midnight-navy">Lamington </h4>
-                                    <p className="mb-0 text-grey">New South Wales • National Par</p>
-                                    <p className="mb-0 text-grey">8 Trails</p>
-                                </div>
-                                <div className="gds-btn">
-                                    <a href="" className="stretched-link">
-                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
-                                            xmlns="http://www.w3.org/2000/svg">
-                                            <path
-                                                d="M6.7 2.99988L10.3306 7.2356C10.7158 7.68498 10.7158 8.34811 10.3306 8.79749L6.7 13.0332"
-                                                stroke="#717171" stroke-width="1.1" stroke-linecap="round" />
-                                        </svg>
-                                    </a>
-                                </div>
-                            </div>
-                        </div> */}
                     </div>
                 </div>
             </section>

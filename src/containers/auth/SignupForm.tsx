@@ -7,6 +7,20 @@ const BASE_URL = import.meta.env.VITE_API_URL;
 const SignupForm = () => {
     const navigate = useNavigate();
     //const [isSignUp, setIsSignUp] = useState();
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [successMsg, setSuccessMsg] = useState('');
+    const [errorMsg, setErrorMsg] = useState('');
+     const [showPassword, setShowPassword] = useState(false); 
+    const [formData, setFormData] = useState({
+        // firstName: "",
+        // lastName: "",
+        fullName:"",
+        signupEmail: "",
+        // mobile: "",
+        signupPassword: ""
+    });
 
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -14,24 +28,12 @@ const SignupForm = () => {
         navigate("/");
         }
     }, [navigate]);
-
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [errors, setErrors] = useState<Record<string, string>>({});
-    const [successMsg, setSuccessMsg] = useState('');
-    const [errorMsg, setErrorMsg] = useState('');
-
-    const [formData, setFormData] = useState({
-        // firstName: "",
-        // lastName: "",
-        fullName:"",
-        signupEmail: "",
-        mobile: "",
-        signupPassword: ""
-    });
-
+    const togglePasswordVisibility = () => {
+        setShowPassword(prevShowPassword => !prevShowPassword);
+    };
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
+        // console.log('name',name);
         setFormData(prev => ({ ...prev, [name]: value }));
         setErrors(prev => ({ ...prev, [name]: '' }));
     };
@@ -40,17 +42,17 @@ const SignupForm = () => {
         const newErrors: Record<string, string> = {};
         //if (!formData.firstName.trim()) newErrors.firstName = "First name is required.";
         //if (!formData.lastName.trim()) newErrors.lastName = "Last name is required.";
-        if (!formData.fullName.trim()) newErrors.Fullname = "Full name is required.";
+        if (!formData.fullName.trim()) newErrors.fullName = "Full name is required.";
         if (!formData.signupEmail.trim()) {
         newErrors.signupEmail = "Email is required.";
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.signupEmail)) {
         newErrors.signupEmail = "Email is invalid.";
         }
-        if (!formData.mobile.trim()) {
-        newErrors.mobile = "Mobile number is required.";
-        } else if (!/^\d{10}$/.test(formData.mobile)) {
-        newErrors.mobile = "Mobile number must be 10 digits.";
-        }
+        // if (!formData.mobile.trim()) {
+        // newErrors.mobile = "Mobile number is required.";
+        // } else if (!/^\d{10}$/.test(formData.mobile)) {
+        // newErrors.mobile = "Mobile number must be 10 digits.";
+        // }
         // if (!formData.signupPassword.trim()) {
         //   newErrors.signupPassword = "Password is required.";
         // } else if (formData.signupPassword.length < 6) {
@@ -81,9 +83,9 @@ const SignupForm = () => {
         setErrorMsg('');
         setError(null);
 
-        let fullname = formData.fullName.trim().split(' '); // split full name
-        let firstName = fullname[0]
-        let lastName = fullname.slice(1).join(" ")||" "; // remaining name
+        // let fullname = formData.fullName.trim().split(' '); // split full name
+        // let firstName = fullname[0]
+        // let lastName = fullname.slice(1).join(" ")||" "; // remaining name
 
         if (!validateSignUp()) return;
 
@@ -91,29 +93,44 @@ const SignupForm = () => {
 
         try {
         const response = await axios.post(`${BASE_URL}/user/createuser`, {
-            email: formData.signupEmail,
-            first_name:firstName,
-            last_name: lastName,
+            email: formData.signupEmail.trim(),
+            full_name:formData.fullName.trim(),
+            // last_name: lastName,
             //: formData.fullName,
             new_password: formData.signupPassword,
-            phone_no: formData.mobile,
+            // phone_no: formData.mobile,
         });
 
         const data = response.data;
-        console.log(data);
+        console.log('signup',data);
 
-        if (data.status === "success") {
-            //localStorage.setItem("token", data.token);
-            setSuccessMsg('Registered successfully!');
-            //setFormData({ firstName: '', lastName: '', signupEmail: '', mobile: '', signupPassword: '' });
-            //setFormData({ firstName: '', lastName: '', signupEmail: '', mobile: '', signupPassword: '' });
-            setFormData({ fullName: '', signupEmail: '', mobile: '', signupPassword: '' });
-            setFormData({  fullName: '', signupEmail: '', mobile: '', signupPassword: '' });
+            if (data.status === "success") {
+            setSuccessMsg("Registered successfully!");
+            setFormData({
+                fullName: "",
+                signupEmail: "",
+                signupPassword: "",
+            });
             setErrors({});
-            navigate('/login');
-        } else {
-            setErrorMsg(data.message || 'Signup failed');
-        }
+            navigate("/login");
+            } 
+            else if (data.status === "failed") {
+            // 🔥 Map backend error to email field
+            if (
+                data.message?.toLowerCase().includes("email")
+            ) {
+                setErrors(prev => ({
+                ...prev,
+                signupEmail: data.message, // show under email input
+                }));
+            } else {
+                setErrorMsg(data.message || "Signup failed");
+            }
+            }
+            else {
+            setErrorMsg(data.message || "Signup failed");
+            }
+
         } catch (err: any) {
         setErrorMsg(err.response?.data?.message || "Server error. Please try again later.");
         } finally {
@@ -136,12 +153,12 @@ const SignupForm = () => {
                         <div className="login-form-container">
                             <form onSubmit={handleSignUp} className="login-form mb-4">
                                 {successMsg && <p className="text-green-600 text-sm">{successMsg}</p>}
-                                {errorMsg && <p className="text-red-600 text-sm">{errorMsg}</p>}
+                                {errorMsg && <p className="text-danger small">{errorMsg}</p>}
                                 <div className="form-floating">
                                     <input type="email" name="signupEmail" className="form-control" id="username"
                                         placeholder="name@example.com" value={formData.signupEmail} onChange={handleChange} />
                                     <label htmlFor="username">Email address</label>
-                                    {errors.signupEmail && <p className="text-red-500 text-xs">{errors.signupEmail}</p>}
+                                    {errors.signupEmail && <p className="text-danger small">{errors.signupEmail}</p>}
                                 </div>
                                 {/* <div className="form-floating">
                                     <input type="text" name="firstName" className="form-control" id="Firstname"
@@ -159,7 +176,7 @@ const SignupForm = () => {
                                     <input type="text" name="fullName" className="form-control" id="FullName"
                                         placeholder="Full Name" value={formData.fullName} onChange={handleChange} />
                                     <label htmlFor="fullName">Full Name</label>
-                                    {errors.fullName && <p className="text-red-500 text-xs">{errors.fullName}</p>}
+                                    {errors.fullName && <p className="text-danger small">{errors.fullName}</p>}
                                 </div>
                                 {/* <div className="form-floating">
                                     <input type="text" name="mobile" className="form-control" id="mobile"
@@ -168,18 +185,21 @@ const SignupForm = () => {
                                     {errors.mobile && <p className="text-red-500 text-xs">{errors.mobile}</p>}
                                 </div> */}
                                 <div className="form-floating">
-                                    <input type="password" name="signupPassword" className="form-control form-control-password"
+                                    <input type={showPassword ? "text" : "password"} name="signupPassword" className="form-control form-control-password"
                                         id="password" placeholder="Password" value={formData.signupPassword} onChange={handleChange} />
                                     <label htmlFor="password">Password</label>
-                                    <i className="toggle-password bi bi-eye"></i>
-                                    {errors.signupPassword && <p className="text-red-500 text-xs">{errors.signupPassword}</p>}
+                                    <i className={`toggle-password bi ${showPassword ? "bi-eye-slash" : "bi-eye"}`}
+                                      onClick={togglePasswordVisibility} ></i>
+                                    {errors.signupPassword && <p className="text-danger small">{errors.signupPassword}</p>}
                                 </div>
                                 <button type="submit" className="btn-style-1 w-100" disabled={loading}>{loading ? "Signing Up..." : "Sign Up"}</button>
                             </form>
                             <div className="forgot-password text-center mb-3">
-                                <a href="">Forgot your password?</a>
+                                <Link to={'/forgot-password'}>
+                                  Forgot your password?
+                                </Link>
                             </div>
-                            <p className="or text-center mb-3">or</p>
+                            {/* <p className="or text-center mb-3">or</p>
                             <div className="platform-logins">
                                 <a href="" className="login-btn mb-2"> <img
                                         src="assets/images/icons/facebook-color.svg" alt="" /> Continue with
@@ -190,7 +210,7 @@ const SignupForm = () => {
                                 <a href="" className="login-btn"> <img src="assets/images/icons/apple-color.svg"
                                         alt="" />
                                     Continue with Apple</a>
-                            </div> 
+                            </div>  */}
                             <div className="dont-have-ac text-center">
                                 <p className="txt-1">Already have an account? 
                                   {/* <a href="login.html" className="text-midnight-navy">Log in here</a> */}

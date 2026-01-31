@@ -13,7 +13,8 @@ const Banner: React.FC = () => {
     const [take, setTake] = useState(5);
     // const take = 5;
     // console.log(inputSearchvlue);
-  
+    
+    
 
     useEffect(() => {
         const delayDebounce = setTimeout(() => {
@@ -42,14 +43,14 @@ const Banner: React.FC = () => {
                 searchkey: searchTerm,
                 category: ''
             });
-            //console.log("searchkey response", response.data);
+            console.log("searchkeyss response", response.data);
             setSuggestions(response.data.data);
-            console.log("searchkey response:", {searchkey:searchTerm,category:''} );
+            // console.log("searchkey response:", {searchkey:searchTerm,category:''} );
             result = response.data.data || [];
             if (response.data?.status === "success" && response.data.data.length > 0) {
                 setSuggestions(response.data.data);
             } else{
-                console.log("Trying category search:", { searchkey: '', category: searchTerm });
+                // console.log("Trying category search:", { searchkey: '', category: searchTerm });
                 const fallback = await axios.post(`${BASE_URL}/Trail/Search`, {
                 take: take,
                 skip: skipCount,
@@ -57,7 +58,7 @@ const Banner: React.FC = () => {
                 category: searchTerm
                 });
                 if (fallback.data?.status === "success" && fallback.data.data.length > 0) {
-                    console.log("category response", fallback.data);
+                    // console.log("category response", fallback.data);
                     setSuggestions(fallback.data.data); 
                 } else {
                     setSuggestions([]); 
@@ -79,7 +80,7 @@ const Banner: React.FC = () => {
         setSuggestions([]);
     }
    
-//console.log(suggestions);
+//  console.log(suggestions);
     return (
       <section className="home-hero-section">
         <div className="container-fluid  bg-image">
@@ -113,7 +114,19 @@ const Banner: React.FC = () => {
                         inputSearchvlue && (
                             suggestions.length > 0 ? (
                                 <ul className="suggestions">
-                                {suggestions.map((item: any, index: number) => (
+                                {suggestions.map((item: any, index: number) => {
+                                    // country null check
+                                    // const safeSlug = (value) => value ? generateSlug(value) : '';
+                                    // const nearUrl = `/${safeSlug(nTrails.type)}s/${safeSlug(nTrails.country)}/${safeSlug(nTrails.state)}/${safeSlug(nTrails.city)}/${nTrails.urlTitle ? nTrails.urlTitle : generateSlug(nTrails.title)}`;
+                                    const city    = item.city    ?? "Lucknow";
+                                    const state   = item.state   ?? "UTTAR PRADESH";
+                                    const country = item.country ?? "India";
+
+                                    const slugTitle = item.urlTitle ?? generateSlug(item.title);
+                                    const trailurl = `/${generateSlug(item.type)}s/${generateSlug(country)}/${generateSlug(state)}/${generateSlug(city)}/${slugTitle}`;
+                                    const parkUrl = `/${generateSlug(item.type)}s/${generateSlug(country)}/${generateSlug(state)}/${generateSlug(city)}/${slugTitle}`;
+
+                                    return(
                                     <li
                                     key={index}
                                     className="flex items-start px-3 py-2 hover:bg-gray-100 cursor-pointer"
@@ -125,23 +138,25 @@ const Banner: React.FC = () => {
                                         {/* <Link to={`/affiliate-details/${item.trailId}`} className="a-text">
                                             {item.title}
                                         </Link> */}
-                                        <Link to={`/affiliate-details/${generateSlug(item.title)}`} className="a-text">
-                                            {item.title}
-                                        </Link>
-                                        
-                                        {/* <Link className="a-text"
-                                            to={
-                                                category === 'trail'
-                                                ? `/affiliate-details/${generateSlug(item.title)}`
-                                                : `/explore-trail/${generateSlug(item.title)}`
-                                            }
-                                            >
+                                        {/* <Link to={`/affiliate-details/${generateSlug(item.title)}`} className="a-text">
                                             {item.title}
                                         </Link> */}
+                                        
+                                        <Link className="a-text" state={{trailId:item.trailId}}
+                                            to={
+                                                item.type === 'Trail'
+                                                ? trailurl
+                                                : parkUrl
+                                            }
+                                            >
+                                           {`${item.title} (${item.type})`}
+                                           <p style={{fontSize:'12px'}}>{item.address}</p>
+                                        </Link>
                                         </div>
                                     </div>
                                     </li>
-                                ))}
+                                    )
+                                    })}
                                 </ul>
                             ) : (
                                 <ul className="suggestions">   

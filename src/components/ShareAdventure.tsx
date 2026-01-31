@@ -6,19 +6,40 @@ import axios from 'axios';
 import 'owl.carousel/dist/assets/owl.carousel.min.css';
 import 'owl.carousel/dist/assets/owl.theme.default.min.css';
 import { SyncLoader } from "react-spinners";
+import data from '../data/socialMedia.json';
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 //const BASE_URL = 'https://api.cooltrails.purchaseitnow.shop/api/home/topadventurecategory';
+
+interface Media{
+    name:string,
+    url:string,
+    icon:string
+}
 const ShareAdventure: React.FC = () => {
     const [shareAdventure, setAdventure] = useState([]);
+    const [getMedia, setMedia ]= useState<Media[]>([]);
     const [loadingAdventure, setLoadingAdventure] = useState(true);
     const [errorAdventure, setErrorAdventure] = useState('');
     
+    useEffect(()=>{
+        const fetchMedia= async () => {
+                try {
+                    const response = await fetch('/data/socialMedia.json'); 
+                    const json: Media[] = await response.json();
+                    setMedia(json.social_media);
+                    
+                }catch (error) {
+                console.error('Error fetching JSON:', error);
+            }
+        };
+        fetchMedia();
+    },[]);
     // Effect to fetch data
     useEffect(() => {
         const fetchtopAdventure = async ()=>{
             try{
-                const response = await axios.get(`${BASE_URL}/home/topadventurecategory/10`);
+                const response = await axios.get(`${BASE_URL}/home/adventurelist/15`);
                 setAdventure(response.data.data);
             }catch(err){
                 console.error('API Error:', err);
@@ -118,9 +139,9 @@ const ShareAdventure: React.FC = () => {
                                shareAdventure.map((adventure: any, index: number) => (
                                 
                                 <div key={index} className="advnSliderItem">
-                                    <div className="share-adventure-single position-relative overflow-hidden">
+                                    <div className="share-adventure-single position-relative overflow-hidden image-div-style">
                                         <img
-                                            src={adventure.image || '/assets/images/not-found.jpg'}
+                                            src={adventure.imagePath || '/assets/images/not-found.jpg'}
                                             alt="Adventure" className="" 
                                             onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                                                 const target = e.currentTarget;
@@ -128,8 +149,11 @@ const ShareAdventure: React.FC = () => {
                                                 target.src = '/assets/images/not-found.jpg'; // fallback image
                                             }}
                                         />
-                                        <a href="" className="share-adv-overlay d-flex w-100 h-100 align-items-end justify-content-center text-center text-white">
-                                        <span className="d-block w-100">{adventure.title}</span></a>
+                                        {/* <a href="" className="share-adv-overlay d-flex w-100 h-100 align-items-end justify-content-center text-center text-white">
+                                        <span className="d-block w-100">{adventure.title} ddd</span></a> */}
+                                        <div  className="share-adv-overlay d-flex w-100 h-100 align-items-end justify-content-center text-center text-white">
+                                            <span className="d-block w-100">{adventure.title}</span>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -202,9 +226,47 @@ const ShareAdventure: React.FC = () => {
             <div className="row">
                 <div className="col-12">
                     <ul className="d-flex justify-content-center gap-3 list-unstyled flex-wrap social-media-logo">
-                        <li><a href="" title="Facebook"
-                                className="social-media-btn d-flex align-items-center justify-content-center"><img
-                                    src="/assets/images/icons/facebook.svg" alt="" /></a></li>
+                        
+                        {
+                            getMedia.length > 0 ?(
+                                getMedia.map((media:any,index:number)=>(
+                                    <li key={index} >
+                                        <a href={media.url ?? ''} title={media.name ?? ''}
+                                            className="social-media-btn d-flex align-items-center justify-content-center"
+                                            target="_blank"
+                                            >
+                                            {/* <img src="/assets/images/icons/facebook.svg" alt="" /> */}
+                                            <img
+                                            src={media.icon || '/assets/images/not-found.jpg'}
+                                            alt={media.name ?? ''} className="" 
+                                            onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                                                const target = e.currentTarget;
+                                                target.onerror = null; // prevent infinite loop
+                                                target.src = '/assets/images/not-found.jpg'; // fallback image
+                                            }}
+                                        />
+                                        </a>
+                                    </li>  
+                                ))
+                            ):(
+                                <p>Not Found.</p>
+                            )
+                        }
+                        
+                        {/* <li>
+                            <a href="" title="Facebook"
+                                className="social-media-btn d-flex align-items-center justify-content-center">
+                                <img src="/assets/images/icons/facebook.svg" alt="" />
+                            </a> */}
+                            {/* <a
+                                href="https://facebook.com/CoolTrails"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="social-media-btn d-flex align-items-center justify-content-center"
+                                >
+                                <img src="/assets/images/icons/facebook.svg" alt="Facebook" />
+                            </a> */}
+                        {/* </li>
                         <li><a href="" title="Instagram"
                                 className="social-media-btn d-flex align-items-center justify-content-center"><img
                                     src="/assets/images/icons/instagram.svg" alt="" /></a></li>
@@ -213,7 +275,7 @@ const ShareAdventure: React.FC = () => {
                                     src="/assets/images/icons/twitter-x.svg" alt="" /></a></li>
                         <li><a href="" title="Linked IN"
                                 className="social-media-btn d-flex align-items-center justify-content-center"><img
-                                    src="/assets/images/icons/linkedin02.svg" alt="" /></a></li>
+                                    src="/assets/images/icons/linkedin02.svg" alt="" /></a></li> */}
                     </ul>
                 </div>
             </div>

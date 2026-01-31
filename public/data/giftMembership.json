@@ -1,0 +1,36 @@
+
+{
+    "plans":{
+        "Plan_name":"Annual ",
+        "currency":"AED",
+        "monthly_amt":"9.17",
+        "total_amt":" 109.99"
+    },
+    "FAQ":[
+        {
+            "faq_name": "How do I redeem my subscription?",
+            "faq_description": "If you don't want your gift delivered by email, you'll have the option to print instead. Then you can deliver your gift by hand or by mail and the PDF will include all the information your recipient needs to redeem it."
+        },
+        {
+            "faq_name": "How do I redeem my subscription?",
+            "faq_description": "If you don't want your gift delivered by email, you'll have the option to print instead. Then you can deliver your gift by hand or by mail and the PDF will include all the information your recipient needs to redeem it."
+        },
+        {
+            "faq_name": "Will I know if my recipient receives their gift?",
+            "faq_description": "If you don't want your gift delivered by email, you'll have the option to print instead. Then you can deliver your gift by hand or by mail and the PDF will include all the information your recipient needs to redeem it."
+        },
+        {
+            "faq_name": "Is there an expiration date on the subscription?",
+            "faq_description": "If you don't want your gift delivered by email, you'll have the option to print instead. Then you can deliver your gift by hand or by mail and the PDF will include all the information your recipient needs to redeem it."
+        },
+        {
+            "faq_name": "Can I buy a physical gift subscription?",
+            "faq_description": "If you don't want your gift delivered by email, you'll have the option to print instead. Then you can deliver your gift by hand or by mail and the PDF will include all the information your recipient needs to redeem it."
+        },
+        {
+            "faq_name": "How do I redeem my subscription?",
+            "faq_description": "If you don't want your gift delivered by email, you'll have the option to print instead. Then you can deliver your gift by hand or by mail and the PDF will include all the information your recipient needs to redeem it."
+        }
+        
+    ]
+}

@@ -13,7 +13,7 @@ const AppPromotion: React.FC = () => {
                                 <div className="download-app-content">
                                     <h2 className="text-white">Our App is Launching Soon!</h2>
                                     <p className="mb-4 text-white">Be the first to explore with it</p>
-                                    <a href="" className="btn-style-2">Get Notified</a>
+                                    {/* <a href="" className="btn-style-2">Get Notified</a> */}
                                 </div>
                             </div>
                             <div className="col-xl-3 col-lg-4 col-md-5 col-sm-12">

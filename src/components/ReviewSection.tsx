@@ -1,12 +1,13 @@
 // src/components/ReviewSection.tsx
-import React, { useEffect, useState,useRef } from 'react';
+import React, { useEffect, useState,useRef,useCallback } from 'react';
 import axios from 'axios';
 import 'owl.carousel'; // Import OwlCarousel's JS (ensure this path is correct)
-
+import { Link ,useNavigate} from 'react-router-dom';
 // IMPORTANT: Make sure these CSS imports are present either here or in your main.tsx
 import 'owl.carousel/dist/assets/owl.carousel.min.css';
 import 'owl.carousel/dist/assets/owl.theme.default.min.css';
 import { SyncLoader } from "react-spinners";
+import {getAuth} from '../utils/storage';
 const BASE_URL = import.meta.env.VITE_API_URL;
 
 // Declare jQuery globally for TypeScript
@@ -19,26 +20,160 @@ declare global {
 
 
 const ReviewSection: React.FC = () => {
+    const [btnText, setBtnText] = useState("Follow");
     const [explorers, setExplorers] = useState([]);
     const [loadingExplorers, setLoadingExplorers] = useState(true);
     const [errorExplorers, setErrorExplorers] = useState('');
-    
-    // Effect to fetch data
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const navigate = useNavigate();
+    const [userId, setUserId] = useState<string>("");
+    const [token, setToken] = useState<string>("");
+    const [getFollow, setFollow] = useState<{ [key: number]: boolean }>({});
+    // Get id by helper
+      useEffect(() => {
+        const { userId, token } = getAuth();
+        if (userId) setUserId(userId);
+        if (token) setToken(token);
+      }, []);
+    console.log('userId',userId);
     useEffect(() => {
-        const fetchtopExplorers = async ()=>{
-            try{
-                const response = await axios.get(`${BASE_URL}/trail/FellowExplorers/2`);
-                //console.log(response.data.data);
-                setExplorers(response.data.data);
-            }catch(err){
-                console.error('API Error:', err);
-                setErrorExplorers('Unable to fetch adventure');
-            } finally{
+        // const token = sessionStorage.getItem("token");
+        setIsLoggedIn(!!token);
+    }, []);
+    // console.log('userId',userId);
+    useEffect(() => {
+        const fetchtopExplorers = async () => {
+            try {
+                const response = await axios.get(`${BASE_URL}/trail/FellowExplorers/10/${userId}`);
+                const data = response.data.data;
+                setExplorers(data);
+                // console.log('explorers',data);
+                const initialFollows: Record<string, boolean> = {};
+                data.forEach((exp: any) => {
+                    // Default logic: if do_follow true → Following
+                    if (exp.do_follow === true || exp.do_follow === "true") {
+                        initialFollows[exp.id] = true;
+                    } else {
+                        initialFollows[exp.id] = false; // default fallback
+                    }
+                });
+                setFollow(initialFollows);
+
+            } catch (err) {
+                console.error("API Error:", err);
+            } finally {
                 setLoadingExplorers(false);
             }
         };
-        fetchtopExplorers();  
-    }, []);
+
+        fetchtopExplorers();
+    }, [userId]);
+
+
+    // console.log("user ID:", userId); userId
+    const handleFollow = useCallback(
+        async (id: string) => {
+            try {
+                const response = await axios.post(`${BASE_URL}/user/follow`, {
+                    FollowerId: userId,//9c4eede4-8850-4f89-aaf0-4e417d40b942
+                    UserId: id, //a2dc38a2-f4fa-4a6f-8eb3-4400932bc62c
+    
+                }
+            );
+            // console.log('follow',response.data);
+                if (response.data.status === "success") {
+                    const doFollow = response.data.do_follow 
+                                    ?? response.data.data?.do_follow 
+                                    ?? response.data.follow;
+
+                    console.log("doFollow:", doFollow);
+                    setFollow((prev) => ({
+                        ...prev,
+                        [id]: doFollow === true || doFollow === "true",
+                    }));
+                        
+                }
+            } catch (error) {
+            console.error(error);
+            }
+        },[userId] // dependencies
+    );
+
+    // const handleFollow = useCallback(
+    //     async (id: string) => {
+    //         // e.preventDefault();
+    //         try {
+
+    //         if (!isLoggedIn) {
+    //             // not logged in → go to login page
+    //             navigate("/login");
+    //             return;
+    //         }
+           
+    //         const response = await axios.post(`${BASE_URL}/user/follow`, {
+    //             FollowerId: userId,
+    //             UserId: id,
+    //         });
+    //         if (response.data.status === "success") {
+    //             setFollow((prev) => ({
+    //                     ...prev,
+    //                     [id]: true,
+    //                 }));
+    //                 // console.log(getFollow);
+    //             const doFollow = response.data.do_follow 
+    //                             ?? response.data.data?.do_follow 
+    //                             ?? response.data.follow;
+
+    //             //console.log("doFollow:", doFollow);
+    //             setFollow((prev) => ({
+    //                 ...prev,
+    //                 [id]: doFollow === true || doFollow === "true",
+    //         }));
+
+    //         console.log(response.data);
+    //         if (response.data.status === "success") {
+    //             // Update getCommunity directly
+    //              console.log(response.data.do_follow);
+    //             setFollow((prev) => ({
+    //             ...prev,
+    //             [id]: response.data.do_follow === true || response.data.do_follow === "true",
+    //         }));
+
+                
+    //         }
+    //         } catch (error) {
+    //         console.error(error);
+    //         }
+    //     },[userId] // dependencies
+    // );
+
+    // const handleFollow = (e: React.MouseEvent<HTMLButtonElement>) => {
+    //     e.preventDefault();
+
+    //     if (!isLoggedIn) {
+    //         // not logged in → go to login page
+    //         navigate("/login");
+    //         return;
+    //     }
+
+    //     // logged in → navigate home
+    //     if (location.pathname !== "/") {
+    //         navigate("/", { replace: true });
+    //         // small delay so homepage mounts before scroll
+    //         setTimeout(() => {
+    //         window.scrollTo({ top: 0, behavior: "smooth" });
+    //         }, 100);
+    //     } else {
+    //         // already on home → just scroll
+    //         window.scrollTo({ top: 0, behavior: "smooth" });
+    //     }
+
+    //     // optionally update button text or call API
+    //     // setBtnText("Following");
+    //     // axios.post("/api/follow", { profileId });
+    // };
+    // Effect to fetch data
+    
      //console.log(explorers);
 
     // Create refs for your slider elements
@@ -140,7 +275,10 @@ const ReviewSection: React.FC = () => {
                             <h2 className="title">Follow Fellow <span>Explorers</span></h2>
                             <p className="mb-4">Stay inspired by following hikers, bikers, and nature lovers who share your
                                 passion for adventure.</p>
-                            <a href="" className="btn-style-3">Explore the Community</a>
+                                <Link to={'/community'} className="btn-style-3">
+                                        Explore the Community
+                                </Link>
+                            {/* <a href="" className="btn-style-3">Explore the Community</a> */}
                         </div>
                     </div>
                 </div>  
@@ -149,6 +287,7 @@ const ReviewSection: React.FC = () => {
                         <div className="position-relative">
                             {/* Attach the ref to the slider container */}
                             <div className="follow-fellow-slider" id="followSl-1" ref={followSl1Ref}>
+                                {/* // console.log("user ID:", userId); userId */}
                                 {explorers.map((explorer:any,index:number) => (
                                     <div key={`${explorer.userId}-${index}`}> {/* Add unique key here */}
                                         <div className="follow-fellow-single d-flex br-20 align-items-center position-relative">
@@ -168,34 +307,48 @@ const ReviewSection: React.FC = () => {
                                             <div className="ff-content">
                                                 <h3 className="ff-title">{explorer.fullName}</h3>
                                                 <p>{explorer.address} Member since&nbsp;{explorer.registeredOn} </p>
-                                                <a href="" className="btn-style-1 stretched-link">Follow</a>
+                                                {explorer.id === userId ? (
+                                                    <span className="btn-style-1 stretched-link"
+                                                    style={{border: 'none',
+                                                            padding: '5px 25px',
+                                                            borderRadius: '50px',
+                                                            textAlign:'center',
+                                                            fontSize:'14px'}}
+                                                    >You</span> // optional text
+                                                    ) : (
+                                                    <button
+                                                        disabled={getFollow[explorer.id]} 
+                                                        onClick={(e) => {
+                                                            if (getFollow[explorer.id]) {
+                                                                e.preventDefault(); // block click if already followed
+                                                                return;
+                                                            }
+                                                            e.preventDefault();
+                                                            handleFollow(explorer.id);
+                                                        }}
+                                                        style={{
+                                                            cursor: getFollow[explorer.id] ? 'not-allowed' : 'pointer',
+                                                            opacity: getFollow[explorer.id] ? 0.5 : 1,
+                                                            backgroundColor: getFollow[explorer.id] ? '#ccc' : '#FC673C', 
+                                                            color: getFollow[explorer.id] ? '#666' : '#fff',
+                                                            border: 'none',
+                                                            padding: '5px 25px',
+                                                            borderRadius: '50px',
+                                                            textAlign:'center',
+                                                            fontSize:'14px'
+                                                        
+                                                        }}
+                                                        className="btn-style-1 stretched-link"
+                                                    >
+                                                        {getFollow[explorer.id] ? "Following" : "Follow"}
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
                                 ))}
                                 {/* Duplicate explorers for the second carousel to ensure enough items for continuous scroll */}
-                                {explorers.map((explorer:any,index:number) => (
-                                    <div key={`dup1-${explorer.userId}-${index}`}> {/* Unique key for duplicated items */}
-                                        <div className="follow-fellow-single d-flex br-20 align-items-center position-relative">
-                                            <div className="ff-thumb">
-                                            <img
-                                                src={explorer.picturePath  || '/assets/images/not-found.jpg'}
-                                                alt="explorer" className="" 
-                                                onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                                                    const target = e.currentTarget;
-                                                    target.onerror = null; // prevent infinite loop
-                                                    target.src = '/assets/images/not-found.jpg'; // fallback image
-                                                }}
-                                            />
-                                            </div>
-                                            <div className="ff-content">
-                                                <h3 className="ff-title">{explorer.fullName}</h3>
-                                                <p>{explorer.address} Member since&nbsp;{explorer.registeredOn} </p>
-                                                <a href="" className="btn-style-1 stretched-link">Follow</a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
+                            
                             </div>
                         </div>
                     </div>
@@ -222,35 +375,51 @@ const ReviewSection: React.FC = () => {
                                             <div className="ff-content">
                                                 <h3 className="ff-title">{explorer.fullName}</h3>
                                                 <p>{explorer.address} Member since&nbsp;{explorer.registeredOn} </p>
-                                                <a href="" className="btn-style-1 stretched-link">Follow</a>
+                                                {
+                                                    explorer.id === userId ? (
+                                                        <span className="btn-style-1 stretched-link"
+                                                            style={{border: 'none',
+                                                            padding: '5px 25px',
+                                                            borderRadius: '50px',
+                                                            textAlign:'center',
+                                                            fontSize:'14px'}}
+                                                        >You</span>
+                                                    ):(
+                                                    <button
+                                                        disabled={getFollow[explorer.id]} 
+                                                        onClick={(e) => {
+                                                            if (getFollow[explorer.id]) {
+                                                                e.preventDefault(); // block click if already followed
+                                                                return;
+                                                            }
+                                                            e.preventDefault();
+                                                            handleFollow(explorer.id);
+                                                        }}
+                                                        style={{
+                                                            cursor: getFollow[explorer.id] ? 'not-allowed' : 'pointer',
+                                                            opacity: getFollow[explorer.id] ? 0.5 : 1,
+                                                            backgroundColor: getFollow[explorer.id] ? '#ccc' : '#FC673C', 
+                                                            color: getFollow[explorer.id] ? '#666' : '#fff',
+                                                            border: 'none',
+                                                            padding: '5px 25px',
+                                                            borderRadius: '50px',
+                                                            textAlign:'center',
+                                                            fontSize:'14px'
+                                                        
+                                                        }}
+                                                        className="btn-style-1 stretched-link"
+                                                    >
+                                                        {getFollow[explorer.id] ? "Following" : "Follow"}
+                                                    </button>
+                                                    )
+                                                }
+                                                
+
                                             </div>
                                         </div>
                                     </div>
                                 ))}
-                                {/* Duplicate explorers for the second carousel to ensure enough items for continuous scroll */}
-                                {explorers.map((explorer:any,index:number) => (
-                                    <div key={`dup2-${explorer.userId}-${index}`}> {/* Unique key for duplicated items in second carousel */}
-                                        <div className="follow-fellow-single d-flex br-20 align-items-center position-relative"
-                                            dir="rtl">
-                                            <div className="ff-thumb">
-                                            <img
-                                                src={explorer.picturePath  || '/assets/images/not-found.jpg'}
-                                                alt="explorer" className="" 
-                                                onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                                                    const target = e.currentTarget;
-                                                    target.onerror = null; // prevent infinite loop
-                                                    target.src = '/assets/images/not-found.jpg'; // fallback image
-                                                }}
-                                            />
-                                            </div>
-                                            <div className="ff-content">
-                                                <h3 className="ff-title">{explorer.fullName}</h3>
-                                                <p>{explorer.address} Member since&nbsp;{explorer.registeredOn} </p>
-                                                <a href="" className="btn-style-1 stretched-link">Follow</a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
+                                
                             </div>
                         </div>
                     </div>

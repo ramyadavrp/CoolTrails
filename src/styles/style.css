@@ -30,7 +30,7 @@ a:hover {
     background-position: center;
     background-size: cover;
     background-repeat: no-repeat;
-    height: 470px; /* 25-7-25 Ali */
+    height: 500px; /* 470, 25-7-25 Ali */
 }
 
 .bg-skyblue {
@@ -1486,7 +1486,7 @@ background: linear-gradient(92.85deg, #4CAF50 -5.36%, #FFFFFF 98.48%);opacity: 0
     margin-top: 0;
     position: absolute;
     top: 17px;
-    background-image: url(./assets/images/icons/Down-menu.svg);
+    background-image: url('/assets/images/icons/Down-menu.svg');
     height: 8px;
     width: 16px;
     background-repeat: no-repeat;
@@ -2305,7 +2305,8 @@ background: linear-gradient(92.85deg, #4CAF50 -5.36%, #FFFFFF 98.48%);opacity: 0
 }
 
 .ready-to-gift {
-    background-image: url("./assets/images/bg/bg-woman.jpg");
+    background-image: url("/images/bg/bg-woman.jpg");
+    /* background-image: url("./assets/images/bg/bg-woman.jpg"); */
 
 }
 
@@ -2655,7 +2656,7 @@ input[type="radio"]:checked::after {
 }
 
 .wrapper-national-park {
-    background-image: url("./assets/images/bg/Ntional-Park-Guides.svg");
+    background-image: url("/assets/images/bg/Ntional-Park-Guides.svg");
 }
 
 .wrapper-gift {
@@ -3935,6 +3936,7 @@ input[type="radio"]:checked::after {
 
         .trail-desc p, .trail-guide-widget p {
             font-size: 12px;margin-bottom: 0;
+            text-align: justify; /* 11-8-25 Ali  */
         }
 
         .trail-cover .coverImage {
@@ -4322,6 +4324,9 @@ input[type="radio"]:checked::after {
         position: relative;
         top: -20px;
         z-index: 1;
+        max-height: 250px;
+        overflow-y: auto;
+        overflow-x: hidden;
     }
      /* 24/7/25 Ali */
     a.a-text {
@@ -4332,10 +4337,280 @@ input[type="radio"]:checked::after {
         height: 200px; 
         object-fit: cover;
     }
-    /* 25-7-25 Ali*/
-    body, html {
+    /* 25-7-25 Ali issue scroll*/
+    /* body, html {
         overflow-x: hidden;
+    } */
+    /* 6-8-25 */
+    .review-row > .col-xl-6:nth-last-child(3) .testimonial-single {
+        border-bottom: 0;
     }
-   
+    /* 12-8-25 ALI */
+    a.btn-style-review {
+        padding: 13px 25px;
+        color: white;
+        border-radius: 50px;
+        border: none;
+        text-align: center;
+        background-color: var(--orange);
+        display: inline-block;
+        transition: all 0.2s linear;
+    }
+    .review {
+        display: flex;
+        gap: 20px;
+    }
+    /* 13-8-25 ALI */
+    .btn-cross{
+        border-radius: 50%;
+        border: none;
+        width: 45px;
+        height: 45px;
+        
+    }
+    .li-style{
+        border-radius: 50%;
+        border: none;
+        width: 45px;
+        background: #FAFAFA;
+    }
+        
+    .btn-cross:hover {
+        border: 1px solid #FC673C;
+        transition: all 0.3s;
+    }
+    .btn-send{
+        float:right;
+        padding: 10px 25px;
+        color: white;
+        border-radius: 50px;
+        border: none;
+        text-align: center;
+        background-color: #FC673C;
+        display: inline-block;
+        transition: all 0.2s linear;
+    }
+    /* 6-10-25 Ali */
+    .btn-send:disabled {
+        background-color: #ccc; 
+        cursor: not-allowed;
+    }
+    .btn-download{
+        float:center;
+        padding: 10px 25px;
+        color: white;
+        border-radius: 50px;
+        border: none;
+        text-align: center;
+        background-color: #FC673C;
+        display: inline-block;
+        transition: all 0.2s linear;
+    }
+    /* .image-div-style{
+        max-width: 400px;
+        max-height: 276px;
+    } */
+     /* 22-9-25 Ali */
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 24px;
+    }
+
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0; left: 0;
+        right: 0; bottom: 0;
+        background-color: #ccc;
+        transition: 0.4s;
+        border-radius: 24px;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 2px;
+        bottom: 2px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+    }
+
+    input:checked + .slider {
+        background-color: #FC673C;
+    }
+
+    input:checked + .slider:before {
+        transform: translateX(26px);
+    }
+     /* 22-9-25 Ali */
+     /* 29/9/25 Ali */
+    .btn-style-12{
+        text-transform: none;
+        padding: 9px 20px;
+        color: white;
+        border-radius: 50px;
+        text-align: center;
+        display: inline-block;
+        background: #FC673C;
+        border: none;
+    }
+     /* 23/10/25 Ali */
+    .bookmarked-icon {
+        color: #FC673C !important;
+        transition: color 0.2s ease;
+    }
     
-    
+    /* 18-12-25 */
+    .popup-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.popup-content {
+    background: #fff;
+    width: 90%;
+    max-width: 600px;
+    padding: 20px;
+    border-radius: 8px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.close-btn {
+    margin-top: 15px;
+    padding: 8px 16px;
+    cursor: pointer;
+}
+
+
+/* 31-12-25 */
+.sticky-map {
+    position: sticky;
+    top: 100px;
+    height: calc(100vh - 120px);
+    width: 100%;
+}
+
+.sticky-map iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 20px;
+}
+
+@media screen and (max-width: 991px) {
+    .sticky-map {
+        position: relative;
+        top: 0;
+        height: 400px;
+    }
+}
+
+.pt20 {
+    padding-top: 20px;
+}
+
+/* 01/01-26 */
+.section-activity {
+  overflow-x: clip; /* prevents horizontal scroll */
+}
+
+.activity-wrapper {
+  position: relative;
+}
+
+.activity-slider-controls .btn-previous {
+  position: absolute;
+  left: 0px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+}
+
+.activity-slider-controls .btn-next {
+  position: absolute;
+  right: 0px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+}
+.map-container {
+    width: 100%;
+    height: 400px;
+    border-radius: 10px;
+    /* min-height: 500px; */
+}
+.overlay {
+  pointer-events: none;
+}
+/* loader css 09-01-26 */
+.map-wrapper {
+  position: relative;
+  width: 100%;
+  height: 400px; 
+  margin-top: 8px;
+}
+
+.map-loader {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+/* activity page 28-1-26*/
+
+
+.activity-log {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-width: 600px;
+}
+
+.activity-log li {
+    background: #ffffff;
+    border-left: 4px solid #4CAF50;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.activity-log strong {
+    font-size: 14px;
+    color: #333;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.activity-log div {
+    font-size: 13px;
+    color: #555;
+}
+
+.activity-log small {
+    display: block;
+    margin-top: 6px;
+    font-size: 11px;
+    color: #999;
+}

@@ -1,17 +1,40 @@
 // src/containers/Home.tsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import CompanySection from './CompanySection';
 import SupportSection from './SupportSection';
 import SubscribeSection from './SubscribeSection';
+// import data from '../data/socialMedia.json';
+import data from '../../../public/data/socialMedia.json'
+
 // import Banner from '../components/AppHeader/Banner';
 import { Link } from 'react-router-dom';
 
-const Footer: React.FC = () => {
-  const handleClick = () => {
-    alert('Button clicked!');
-  };
+interface Media{
+    name:string,
+    url:string,
+    icon:string
+}
 
-  return (
+const Footer: React.FC = () => {
+    const [getMedia, setMedia ]= useState<Media[]>([]);
+
+    const handleClick = () => {
+        alert('Button clicked!');
+    };
+    useEffect(()=>{
+        const fetchMedia= async () => {
+                try {
+                    const response = await fetch('/data/socialMedia.json'); 
+                    const json = await response.json();
+                    setMedia(json.social_media);
+                    
+                }catch (error) {
+                console.error('Error fetching JSON:', error);
+            }
+        };
+        fetchMedia();
+    },[]);
+    return (
     // <footer className="bg-[#3d3d3d] text-white py-12 pt-0">
     //     <div className="container mx-auto px-6">
     //     <CompanySection />
@@ -48,23 +71,23 @@ const Footer: React.FC = () => {
                             </div>
                             <div className="collapse show" id="footer-nav-1">
                                 <ul className="list-unstyled footer-nav">
-                                    <li><a href="#!">Countries</a></li>
-                                    <li><a href="#!">Regions</a></li>
+                                    {/* <li><a href="#!">Countries</a></li>
+                                    <li><a href="#!">Regions</a></li> */}
                                     <li>
                                         {/* <Link to={'/profile'} className="dropdown-item"> 
                                              Cities
                                         </Link> */}
-                                        <a href="#!">Cities</a>
+                                        {/* <a href="#!">Cities</a> */}
                                     </li>
                                     <li>
                                         <Link to={'/national-park-guide'} className="dropdown-item"> 
                                              Parks
                                         </Link>
                                     </li>
-                                    <li><a href="#!">Trails</a></li>
+                                    {/* <li><a href="#!">Trails</a></li>
                                     <li><a href="#!">Points of Interest</a></li>
                                     <li><a href="#!">Trail </a></li>
-                                    <li><a href="#!">Trail Features</a></li>
+                                    <li><a href="#!">Trail Features</a></li> */}
                                 </ul>
                             </div>
                         </div>
@@ -84,10 +107,15 @@ const Footer: React.FC = () => {
                             </div>
                             <div className="collapse show" id="footer-nav-2">
                                 <ul className="list-unstyled footer-nav">
-                                    <li><a href="#!">My Maps </a></li>
-                                    <li><a href="#!">Create Map</a></li>
-                                    <li><a href="#!">Print Maps </a></li>
-                                    <li><a href="#!">Route Converter</a></li>
+                                    {/* <li><a href="#!">My Maps </a></li> */}
+                                    <li>
+                                        <Link to={'/create-map'} className="dropdown-item"> 
+                                             Create Map
+                                        </Link>
+                                        {/* <a href="#!">Create Map</a> */}
+                                    </li>
+                                    {/* <li><a href="#!">Print Maps </a></li>
+                                    <li><a href="#!">Route Converter</a></li> */}
                                 </ul>
                             </div>
                         </div>
@@ -107,10 +135,10 @@ const Footer: React.FC = () => {
                             </div>
                             <div className="collapse show" id="footer-nav-3">
                                 <ul className="list-unstyled footer-nav">
-                                    <li><a href="#!">About</a></li>
+                                    {/* <li><a href="#!">About</a></li>
                                     <li><a href="#!">Jobs</a></li>
                                     <li><a href="#!">Press</a></li>
-                                    <li><a href="#!">Ambassadors</a></li>
+                                    <li><a href="#!">Ambassadors</a></li> */}
                                     <li><Link to={'/affiliates'}>Affiliates</Link></li>
                                     {/* <li><a href="#!">Affiliates</a></li> */}
                                 </ul>
@@ -132,9 +160,9 @@ const Footer: React.FC = () => {
                             </div>
                             <div className="collapse show" id="footer-nav-4">
                                 <ul className="list-unstyled footer-nav">
-                                    <li><a href="#!">Support</a></li>
+                                    {/* <li><a href="#!">Support</a></li> */}
                                     <li><Link to={'/gift-membership'} >Gift membership</Link></li>
-                                    <li><a href="#!">Gears</a></li>
+                                    {/* <li><a href="#!">Gears</a></li> */}
                                 </ul>
                             </div>
                         </div>
@@ -160,10 +188,19 @@ const Footer: React.FC = () => {
                         <div className="footer-social-media">
                             <ul
                                 className="d-flex justify-content-end gap-3 list-unstyled flex-wrap social-media-logo social-media-logo-footer mb-0 mt-0 align-items-center">
-                                <li><a href="" title="Facebook"
-                                        className="social-media-btn d-flex align-items-center justify-content-center"><img
-                                            src="/assets/images/icons/facebook.svg" alt="" /></a></li>
-                                <li><a href="" title="Instagram"
+                                {
+                                    getMedia.length > 0 &&(
+                                        getMedia.map((media:any,index:number)=>(
+                                            <li key={index}>
+                                                <a href={media.url ?? ''} title={media.name ?? ''} className="social-media-btn d-flex align-items-center justify-content-center" target="_blank">
+                                                <img src={media.icon || '/assets/images/not-found.jpg'} alt={media.name ?? '' } />
+                                                </a>
+                                            </li>
+                                        ))
+                                        
+                                    )
+                                }
+                                {/* <li><a href="" title="Instagram"
                                         className="social-media-btn d-flex align-items-center justify-content-center"><img
                                             src="/assets/images/icons/instagram.svg" alt="" /></a></li>
                                 <li><a href="" title="Twitter-X"
@@ -171,7 +208,7 @@ const Footer: React.FC = () => {
                                             src="/assets/images/icons/twitter-x.svg" alt="" /></a></li>
                                 <li><a href="" title="Linked IN"
                                         className="social-media-btn d-flex align-items-center justify-content-center"><img
-                                            src="/assets/images/icons/linkedin02.svg" alt="" /></a></li>
+                                            src="/assets/images/icons/linkedin02.svg" alt="" /></a></li> */}
                             </ul>
                         </div>
                     </div>

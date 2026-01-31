@@ -3,10 +3,22 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import './index.css'
 import './styles/style.css'
+import { HelmetProvider } from 'react-helmet-async'
 
+// import { AuthProvider } from './context/AuthContext';
+// const token = localStorage.getItem("token");
+// console.log('tt',token);
+// if (!token) {
+//   window.location.href = "/login";
+// }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <HelmetProvider>
+       {/* <AuthProvider> */}
+      <App />
+       {/* </AuthProvider> */}
+      
+    </HelmetProvider>
   </React.StrictMode>,
 )

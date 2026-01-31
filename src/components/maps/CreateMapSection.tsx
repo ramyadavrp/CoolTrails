@@ -1,229 +1,546 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, FeatureGroup, useMapEvents } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import 'leaflet-draw/dist/leaflet.draw.css';
-import L from 'leaflet';
-import { EditControl } from 'react-leaflet-draw';
+// src/components/AffiliateTrail.tsx
+import React, { useState,useEffect,useCallback,useRef } from 'react';
+import { Link as ScrollLink } from 'react-scroll';
+// import data from '../../public/data/community.json';
+import { Link } from 'react-router-dom';
+// import StarRating from './AffiliateDetails/StarRating';
+import { useLocation, useParams } from 'react-router-dom';
+import { decodeId,encodeId, generateSlug ,slugToTitle,timeAgo} from '../../utils/helpers';
 
-// ... (L.Icon.Default.mergeOptions remains the same)
+import axios from 'axios';
+import { SquareLoader } from "react-spinners"; 
+// import {getAuth} from '../utils/storage';
+import {getAuth} from '../../utils/storage';
+import mapboxgl from "mapbox-gl";
+// import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
+import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
+import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
+import "mapbox-gl/dist/mapbox-gl.css";
+const BASE_URL = import.meta.env.VITE_API_URL;
+mapboxgl.accessToken = "pk.eyJ1IjoiMTExMnZpcmVuZHJhIiwiYSI6ImNtYmE0emNyNjBwbHMyanNibHBpZHgxMjUifQ.5FSp2VZ1T1kXcGV38bC5jA";
 
-const CreateMapSection = () => {
-  const position: [number, number] = [26.8467, 80.9462];
-  const featureGroupRef = useRef<L.FeatureGroup>(null);
-
-  const [isDrawingMode, setIsDrawingMode] = useState(false); // State for 'Draw on map'
-  const [smartRoutingEnabled, setSmartRoutingEnabled] = useState(false); // State for 'Smart routing'
-  const [drawnLayers, setDrawnLayers] = useState<L.Layer[]>([]); // To store drawn layers
-
-  // This custom hook will allow us to interact with the map instance
-  const MapEvents = () => {
-    useMapEvents({
-      click(e) {
-        if (isDrawingMode && !smartRoutingEnabled) {
-          // Logic for drawing directly on map (without smart routing)
-          // You might add markers or connect points to form a polyline manually
-          console.log("Map clicked at:", e.latlng);
-          // For a simple example, add a marker
-          // const newMarker = L.marker(e.latlng).addTo(map);
-          // setDrawnLayers(prev => [...prev, newMarker]);
-        }
-      },
-    });
-    return null;
-  };
+interface Point {
+  title: string;
+  latitude: number; 
+  longitude: number;
+  pointOrder: number;
+}
 
 
+type ShareOption = {
+  label: string;
+//   icon: JSX.Element | (() => JSX.Element);
+   action: (cmt: any) => void
+};
+
+const CreateMapSection: React.FC = () => {
+    const { slug } = useParams();
+    const location = useLocation();
+    const statePostId = location.state?.postId;
+    const [message, setMessage] = useState<string | null>(null);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [loadingMap,setLoadingMap] = useState(true);
+    const [userId, setUserId] = useState<string>("");
+    // map state
+    const mapContainer = useRef<HTMLDivElement | null>(null);
+    const mapRef = useRef<mapboxgl.Map | null>(null);
+    // const mapContainer = useRef<HTMLDivElement | null>(null);
+    const walkerMarkerRef = useRef<mapboxgl.Marker | null>(null);
+    const animationRef = useRef<number | null>(null);
+    // const mapRef = useRef<mapboxgl.Map | null>(null);
+    const [points, setPoints] = useState<[number, number][]>([]);
+    const [titles, setTitles] = useState<string[]>([]);
+    const [markers, setMarkers] = useState<mapboxgl.Marker[]>([]);
+    const [loopClosed, setLoopClosed] = useState(false);
+     // map state close
+    const [showPrompt, setShowPrompt] = useState(false);
+    const [promptValue, setPromptValue] = useState("");
+    const [promptCallback, setPromptCallback] = useState<((value: string | null) => void) | null>(null);
+
+
+    const shareUrl = window.location.href;
+    useEffect(() => {
+        const { userId, token ,login} = getAuth();
+            if (userId) setUserId(userId);
+    }, []);
+    // console.log('userIduserId',userId);
+    // Function you will call instead of prompt()
+    const openCustomPrompt = (callback: (value: string | null) => void) => {
+        setPromptCallback(() => callback);
+        setPromptValue("");
+        setShowPrompt(true);
+    };
+
+    // close popup
+    const closePrompt = (value: string | null) => {
+        setShowPrompt(false);
+        if (promptCallback) promptCallback(value);
+    };
+
+    useEffect(() => {
+        // Check if token exists in localStorage
+        const token = sessionStorage.getItem("token");
+        setIsLoggedIn(!!token);
+    }, []);
+        
+    // Start map creation
+    // Initialize map
+    useEffect(() => {
+      if (!mapContainer.current) return;
+      setLoadingMap(true);
+
+      const map = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: "mapbox://styles/mapbox/streets-v12",
+        center: [78.0421, 27.1751],
+        zoom: 16,
+        pitch: 0,
+        bearing: 0,
+        antialias: true,
+        attributionControl: false,
+      });
+
+      mapRef.current = map;
+
+      const geocoder = new MapboxGeocoder({
+        accessToken: mapboxgl.accessToken,
+        mapboxgl: mapboxgl,
+        marker: false,
+        placeholder: "Search location",
+      });
+
+      map.addControl(geocoder);
+
+      map.on("load", () => {
+        setLoadingMap(false);
+
+        map.addSource("route", {
+          type: "geojson",
+          data: {
+            type: "Feature",
+            properties: {},
+            geometry: { type: "LineString", coordinates: [] as [number, number][] },
+          },
+        });
+
+        map.addLayer({
+          id: "route-layer",
+          type: "line",
+          source: "route",
+          layout: { "line-join": "round", "line-cap": "round" },
+          paint: { "line-color": "#3b9ddd", "line-width": 5 },
+        });
+
+        // Walker marker
+        const el = document.createElement("div");
+        el.style.width = "30px";
+        el.style.height = "30px";
+        el.style.backgroundImage =
+          "url('https://img.icons8.com/color/48/person-male--v1.png')";
+        el.style.backgroundSize = "cover";
+        el.style.borderRadius = "50%";
+        el.style.border = "2px solid white";
+        walkerMarkerRef.current = new mapboxgl.Marker(el).setLngLat([0, 0]).addTo(map);
+
+        loadMap();
+      });
+
+      return () => {
+        map.remove();
+        if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      };
+    }, []);
+
+  // Map click handler
   useEffect(() => {
-    // This part should be safe after the featureGroup fix
-    if (featureGroupRef.current) {
-        const leafletFeatureGroup = featureGroupRef.current.leafletElement;
-        // console.log("FeatureGroup ref current:", leafletFeatureGroup);
-        // You might want to bind events directly to the featureGroup if needed
+    const map = mapRef.current;
+    if (!map) return;
+
+    const handleClick = (e: mapboxgl.MapMouseEvent) => {
+      if (loopClosed) return alert("Loop already closed.");
+
+      const coords: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+
+      // Loop detection
+      if (points.length > 2) {
+        const first = points[0];
+        const dist =
+          Math.sqrt(Math.pow(first[0] - coords[0], 2) + Math.pow(first[1] - coords[1], 2));
+        if (dist < 0.0001) {
+          setLoopClosed(true);
+          alert("Loop closed!");
+          setPoints((prev) => {
+            const newPoints = [...prev, coords];
+            updateRoute(newPoints);
+            handleAddMapPoints(newPoints);
+            return newPoints;
+          });
+          return;
+        }
+      }
+
+      // Prompt for title
+      openCustomPrompt((title) => {
+        if (!title) return;
+
+        const index = points.length;
+
+        const marker = new mapboxgl.Marker({ draggable: true })
+          .setLngLat(coords)
+          .setPopup(new mapboxgl.Popup().setText(title))
+          .addTo(mapRef.current!);
+
+        marker.togglePopup();
+
+        // Drag update
+        marker.on("dragend", () => {
+          const lngLat = marker.getLngLat();
+          setPoints((prev) => {
+            const updatedPoints = [...prev];
+            updatedPoints[index] = [lngLat.lng, lngLat.lat];
+            updateRoute(updatedPoints);
+            handleAddMapPoints(updatedPoints);
+            return updatedPoints;
+          });
+        });
+
+        // Update state
+        setPoints((prev) => {
+          const newPoints = [...prev, coords];
+          setTitles((prevTitles) => [...prevTitles, title]);
+          setMarkers((prevMarkers) => [...prevMarkers, marker]);
+
+          updateRoute(newPoints);
+
+          // API call
+          handleAddMapPoints(newPoints);
+
+          return newPoints;
+        });
+      });
+    };
+
+    map.on("click", handleClick);
+     return () => {
+      map.off("click", handleClick);
+    };
+    // return () => map.off("click", handleClick);
+  }, [points, loopClosed]);
+
+    // Get route using Mapbox Directions API
+    const getRoute = async (start: [number, number], end: [number, number]) => {
+        const url = `https://api.mapbox.com/directions/v5/mapbox/walking/${start[0]},${start[1]};${end[0]},${end[1]}?geometries=geojson&access_token=${mapboxgl.accessToken}`;
+        const res = await fetch(url);
+        const json = await res.json();
+        return json.routes?.[0]?.geometry.coordinates || null;
+    };
+    
+    const updateRoute = async (pts: [number, number][]) => {
+        const map = mapRef.current;
+        if (!map) return;
+        if (pts.length < 2) {
+            const source = map.getSource("route") as mapboxgl.GeoJSONSource;
+            if (source) {
+                source.setData({
+                    type: "Feature",
+                    properties: {},
+                    geometry: {
+                        type: "LineString",
+                        coordinates: [],
+                    },
+                });
+            }
+            return;
+        }
+        let fullRoute: [number, number][] = [];
+
+        for (let i = 0; i < pts.length - 1; i++) {
+            const route = await getRoute(pts[i], pts[i + 1]);
+            if (!route) return;
+            if (i > 0) route.shift();
+            fullRoute = fullRoute.concat(route);
+        }
+
+        if (loopClosed && pts.length > 2) {
+            const closeRoute = await getRoute(pts[pts.length - 1], pts[0]);
+            if (closeRoute) {
+                closeRoute.shift();
+                fullRoute = fullRoute.concat(closeRoute);
+            }
+        }
+
+        walkerMarkerRef.current?.setLngLat(fullRoute[0]);
+        const source = map.getSource("route") as mapboxgl.GeoJSONSource;
+        if (source) {
+            source.setData({
+                type: "Feature",
+                properties: {},
+                geometry: {
+                    type: "LineString",
+                    coordinates: fullRoute,
+                },
+            });
+        }
+        animateAlongPath(fullRoute);
+    };
+
+    const animateAlongPath = (coords: [number, number][]) => {
+        if (!walkerMarkerRef.current) return;
+
+        let i = 0;
+
+        const step = () => {
+            if (i >= coords.length - 1) return;
+            const start = coords[i];
+            const end = coords[i + 1];
+            let progress = 0;
+            const duration = 200;
+            const startTime = performance.now();
+
+            const animate = (t: number) => {
+                progress = Math.min((t - startTime) / duration, 1);
+                const lng = start[0] + (end[0] - start[0]) * progress;
+                const lat = start[1] + (end[1] - start[1]) * progress;
+                walkerMarkerRef.current?.setLngLat([lng, lat]);
+
+                if (progress < 1) {
+                    animationRef.current = requestAnimationFrame(animate);
+                } else {
+                    i++;
+                    animationRef.current = requestAnimationFrame(step);
+                }
+            };
+
+            animationRef.current = requestAnimationFrame(animate);
+        };
+
+        if (animationRef.current) cancelAnimationFrame(animationRef.current);
+        animationRef.current = requestAnimationFrame(step);
+    };
+
+    const clearMap = () => {
+        markers.forEach((m) => m.remove());
+        setMarkers([]);
+        setPoints([]);
+        setTitles([]);
+        setLoopClosed(false);
+        walkerMarkerRef.current?.setLngLat([0, 0]);
+        mapRef.current?.getSource("route")?.setData({
+            type: "Feature",
+            geometry: { type: "LineString", coordinates: [] },
+        });
+    };
+
+    const toggle3D = () => {
+        const map = mapRef.current;
+        if (!map) return;
+        const pitch = map.getPitch();
+        map.easeTo({ pitch: pitch === 0 ? 60 : 0, bearing: pitch === 0 ? 20 : 0 });
+    };
+
+
+    const loadMap = async () => {
+        //alert('load'); 
+        const res = await fetch("/Trails/Load");
+        if (!res.ok) return console.warn("Map not found.");
+        const data = await res.json();
+
+        clearMap();
+        const bounds = new mapboxgl.LngLatBounds();
+        const newPoints: [number, number][] = [];
+        const newMarkers: mapboxgl.Marker[] = [];
+        const newTitles: string[] = [];
+
+        data.points.data.forEach((p: any, idx: number) => {
+            const coords: [number, number] = [p.longitude, p.latitude];
+            const marker = new mapboxgl.Marker({ draggable: true })
+                .setLngLat(coords)
+                .setPopup(new mapboxgl.Popup().setText(p.title))
+                .addTo(mapRef.current!);
+            marker.togglePopup();
+
+            // use index binding
+            marker.on("dragend", () => {
+                const lngLat = marker.getLngLat();
+                setPoints(prev => {
+                    const updatedPoints = [...prev];
+                    updatedPoints[idx] = [lngLat.lng, lngLat.lat];
+                    updateRoute(updatedPoints);
+                    return updatedPoints;
+                });
+            });
+
+            newPoints.push(coords);
+            newMarkers.push(marker);
+            newTitles.push(p.title);
+            bounds.extend(coords);
+        });
+
+        setPoints(newPoints);
+        setMarkers(newMarkers);
+        setTitles(newTitles);
+
+        if (newPoints.length > 2) {
+            const first = newPoints[0],
+                last = newPoints[newPoints.length - 1];
+            const dist = Math.sqrt(Math.pow(first[0] - last[0], 2) + Math.pow(first[1] - last[1], 2));
+            setLoopClosed(dist < 0.0001);
+        }
+
+        if (!bounds.isEmpty()) mapRef.current!.fitBounds(bounds, { padding: 50, maxZoom: 17 });
+
+        updateRoute(newPoints);
+    };
+ 
+  // End map creation
+    // API call
+  const handleAddMapPoints = async (pointsWithCoords: [number, number][]) => {
+    console.log("pointsWithCoords", pointsWithCoords);
+
+    const payload = {
+      UserId: userId,
+      feedId: 1,
+      points: pointsWithCoords.map((p) => ({
+        Latitude: p[1].toString(),
+        Longitude: p[0].toString(),
+      })),
+    };
+
+    console.log("Payload to send:", payload);
+
+    try {
+      const res = await axios.post(`${BASE_URL}/feed/addmap`, payload);
+      console.log("API response:", res.data);
+      if (res.data.success) alert("Points saved successfully!");
+    } catch (err) {
+      console.error("API error:", err);
+      alert("Failed to save points.");
     }
-  }, []);
-
-  // Handler for drawing events
-  const onCreated = (e: any) => {
-    const layer = e.layer;
-    console.log('Shape created:', layer.toGeoJSON());
-    // Add the newly created layer to your state
-    setDrawnLayers((prevLayers) => [...prevLayers, layer]);
   };
 
-  const onEdited = (e: any) => {
-    e.layers.eachLayer((layer: L.Layer) => {
-      console.log('Shape edited:', layer.toGeoJSON());
-      // Update state to reflect edited layers
-      setDrawnLayers((prevLayers) =>
-        prevLayers.map((l) => (l.options.id === layer.options.id ? layer : l))
-      );
-    });
-  };
 
-  const onDeleted = (e: any) => {
-    console.log('Shape(s) deleted', e.layers);
-    // Remove deleted layers from state
-    e.layers.eachLayer((layer: L.Layer) => {
-      setDrawnLayers((prevLayers) =>
-        prevLayers.filter((l) => l.options.id !== layer.options.id)
-      );
-    });
-  };
+    return (
+        <main className="mainContent">
+            <section className="section-trail-detail">
+                <div style={{display: 'flex',justifyContent: 'space-between'}}>
+                  <div style={{paddingLeft: '20px'}}>
+                      <h1>Create Map</h1>
+                      <p style={{margin:'0px',color:'#FC673C'}}>Please click the over map and set point.</p>
+                  </div>
+                  {/* start show phpup */}
+                  {showPrompt && (
+                      <div style={{position: "fixed",top: 0,left: 0, right: 0,bottom: 0, background: "rgba(0,0,0,0.5)",display: "flex", 
+                              alignItems: "center", justifyContent: "center", zIndex: 1000,}}
+                          onClick={() => closePrompt(null)}>
+                          <div
+                              style={{ background: "white",padding: "25px",borderRadius: "10px",width: "450px",maxHeight: "80vh", overflowY: "auto",}}
+                              onClick={(e) => e.stopPropagation()}>
 
-  return (
-    <div className="h-screen flex flex-col">
-      {/* ... (Breadcrumb remains the same) ... */}
+                              {/* Close Button */}
+                              <div style={{ display: "flex", justifyContent: "end" }}>
+                                  <button className="btn-cross" onClick={() => closePrompt(null)}>
+                                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                          <path d="M4 4L16 16M16 4L4 16" stroke="#05073D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                      </svg>
+                                  </button>
+                              </div>
 
-      <div className="flex flex-1 overflow-hidden">
-        <div className="w-[400px] bg-white border-r overflow-y-auto p-6 relative">
-          <h1 className="text-2xl font-bold mb-2">Create a custom map</h1>
-          <p className="text-gray-600 mb-4">
-            Easily plan the perfect path for your next hike, bike, or run with our Map Creator tool.
-          </p>
+                              {/* Title */}
+                              <h4>Enter Title for This Point</h4>
+                              {/* Input */}
+                              <div className="row mt-3">
+                                  <div className="col-md-12">
+                                      <input type="text" value={promptValue} onChange={(e) => setPromptValue(e.target.value)}
+                                          autoFocus
+                                          style={{width: "100%",padding: "10px",borderRadius: "6px", border: "1px solid #ccc",}}
+                                          placeholder="Enter title"
+                                      />
+                                  </div>
+                              </div>
 
-          <div className="bg-orange-100 text-orange-800 text-sm p-4 rounded mb-6">
-            ⚠️ Stay tuned for a new custom routing experience coming soon!
-          </div>
+                              {/* Buttons */}
+                              <div style={{ marginTop: "20px", display: "flex", gap: "10px" }}>
+                                  {/* <button className="btn-send" 
+                                  // onClick={() => closePrompt(promptValue)} 
+                                  onClick={() => handleAddMapPoints(points)} 
+                                  disabled={!promptValue.trim()}> */}
+                                  <button
+                                      className="btn-send"
+                                      onClick={() => {
+                                          if (promptCallback) promptCallback(promptValue);
+                                          closePrompt(promptValue)
+                                      }}
+                                      disabled={!promptValue.trim()}
+                                      >
+                                      OK</button>
+                                  <button className="btn-cancel" onClick={() => closePrompt(null)}
+                                  style={{ background: "#ddd",padding: "9px 11px",borderRadius: "50px",border:'none'}}>Cancel
+                                  </button>
+                              </div>
+                          </div>
+                      </div>
+                  )}
+                  {/* end popup */}
 
-          <h2 className="text-lg font-semibold mb-2">Your route</h2>
-          <div className="space-y-3 mb-6">
-            <button
-              className={`w-full py-3 rounded-full font-medium ${isDrawingMode ? 'bg-blue-600 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-800'}`}
-              onClick={() => setIsDrawingMode(!isDrawingMode)} // Toggle drawing mode
-            >
-              Draw on map
-            </button>
-            <button className="w-full py-3 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium">
-              Upload from file
-            </button>
-          </div>
+                  <div
+                      style={{
+                      // position: "absolute",
+                      top: 10,
+                      left: 10,
+                      // background: "white",
+                      padding: 15,
+                      borderRadius: 8,
+                      // boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+                      zIndex: 1,
+                      display: "flex",
+                      gap: "8px",
+                      flexWrap: "wrap",
+                      // marginBottom: "25px",
+                      justifyContent: 'end' 
+                      }}
+                  > 
+                      {/* <button onClick={saveMap}>💾 Save Map</button>
+                      <button onClick={deleteMap}>🗑️ Delete Map</button>
+                      <button onClick={() => window.location.reload()}>🔄 Refresh</button> */}
+                      <button className="btn-style-12" onClick={toggle3D}>3D View</button>
+                      <button  className="btn-style-12" onClick={clearMap}>Clear</button>
+                      {/* <button  className="btn-style-12" onClick={() => (window.location.href = "")}>Trail Details</button>  */}
+                      {/* <button  className="btn-style-12" onClick={() => (window.location.href = "/Trails/Details")}>Trail Details</button>  */}
+                  </div> 
+                </div> 
+                {/* <div style={{ height: "100vh", width: "100%", position: "relative" ,padding:'20px'}}>
+                    <div ref={mapContainer}  style={{ height: "100%", width: "100%",borderRadius: "10px" }}/>           
+                </div> */}
+                
+                <div style={{ position: "relative", width: "100%", height: "100vh",padding:'20px' }}>
+                    <div ref={mapContainer}
+                    style={{width: "100%", height: "100%",borderRadius: "10px",
+                        visibility: loadingMap ? "hidden" : "visible",}}/>
+                    {loadingMap && (
+                    <div
+                        style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        width: "100%",
+                        height: "100%",
+                        background: "#FFF5E9",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 9999,
+                        }}
+                    >
+                        <SquareLoader color="#FC673C" size={80} speedMultiplier={1.5} />
+                    </div>
+                    )}
+                </div>
+                
+            </section>
+            
+        </main>         
 
-          {/* Smart Routing Toggle (if isDrawingMode is true) */}
-          {isDrawingMode && (
-            <div className="flex items-center justify-between my-4 border-t pt-4">
-              <span className="font-semibold text-gray-800">Smart routing</span>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  value=""
-                  className="sr-only peer"
-                  checked={smartRoutingEnabled}
-                  onChange={() => setSmartRoutingEnabled(!smartRoutingEnabled)}
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-              </label>
-            </div>
-          )}
-
-          {/* Routing Type (if smartRoutingEnabled is true) */}
-          {isDrawingMode && smartRoutingEnabled && (
-            <div className="mb-4">
-              <label htmlFor="routing-type" className="block text-sm font-medium text-gray-700 mb-1">
-                Routing type
-              </label>
-              <select
-                id="routing-type"
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-              >
-                <option>Hiking</option>
-                <option>Biking</option>
-                <option>Running</option>
-              </select>
-            </div>
-          )}
-
-          {/* Route Length & Elevation */}
-          <div className="my-4">
-            <h3 className="font-semibold text-gray-800 mb-2">Route details</h3>
-            <div className="flex justify-between items-center text-sm text-gray-600">
-              <span>Length: <span className="font-bold">0.00 km</span></span>
-              <span>Elev. gain: <span className="font-bold">--</span></span>
-            </div>
-          </div>
-
-          {/* Route Color (Placeholder for now) */}
-          <div className="my-4">
-            <h3 className="font-semibold text-gray-800 mb-2">Route color</h3>
-            <div className="flex gap-2">
-              {['red', 'green', 'blue', 'yellow', 'purple'].map(color => (
-                <div key={color} className={`w-6 h-6 rounded-full border-2 border-gray-300 cursor-pointer`} style={{ backgroundColor: color }}></div>
-              ))}
-            </div>
-          </div>
-
-          {/* Route Options */}
-          <div className="my-4">
-            <h3 className="font-semibold text-gray-800 mb-2">Route options</h3>
-            <div className="flex gap-2">
-              <button className="px-4 py-2 border border-gray-300 rounded-full text-sm hover:bg-gray-100">Double-back</button>
-              <button className="px-4 py-2 border border-gray-300 rounded-full text-sm hover:bg-gray-100">Close loop</button>
-              <button className="px-4 py-2 border border-gray-300 rounded-full text-sm hover:bg-gray-100">Reverse</button>
-            </div>
-          </div>
-
-
-          {/* ... (Description and Waypoints accordions remain the same) ... */}
-
-          <div className="sticky bottom-0 bg-white pt-6 pb-4">
-            <button className="w-full py-3 rounded-full bg-[#12180B] text-white font-semibold hover:bg-black transition">
-              Save custom map
-            </button>
-          </div>
-        </div>
-
-        {/* Right Map Section */}
-        <div className="flex-1 relative">
-          <MapContainer center={[25.3176, 82.9739]} zoom={7} className="w-full h-full z-0">
-            <TileLayer
-              attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a>'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            <Marker position={position}>
-              <Popup>
-                Purwanchal NGO Office<br /> Lucknow.
-              </Popup>
-            </Marker>
-
-            <MapEvents /> {/* Add MapEvents component here */}
-
-            {/* FeatureGroup for EditControl */}
-            <FeatureGroup ref={featureGroupRef}>
-              <EditControl
-                position="topright"
-                draw={{
-                  rectangle: isDrawingMode && !smartRoutingEnabled, // Only enable if drawing mode is on and smart routing is off
-                  polygon: isDrawingMode && !smartRoutingEnabled,
-                  circle: isDrawingMode && !smartRoutingEnabled,
-                  polyline: isDrawingMode && !smartRoutingEnabled, // Polyline is key for routes
-                  marker: isDrawingMode && !smartRoutingEnabled,
-                  circlemarker: false,
-                }}
-                edit={{
-                  featureGroup: featureGroupRef.current || new L.FeatureGroup(),
-                  remove: true,
-                }}
-                onCreated={onCreated}
-                onEdited={onEdited}
-                onDeleted={onDeleted}
-              />
-            </FeatureGroup>
-
-            {/* Display drawn layers (if any)
-            {drawnLayers.map((layer, index) => (
-              // You'd need to use a component that renders the specific Leaflet layer type
-              // This is a simplified example; actual implementation might be more complex
-              // For polylines, you might use <Polyline positions={layer.getLatLngs()} />
-              // For markers, <Marker position={layer.getLatLng()} /> etc.
-              // react-leaflet-draw often manages these directly within the FeatureGroup
-              null
-            ))}
-            */}
-
-          </MapContainer>
-        </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default CreateMapSection;
