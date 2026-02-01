@@ -195,7 +195,7 @@ const AffiliateDetailTrail: React.FC = () => {
     //     const loadpage = setTimeout(()=>setLoadingDetailTrails(false), 1000);
     //     return clearTimeout(loadpage);
     // },[]);
-    usePageTitle("Cooltrails | Trail");
+    // usePageTitle("Cooltrails | Trail");
      // Get id by helper
     useEffect(() => {
         const { userId, token ,login,email} = getAuth();
@@ -1351,14 +1351,14 @@ const handleTrailClick = async (trail: any, trailurl: string) => {
             icon: copied ? <IconCheck /> : <IconCopy />,
             action: handleCopy,
         },
-        {
-            label: "Text",
-            icon: <IconChat />,
-            action: () => {
-            setIsOpen(false);
-            setShowTextModal(true);
-            },
-        },
+        // {
+        //     label: "Text",
+        //     icon: <IconChat />,
+        //     action: () => {
+        //     setIsOpen(false);
+        //     setShowTextModal(true);
+        //     },
+        // },
         {
             label: "Email",
             icon: <IconEmail />,

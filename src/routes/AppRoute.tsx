@@ -47,6 +47,7 @@ import FullTrailMapSection from '../components/FullTrailMapSection';
 import ExploreNearByTrails from '../containers/ExploreNearByTrails';
 import Forgot from '../containers/auth/Forgot';
 import Reset from '../containers/auth/Reset';
+import StaticPage from '../components/AppFooter/Pages/StaticPage';
 
 const AppRoute = () => {
   
@@ -101,7 +102,7 @@ const AppRoute = () => {
         <Route path="/gift" element={<GiftPage />} />
         <Route path="/community" element={<CommunityPage />} /> 
         <Route path="/page-9" element={<Page9 />} />*/}
-        
+       <Route path="/page/:slug" element={<StaticPage />} />
 
         <Route element={<PrivateRoute />}>
           <Route path="/create-map" element={<CreateMap />} /> 

@@ -41,7 +41,7 @@ const FullTrailMapSection: React.FC = () => {
       // ADD MARKERS
       points.forEach((p) => {
         const coord: [number, number] = [p.longitude, p.latitude];
-        new mapboxgl.Marker().setLngLat(coord).addTo(mapRef.current!); // map icon points
+        // new mapboxgl.Marker().setLngLat(coord).addTo(mapRef.current!); // map icon points
         bounds.extend(coord);
       });
 
