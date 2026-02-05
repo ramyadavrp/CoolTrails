@@ -1,0 +1,91 @@
+{
+    "parks":[
+        {
+            "title":"Trails we love",
+            "description":"From top picks to hidden gems, find your favorite trails with our curated collectionss"
+        },
+        {
+            "title":"All the details you need",
+            "description":"Get guidance from AllTrails experts, informed by our community of 80 million trail-goers."
+        },
+        {
+            "title":"Insider tips and tricks",
+            "description":"Come prepared with helpful info like fees, reservations, and the best times to visit."
+        }
+    ],
+    
+    "Parklist": [
+        {
+        "park_image": "/assets/images/other/sep-1.png",
+        "park_title": "Janeshwar Mishra Park Loop",
+        "park_address": "Tasmania • National Park",
+        "park_trail": "7 Trails",
+        "country": "america"
+        },
+        {
+        "park_image": "/assets/images/other/sep-2.png",
+        "park_title": "Central Green Park",
+        "park_address": "New York • Urban Park",
+        "park_trail": "5 Trails",
+        "country": "america"
+        },
+        {
+        "park_image": "/assets/images/other/sep-1.png",
+        "park_title": "Yamuna Biodiversity Park",
+        "park_address": "Delhi • Eco Reserve",
+        "park_trail": "8 Trails",
+        "country": "india"
+        },
+        {
+        "park_image": "/assets/images/other/sep-3.png",
+        "park_title": "Blue Mountains Reserve",
+        "park_address": "Sydney • National Park",
+        "park_trail": "12 Trails",
+        "country": "austraila"
+        },
+        {
+        "park_image": "/assets/images/other/sep-1.png",
+        "park_title": "Rocky Mountain Vista",
+        "park_address": "Colorado • National Park",
+        "park_trail": "10 Trails",
+        "country": "america"
+        },
+        {
+        "park_image": "/assets/images/other/sep-1.png",
+        "park_title": "Kaziranga Rhino Reserve",
+        "park_address": "Assam • Wildlife Park",
+        "park_trail": "6 Trails",
+        "country": "india"
+        },
+        {
+        "park_image": "/assets/images/other/sep-1.png",
+        "park_title": "Great Barrier Reef Coastline",
+        "park_address": "Queensland • Marine Park",
+        "park_trail": "4 Trails",
+        "country": "austraila"
+        },
+        {
+        "park_image": "/assets/images/other/sep-2.png",
+        "park_title": "Golden Gate Meadows",
+        "park_address": "San Francisco • Bay Area Park",
+        "park_trail": "9 Trails",
+        "country": "america"
+        },
+        {
+        "park_image": "/assets/images/other/sep-9.png",
+        "park_title": "Ranthambore Tiger Reserve",
+        "park_address": "Rajasthan • National Park",
+        "park_trail": "11 Trails",
+        "country": "india"
+        },
+        {
+        "park_image": "/assets/images/other/sep-10.png",
+        "park_title": "Kakadu Wetlands",
+        "park_address": "Northern Territory • Heritage Park",
+        "park_trail": "15 Trails",
+        "country": "austraila"
+        }
+    ]
+
+
+}
