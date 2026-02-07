@@ -38,6 +38,7 @@ const ProfileSection: React.FC = () => {
     const handleShowMore = () => {
         setVisibleCount((prev) => prev + 5); // Show 5 more each time
     };
+    // console.log('tokentoken',token);
      // Get id by helper
     useEffect(() => {
         const { userId, token ,login} = getAuth();

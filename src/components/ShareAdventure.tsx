@@ -7,7 +7,7 @@ import 'owl.carousel/dist/assets/owl.carousel.min.css';
 import 'owl.carousel/dist/assets/owl.theme.default.min.css';
 import { SyncLoader } from "react-spinners";
 import data from '../data/socialMedia.json';
-
+import { getAuth } from '../utils/storage';
 const BASE_URL = import.meta.env.VITE_API_URL;
 //const BASE_URL = 'https://api.cooltrails.purchaseitnow.shop/api/home/topadventurecategory';
 
@@ -21,20 +21,34 @@ const ShareAdventure: React.FC = () => {
     const [getMedia, setMedia ]= useState<Media[]>([]);
     const [loadingAdventure, setLoadingAdventure] = useState(true);
     const [errorAdventure, setErrorAdventure] = useState('');
+    const [loginId, setLoginId] = useState("");
     
-    useEffect(()=>{
-        const fetchMedia= async () => {
+    useEffect(() => {
+        const {login} = getAuth();
+            if (login) setLoginId(login);
+    }, []);
+    useEffect(() => {
+            // if (!userId) return; // wait until userId is available
+    
+            const fetchMedia = async () => {
                 try {
-                    const response = await fetch('/data/socialMedia.json'); 
-                    const json: Media[] = await response.json();
-                    setMedia(json.social_media);
-                    
-                }catch (error) {
-                console.error('Error fetching JSON:', error);
-            }
-        };
-        fetchMedia();
-    },[]);
+                    const response = await axios.post(`${BASE_URL}/common/social-media`, {
+                        LoginId: loginId,
+                    });
+        
+                    if (response.data.status === "success") {
+                        const data = response.data.data;
+                        setMedia(data);
+
+                    }
+                } catch (error) {
+                console.error("Error loading profile:", error);
+                alert("Failed to load profile");
+                }
+            };
+    
+            fetchMedia();
+    }, []);
     // Effect to fetch data
     useEffect(() => {
         const fetchtopAdventure = async ()=>{
@@ -229,22 +243,16 @@ const ShareAdventure: React.FC = () => {
                         
                         {
                             getMedia.length > 0 ?(
-                                getMedia.map((media:any,index:number)=>(
+                                getMedia?.map((media:any,index:number)=>(
                                     <li key={index} >
                                         <a href={media.url ?? ''} title={media.name ?? ''}
                                             className="social-media-btn d-flex align-items-center justify-content-center"
                                             target="_blank"
                                             >
-                                            {/* <img src="/assets/images/icons/facebook.svg" alt="" /> */}
-                                            <img
-                                            src={media.icon || '/assets/images/not-found.jpg'}
-                                            alt={media.name ?? ''} className="" 
-                                            onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                                                const target = e.currentTarget;
-                                                target.onerror = null; // prevent infinite loop
-                                                target.src = '/assets/images/not-found.jpg'; // fallback image
-                                            }}
-                                        />
+                                                <img
+                                                    src={media.iconPath || '/assets/images/not-found.jpg'}
+                                                    alt={media.name || 'social icon'}
+                                                />
                                         </a>
                                     </li>  
                                 ))

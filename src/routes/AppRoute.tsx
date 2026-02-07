@@ -48,6 +48,10 @@ import ExploreNearByTrails from '../containers/ExploreNearByTrails';
 import Forgot from '../containers/auth/Forgot';
 import Reset from '../containers/auth/Reset';
 import StaticPage from '../components/AppFooter/Pages/StaticPage';
+import PrivacyPolicy from '../components/AppFooter/Pages/PrivacyPolicy';
+import CookiePolicy from '../components/AppFooter/Pages/CookiePolicy';
+import ManageCookies from '../components/AppFooter/Pages/ManageCookies';
+import Terms from '../components/AppFooter/Pages/Terms';
 
 const AppRoute = () => {
   
@@ -93,7 +97,7 @@ const AppRoute = () => {
 {/* <Route path="/guides/:country/:title" element={<ParkDetails />} />  15-12-25*/} 
         <Route path="/gift" element={<GiftPage />} />
         <Route path="/gift/customize" element={<GiftCustomize />} />
-        
+        {/* <Route path="/profile" element={<ProfilePage />} /> */}
         {/* <Route path="/affiliate-2" element={<Affiliate4Page />} /> 
         <Route path="/trail" element={<FrameTrail />} />  */}
         {/* <Route path="/profile" element={<ProfilePage />} />
@@ -102,7 +106,10 @@ const AppRoute = () => {
         <Route path="/gift" element={<GiftPage />} />
         <Route path="/community" element={<CommunityPage />} /> 
         <Route path="/page-9" element={<Page9 />} />*/}
-       <Route path="/page/:slug" element={<StaticPage />} />
+       <Route path="/page/:slug" element={<PrivacyPolicy />} />
+       <Route path="/page/:slug" element={<CookiePolicy />} />
+       <Route path="/page/:slug" element={<ManageCookies />} />
+       <Route path="/page/:slug" element={<Terms />} />
 
         <Route element={<PrivateRoute />}>
           <Route path="/create-map" element={<CreateMap />} /> 

@@ -149,6 +149,7 @@ const AffiliateDetailTrail: React.FC = () => {
     const [getReviews, setReviews ]= useState<Review[]>([]);
     const [getUserFavorite, setUserFavorite ]= useState<UserFavorite[]>([]);
     const [getReviewImages, setReviewImages ]= useState<ReviewsImages[]>([]);
+    const [getReviewImagesApi, setReviewImagesApi ]= useState<ReviewsImages[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0); // image arrow
     const [isExpanded, setIsExpanded] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
@@ -197,6 +198,7 @@ const AffiliateDetailTrail: React.FC = () => {
     // },[]);
     // usePageTitle("Cooltrails | Trail");
      // Get id by helper
+     console.log('loginId',loginId);
     useEffect(() => {
         const { userId, token ,login,email} = getAuth();
             if (userId) setUserId(userId);
@@ -742,7 +744,7 @@ const AffiliateDetailTrail: React.FC = () => {
             setPlaceOffer(response.data.data.placeOffer);
             setItinerary(response.data.data.itinerary);
             setReviews(response.data.data.review);
-            // console.log('review',response.data.data.review);
+            // console.log('review',response.data.data.reviews_images);
             setReviewImages(response.data.data.reviews_images);
             const points = response.data.data.mapPoints;
             setMapPoints(points);
@@ -757,7 +759,35 @@ const AffiliateDetailTrail: React.FC = () => {
         }
          
     }
+
+    // const fetchTrailReviewImage = async (title: any) =>{
+    //     // if (!loginId || !title) return;
+    //     if (!title) return;
+    //     try{
+    //         const response = await axios.post(`${BASE_URL}/trail/trail-photo-list`, {
+    //             slug: title,
+    //             UserId: userId,
+                
+    //         });
+            
+    //         setReviewImagesApi(response.data.data);
+    //         console.log('traildetaidddddl',response.data.data)
+            
+    //     }catch(err){
+    //         console.error('API Error:', err);
+    //         // setErrorDetailTrails('Unable to fetch detail trail');
+            
+    //     }finally{
+    //         // setLoadingDetailTrails(false);
+    //     }
+         
+    // }
     
+    // useEffect(() => {
+    //     if (title) {
+    //         fetchTrailReviewImage(title);
+    //     }
+    // }, [title]);
     useEffect(() => {
         if (title) {
             setLoadingDetailTrails(true);
@@ -765,20 +795,20 @@ const AffiliateDetailTrail: React.FC = () => {
         }
     }, [title]);
     
-    // console.log('tariliddd',trailId);
+    // console.log('tarilidratingratingdd',rating);
+    // console.log('UserId',userId);
+    // console.log('UserreviewId',review);
+    // console.log('tarilidratingrattrailIdtrailIdtrailIdingdd',trailId);
+    
     const addReviewAPI = async () => {
-        return axios.post(`${BASE_URL}/trail/addrating`, {
-            // TrailId: trailId,
-            // UserId: userId,
-            // // UserId: "e08ee354-20e2-4af6-a37f-c30127cf322d",
-            // Rating: rating,
-            // Review: review,
-            TrailId: trailId,
-            UserId: userId,
-            Rating: rating,
-            Review: review
-        });
-        };
+        const formData = new FormData();
+        formData.append("TrailId", trailId);
+        formData.append("UserId", userId);
+        formData.append("Rating", rating);
+        formData.append("Review", review);
+
+    return axios.post(`${BASE_URL}/trail/addrating`, formData);
+    };
 
     const updateReviewAPI = async () => {
         // console.log('trailIdtrailId',trailId);
@@ -788,20 +818,15 @@ const AffiliateDetailTrail: React.FC = () => {
         return axios.post(`${BASE_URL}/trail/updaterating`, {
             TrailId: trailId,
             UserId: userId,
-            // TrailId: 1,
-            // UserId: "e08ee354-20e2-4af6-a37f-c30127cf322d",
             Rating: rating,
             Review: review,
-            // "TrailId": 1,
-            // "UserId": "e08ee354-20e2-4af6-a37f-c30127cf322d",
-            // "Rating": 4.5,
-            // "Review": "this is trail review"
         });
     };
     
     const handleSubmitReview = async () => {
-        console.log('userIdssss',userId);
-        console.log('trailIdssss',trailId);
+        // console.log('userIdssss',userId);
+        // console.log('trailIdssss',trailId);
+        // console.log('trailIdssss',trailId);
         if (!userId || !trailId ) {
             window.location.href = "/login";
             return;
@@ -1345,6 +1370,74 @@ const handleTrailClick = async (trail: any, trailurl: string) => {
     </svg>
     );
 
+    const handleFileChange = async (
+        e: React.ChangeEvent<HTMLInputElement>,trailId?: number
+        ) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+            // alert(trailId)
+        const formData = new FormData();
+
+        // REQUIRED FIELDS
+        formData.append("TrailId", trailId);   // number or string
+        formData.append("UserId", userId);     // number or string
+
+        // MULTIPLE IMAGES
+        Array.from(files).forEach((file) => {
+            formData.append("MediaFiles", file);
+        });
+        // console.log("Upload success:", files);
+        try {
+            const response = await axios.post(`${BASE_URL}/trail/add-trail-photo`, formData);
+            // console.log("Upload success:", response.data);
+             if (response.data.status === "success") {
+                // Swal.fire("Uploaded!", "Images uploaded successfully!", "success");
+                useAlertMessage({
+                    icon: "success",
+                    title: "Done!",
+                    html: "<strong>Images uploaded successfully!</strong>",
+                    confirmButtonText: "Ok!",
+                    width: "350px",
+                    confirmButtonColor: "#fc673c",
+                    padding: "1rem",
+                });
+                if (response.data?.images) {
+                    setReviewImages(prev => [...prev, ...response.data.images]);
+                }
+            } else {
+                useAlertMessage({
+                    title: "Failed",
+                    html: "<strong>Upload failed — server rejected</strong>",
+                    icon: "error",
+                    width: "350px",
+                    confirmButtonText: "OK",
+                    confirmButtonColor: "#dc3545",
+                    padding: "1rem",
+                });
+            }
+            
+        } catch (error) {
+            console.error("Upload failed:", error);
+        }
+        };
+
+    // const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    //         const files = e.target.files;
+    //         if (!files) return;
+    
+    //         const fileArray = Array.from(files);
+    //             console.log(fileArray);
+    //         fileArray.forEach((file) => {
+    //             const reader = new FileReader();
+    //             reader.onloadend = () => {
+    //             // setImages((prev) => [...prev, { file, preview: reader.result as string }]);
+    //             };
+    //             reader.readAsDataURL(file);
+    //         });
+    
+    //         // setImgMessage("Image(s) uploaded successfully!");
+    //         e.target.value = ""; // reset input to allow same file re-upload
+    //     };
     const options: ShareOption[] = [
         {
             label: copied ? "Link copied" : "Copy link",
@@ -2635,8 +2728,29 @@ const handleTrailClick = async (trail: any, trailurl: string) => {
                                             </div>
 
                                             {/* EDIT – ONLY LOGGED IN USER */}
-                                            <div className="right-abs">
                                             {
+                                                
+                                            }
+                                            <div className="right-abs">
+                                                {
+                                                    loginId &&(
+                                                        <div className="upload-btn-wrapper" style={{display: "flex",alignItems: "center", gap: "10px"}}>
+                                                        <label htmlFor="imageInput"
+                                                        style={{background: "#FC673C", border: "none",borderRadius: "50px"}}
+                                                            className="btn btn-sm btn-primary ms-2"
+                                                        >Add Images</label>
+                                                        <input id="imageInput" type="file" accept="image/*" multiple
+                                                        onChange={(e) => handleFileChange(e, trailDetail?.trailId)}
+
+                                                        style={{ display: "none" }}
+                                                        />
+                                                        {/* <label htmlFor="thumbnail" style={{ minWidth: "150px" }}>Thumbnail Image</label> */}
+                                                        {/* <input type="file"  multiple ref={fileInputRef} onChange={handleFileChange} />  21-1-26 */}
+                                                    </div>
+                                                    )
+                                                }
+                                                
+                                            {/* {
                                                 rev?.userId === userId &&(
                                                     <a className=" ms-2" title="Edit Review"
                                                     onClick={(e) => {
@@ -2659,7 +2773,7 @@ const handleTrailClick = async (trail: any, trailurl: string) => {
                                                         </svg>
                                                     </a>
                                                 )
-                                            }
+                                            } */}
                                             {/* <a
                                                 className="ms-2"
                                                 title="Edit Review"

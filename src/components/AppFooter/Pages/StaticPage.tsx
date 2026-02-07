@@ -10,6 +10,26 @@ const StaticPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+      const slugs = ["privacy-policy", "terms", "cookie-policy", "manage-cookies"];
+  
+      const fetchStaticAll = async () => {
+        try {
+          const results = await Promise.all(slugs.map((slug) => fetchStaticPage(slug)));
+          const pagesMap: Record<string, StaticPage> = {};
+          results.forEach((res, index) => {
+            pagesMap[slugs[index]] = res;
+          });
+          setPages(pagesMap);
+        } catch (err: any) {
+          // setError(err.message || "Error loading footer pages");
+        } finally {
+          // setLoading(false);
+        }
+      };
+  
+      fetchStaticAll();
+    }, []);
+  useEffect(() => {
     if (!slug) return;
 
     const loadPage = async () => {

@@ -18,7 +18,7 @@ import { Helmet } from 'react-helmet-async';
 import axios from 'axios';
 import { decodeId,encodeId, generateSlug ,slugToTitle,usePageTitle } from '../utils/helpers';
 import SeoMeta from './SeoMeta';
-
+import { getAuth } from '../utils/storage';
 // import SeoMeta from '../containers/SeoMeta'
 const BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -30,7 +30,8 @@ const Home: React.FC = () => {
 //  usePageTitle("Cooltrails | Home");
   // Loader
   // window.scrollTo(0,0);
-
+  const { userId, token ,login} = getAuth();
+// console.log('tokentoken',token);
     useEffect(() => {
       window.scrollTo(0, 0);
     }, []);

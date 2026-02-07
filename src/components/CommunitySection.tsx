@@ -15,6 +15,7 @@ import {useAlertMessage}  from '../utils/useAlertMessage';
 import { decodeId,encodeId, generateSlug ,slugToTitle,usePageTitle } from '../utils/helpers';
 
 const BASE_URL = import.meta.env.VITE_API_URL;
+const PROFILE_KEY = "user_profile";
 
 interface Community{
     id:string,
@@ -97,6 +98,13 @@ const CommunitySection: React.FC = () => {
         if (login) setLoginId(login);
         if (token) setToken(token);
     }, []);
+
+    useEffect(() => {
+        const storedProfile = localStorage.getItem(PROFILE_KEY);
+            if (storedProfile) {
+            setProfile(JSON.parse(storedProfile));
+            }
+    }, []);
     // console.log('loginIdsss',loginId);
     // console.log('token',token);
     // console.log('userId',userId);
@@ -109,29 +117,29 @@ const CommunitySection: React.FC = () => {
     //         setUserId(storedId.trim());
     //     }  
     // }, []);
-    useEffect(() => {
-        if (!userId) return; // wait until userId is available
+    // useEffect(() => {
+    //     if (!userId) return; // wait until userId is available
 
-        const loadProfile = async () => {
-            try {
-            const response = await axios.post(`${BASE_URL}/user/profile`, {
-                UserId: userId,
-            });
+    //     const loadProfile = async () => {
+    //         try {
+    //         const response = await axios.post(`${BASE_URL}/user/profile`, {
+    //             UserId: userId,
+    //         });
 
-            // console.log("Profile Data:", response.data);
+    //         // console.log("Profile Data:", response.data);
 
-            if (response.data.status === "success") {
-                const data = response.data.data;
-                setProfile(data);
-            }
-            } catch (error) {
-            console.error("Error loading profile:", error);
-            alert("Failed to load profile");
-            }
-        };
+    //         if (response.data.status === "success") {
+    //             const data = response.data.data;
+    //             setProfile(data);
+    //         }
+    //         } catch (error) {
+    //         console.error("Error loading profile:", error);
+    //         alert("Failed to load profile");
+    //         }
+    //     };
 
-        loadProfile();
-    }, [userId]);
+    //     loadProfile();
+    // }, [userId]);
     // const handleReportIssue = (postId: string, userId: string, reason: string) => {
     // // console.log("Post ID:", postId);
     // // console.log("User ID:", userId);
