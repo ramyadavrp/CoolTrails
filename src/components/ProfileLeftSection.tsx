@@ -1,4 +1,4 @@
-import React, { useEffect, useState} from 'react';
+import React, { useEffect, useState,useRef } from 'react';
 import { Link, useLocation } from "react-router-dom";
 import axios from 'axios';
 
@@ -11,12 +11,12 @@ interface Profile {
   totalFollowers: number;
   totalFollowing: number;
 }
+const PROFILE_KEY = "user_profile";
 
 const ProfileLeftSection: React.FC = () => {
     const location = useLocation();
     const [userId, setUserId] = useState<string>("");
     const [profile, setProfile] = useState<Profile | null>(null);
-
     
     // Function to determine if a link is active
     const isActive = (path: string) => {
@@ -24,45 +24,19 @@ const ProfileLeftSection: React.FC = () => {
     };
     useEffect(() => {
             const storedId = sessionStorage.getItem("id");
-            // const storedId = localStorage.getItem("id");
-            console.log("Stored sssID:", storedId); // should print the ID string
+            // console.log("Stored sssID:", storedId); // should print the ID string
             if (storedId) {
-                // setUserId(storedId); 
                 setUserId(storedId.trim());
             }  
     }, []);
     
     // Show the profile
     useEffect(() => {
-            if (!userId) return; // wait until userId is available
-    
-            const loadProfile = async () => {
-                try {
-                const response = await axios.post(`${BASE_URL}/user/profile`, {
-                    UserId: userId,
-                }
-                // {
-                //     headers: {
-                //     "Content-Type": "application/json",
-                //     "Authorization": `Bearer ${sessionStorage.getItem("token")}`
-                //     }
-                // }
-                );
-    
-                console.log("Profile Data:", response.data);
-    
-                if (response.data.status === "success") {
-                    const data = response.data.data;
-                    setProfile(data);
-                }
-                } catch (error) {
-                console.error("Error loading profile:", error);
-                alert("Failed to load profile");
-                }
-            };
-    
-            loadProfile();
-    }, [userId]);
+        const storedProfile = localStorage.getItem(PROFILE_KEY);
+            if (storedProfile) {
+            setProfile(JSON.parse(storedProfile));
+            }
+    }, []);
     return(
         <div className="col-xl-3 col-lg-5 col-md-6 col-sm-12 col-12">
             <aside className="profile-sidebar sticky-top"> 

@@ -7,6 +7,8 @@ import { Link } from 'react-router-dom';
 
 
 const BASE_URL = import.meta.env.VITE_API_URL;
+const PROFILE_KEY = "user_profile";
+
 interface FeedProfile {
     id:number,
     mediaType:string,
@@ -38,8 +40,8 @@ const ProfilePhotoSection: React.FC = () => {
         return location.pathname === path ? 'active' : '';
     };
     useEffect(() => {
-            const storedId = sessionStorage.getItem("id");
-            // const storedId = localStorage.getItem("id");
+            // const storedId = sessionStorage.getItem("id");
+            const storedId = localStorage.getItem("id");
             // console.log("Stored ID:", storedId); // should print the ID string
             if (storedId) {
                 // setUserId(storedId); 
@@ -47,38 +49,21 @@ const ProfilePhotoSection: React.FC = () => {
             }  
     }, []);
     useEffect(() => {
-            const storeLocal = sessionStorage.getItem("login");
-            // const storeLocal = localStorage.getItem("login");
+            // const storeLocal = sessionStorage.getItem("login");
+            const storeLocal = localStorage.getItem("login");
             //  console.log(storeLocal)
             if (storeLocal) {
                 setLoginId(storeLocal);
                 // setUserID(userId);
             }
     }, []);
-// Show the profile
+    // Show the profile
     useEffect(() => {
-            if (!userId) return; // wait until userId is available
-    
-            const loadProfile = async () => {
-                try {
-                const response = await axios.post(`${BASE_URL}/user/profile`, {
-                    UserId: userId,
-                });
-    
-                // console.log("Profile Data:", response.data);
-    
-                if (response.data.status === "success") {
-                    const data = response.data.data;
-                    setProfile(data);
-                }
-                } catch (error) {
-                console.error("Error loading profile:", error);
-                alert("Failed to load profile");
-                }
-            };
-    
-            loadProfile();
-    }, [userId]);
+        const storedProfile = localStorage.getItem(PROFILE_KEY);
+            if (storedProfile) {
+            setProfile(JSON.parse(storedProfile));
+            }
+    }, []);
 
      // Show Post more 
     const handleShowPostMore = () => {

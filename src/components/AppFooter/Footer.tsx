@@ -6,7 +6,7 @@ import SubscribeSection from './SubscribeSection';
 // import data from '../data/socialMedia.json';
 import data from '../../../public/data/socialMedia.json'
 import axios from 'axios';
-
+import { getAuth } from '../../utils/storage';
 // import Banner from '../components/AppHeader/Banner';
 import { Link } from 'react-router-dom';
 import { fetchStaticPage,StaticPage  } from '../../utils/footerstaticPages';
@@ -20,47 +20,55 @@ const BASE_URL = import.meta.env.VITE_API_URL;
 const Footer: React.FC = () => {
     const [getMedia, setMedia ]= useState<Media[]>([]);
     const [pages, setPages] = useState<Record<string, StaticPage>>({});
+    const [loginId, setLoginId] = useState("");
+    
     const handleClick = () => {
         alert('Button clicked!');
     };
 
-    useEffect(()=>{
-        const fetchMedia= async () => {
-                try {
-                    
-                    const response = await fetch('/data/socialMedia.json'); 
-                    const json = await response.json();
-                    setMedia(json.social_media);
-                    
-                }catch (error) {
-                console.error('Error fetching JSON:', error);
-            }
-        };
-        fetchMedia();
-    },[]);
-   
+     useEffect(() => {
+        const {login} = getAuth();
+            if (login) setLoginId(login);
+    }, []);
     useEffect(() => {
-    const slugs = ["privacy-policy", "terms", "cookie-policy", "manage-cookies"];
+            // if (!userId) return; // wait until userId is available
+    
+            const fetchMedia = async () => {
+                try {
+                    const response = await axios.post(`${BASE_URL}/common/social-media`, {
+                        LoginId: loginId,
+                    });
+        
+                    if (response.data.status === "success") {
+                        const data = response.data.data;
+                        setMedia(data);
 
-    const fetchStaticAll = async () => {
-      try {
-        const results = await Promise.all(slugs.map((slug) => fetchStaticPage(slug)));
-        const pagesMap: Record<string, StaticPage> = {};
-        // console.log('pagesMap',pagesMap);
-        results.forEach((res, index) => {
-          pagesMap[slugs[index]] = res;
-        });
-        setPages(pagesMap);
-      } catch (err: any) {
-        // setError(err.message || "Error loading footer pages");
-      } finally {
-        // setLoading(false);
-      }
-    };
+                    }
+                } catch (error) {
+                console.error("Error loading profile:", error);
+                alert("Failed to load profile");
+                }
+            };
+    
+            fetchMedia();
+    }, []);
 
-    fetchStaticAll();
-  }, []);
-
+    // useEffect(()=>{
+    //     const fetchMedia= async () => {
+    //             try {
+                    
+    //                 const response = await fetch('/data/socialMedia.json'); 
+    //                 const json = await response.json();
+    //                 setMedia(json.social_media);
+                    
+    //             }catch (error) {
+    //             console.error('Error fetching JSON:', error);
+    //         }
+    //     };
+    //     fetchMedia();
+    // },[]);
+   
+   
     return (
     // <footer className="bg-[#3d3d3d] text-white py-12 pt-0">
     //     <div className="container mx-auto px-6">
@@ -98,31 +106,10 @@ const Footer: React.FC = () => {
                             </div>
                             <div className="collapse show" id="footer-nav-1">
                                 <ul className="list-unstyled footer-nav">
-                                    {/* <li><a href="#!">Countries</a></li>
-                                    <li><a href="#!">Regions</a></li> */}
-                                    <li>
-                                        {/* <Link to={'/profile'} className="dropdown-item"> 
-                                             Cities
-                                        </Link> */}
-                                        {/* <a href="#!">Cities</a> */}
-                                    </li>
-                                    <li>
-                                        <Link to={'/national-park-guide'} className="dropdown-item"> 
-                                             Parks
-                                        </Link>
-                                    </li>
-                                    {/* <li><a href="#!">Trails</a></li>
-                                    <li><a href="#!">Points of Interest</a></li>
-                                    <li><a href="#!">Trail </a></li>
-                                    <li><a href="#!">Trail Features</a></li> */}
+                                    <li><Link to={'/national-park-guide'} className="dropdown-item">Parks</Link></li>
                                 </ul>
                                 <ul className="list-unstyled footer-nav">
-                                    <li>
-                                        <Link to={`/page/cookie-policy`}>
-                                            {pages["cookie-policy"]?.title || "Cookie Policy"}
-                                        </Link>
-                                    </li>
-                                    
+                                    <li><Link to={`/page/cookie-policy`}>Cookie Policy</Link></li>
                                 </ul>
                             </div>
                         </div>
@@ -142,27 +129,10 @@ const Footer: React.FC = () => {
                             </div>
                             <div className="collapse show" id="footer-nav-2">
                                 <ul className="list-unstyled footer-nav">
-                                    {/* <li><a href="#!">My Maps </a></li> */}
-                                    <li>
-                                        {/* <Link to={'/create-map'} className="dropdown-item"> 
-                                             Create Map
-                                        </Link> */}
-                                        <Link to={'/add-post'} className="dropdown-item"> 
-                                             Create Map
-                                        </Link>
-                                        {/* <a href="#!">Create Map</a> */}
-                                    </li>
-                                    {/* <li><a href="#!">Print Maps </a></li>
-                                    <li><a href="#!">Route Converter</a></li> */}
+                                    <li><Link to={'/add-post'} className="dropdown-item"> Create Map</Link></li>
                                 </ul>
                                 <ul className="list-unstyled footer-nav">
-                                    {/* <li><a href="#!">My Maps </a></li> */}
-                                    <li>
-                                        <Link to={`/page/manage-cookies`}>
-                                            {pages["manage-cookies"]?.title || "Manage Cookies"}
-                                        </Link>
-                                        {/* <a href="#!">Create Map</a> */}
-                                    </li>
+                                    <li><Link to={`/page/manage-cookies`}> Manage Cookies</Link></li>
                                 </ul>
                             </div>
                         </div>
@@ -182,17 +152,10 @@ const Footer: React.FC = () => {
                             </div>
                             <div className="collapse show" id="footer-nav-3">
                                 <ul className="list-unstyled footer-nav">
-                                    {/* <li><a href="#!">About</a></li>
-                                    <li><a href="#!">Jobs</a></li>
-                                    <li><a href="#!">Press</a></li>
-                                    <li><a href="#!">Ambassadors</a></li> */}
                                     <li><Link to={'/affiliates'}>Affiliates</Link></li>
-                                    {/* <li><a href="#!">Affiliates</a></li> */}
                                 </ul> 
                                  <ul className="list-unstyled footer-nav">
-                                    <li><Link to={`/page/privacy-policy`}>
-                                        {pages["privacy-policy"]?.title || "Privacy Policy"}
-                                    </Link></li>
+                                    <li><Link to={`/page/privacy-policy`}>Privacy Policy</Link></li>
                                 </ul> 
                             </div>
                         </div>
@@ -212,14 +175,10 @@ const Footer: React.FC = () => {
                             </div>
                             <div className="collapse show" id="footer-nav-4">
                                 <ul className="list-unstyled footer-nav">
-                                    {/* <li><a href="#!">Support</a></li> */}
                                     <li><Link to={'/gift-membership'} >Gift membership</Link></li>
-                                    {/* <li><a href="#!">Gears</a></li> */}
                                 </ul>
                                 <ul className="list-unstyled footer-nav">
-                                    <li><Link to={`/page/terms`}>
-                                        {pages["terms"]?.title || "Terms"}
-                                    </Link></li>
+                                    <li><Link to={`/page/terms`}>Terms</Link></li>
                                 </ul>
 
                             </div>
@@ -235,10 +194,10 @@ const Footer: React.FC = () => {
                         <div className="copyright">
                             <p className="mb-0 copyright-text">© 2010-2025 CoolTrails, LLC</p>
                             <ul className="list-unstyled d-flex flex-wrap footer-copyright-nav mb-0 mt-0">
-                                <li><a href="">Privacy Policy </a></li>
-                                <li><a href="">Terms </a></li>
-                                <li><a href="">Cookie Policy </a></li>
-                                <li><a href="">Manage Cookies </a></li>
+                                <li><Link to={`/page/privacy-policy`}>Privacy Policy</Link></li>
+                                <li><Link to={`/page/terms`}>Terms</Link></li>
+                                <li><Link to={`/page/cookie-policy`}>Cookie Policy</Link></li>
+                                <li><Link to={`/page/manage-cookies`}>Manage Cookies</Link></li>
                             </ul>
                         </div>
                     </div>
@@ -246,18 +205,21 @@ const Footer: React.FC = () => {
                         <div className="footer-social-media">
                             <ul
                                 className="d-flex justify-content-end gap-3 list-unstyled flex-wrap social-media-logo social-media-logo-footer mb-0 mt-0 align-items-center">
-                                {
-                                    getMedia.length > 0 &&(
-                                        getMedia.map((media:any,index:number)=>(
-                                            <li key={index}>
-                                                <a href={media.url ?? ''} title={media.name ?? ''} className="social-media-btn d-flex align-items-center justify-content-center" target="_blank">
-                                                <img src={media.icon || '/assets/images/not-found.jpg'} alt={media.name ?? '' } />
-                                                </a>
-                                            </li>
-                                        ))
-                                        
-                                    )
-                                }
+                                {getMedia?.map((media: any) => (
+                                    <li key={media.id}>
+                                        <a href={media.url || '#'} title={media.name || ''}
+                                            className="social-media-btn d-flex align-items-center justify-content-center"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            <img
+                                                src={media.iconPath || '/assets/images/not-found.jpg'}
+                                                alt={media.name || 'social icon'}
+                                            />
+                                        </a>
+                                    </li>
+                                ))}
+
                                 {/* <li><a href="" title="Instagram"
                                         className="social-media-btn d-flex align-items-center justify-content-center"><img
                                             src="/assets/images/icons/instagram.svg" alt="" /></a></li>

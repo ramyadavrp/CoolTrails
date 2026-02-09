@@ -16,6 +16,7 @@ import {useAlertMessage}  from '../utils/useAlertMessage';
 import { decodeId,encodeId, generateSlug ,slugToTitle,usePageTitle } from '../utils/helpers';
 
 const BASE_URL = import.meta.env.VITE_API_URL;
+const PROFILE_KEY = "user_profile";
 
 interface Community{
     id:string,
@@ -91,35 +92,11 @@ const ProfileFeedSection: React.FC = () => {
     
     // Show the profile
     useEffect(() => {
-            if (!userId) return; // wait until userId is available
-    
-            const loadProfile = async () => {
-                try {
-                const response = await axios.post(`${BASE_URL}/user/profile`, {
-                    UserId: userId,
-                }
-                // {
-                //     headers: {
-                //     "Content-Type": "application/json",
-                //     "Authorization": `Bearer ${sessionStorage.getItem("token")}`
-                //     }
-                // }
-                );
-    
-                console.log("Profile Data:", response.data);
-    
-                if (response.data.status === "success") {
-                    const data = response.data.data;
-                    setProfile(data);
-                }
-                } catch (error) {
-                console.error("Error loading profile:", error);
-                alert("Failed to load profile");
-                }
-            };
-    
-            loadProfile();
-    }, [userId]);
+        const storedProfile = localStorage.getItem(PROFILE_KEY);
+            if (storedProfile) {
+            setProfile(JSON.parse(storedProfile));
+            }
+    }, []);
     useEffect(()=>{
             const timer = setTimeout(()=>
                 setloadingProfile(false),3000);

@@ -206,6 +206,7 @@ const CommunitySectionCmtDetails: React.FC = () => {
 
     useEffect(() => {
         const token = sessionStorage.getItem("token");
+        // const token = localStorage.getItem("token");
         setIsLoggedIn(!!token);
     }, []);
 

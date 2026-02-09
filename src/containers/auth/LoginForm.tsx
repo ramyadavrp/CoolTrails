@@ -12,12 +12,19 @@ const LoginForm = () => {
    // extract redirect URL if any
   const params = new URLSearchParams(location.search);
   const redirectUrl = params.get("redirect") || "/profile"; // default to profile
+  // useEffect(() => {
+  //   const token = localStorage.getItem("token");
+  //   if (token) {
+  //     navigate("/");
+  //   }
+  // }, [navigate]);
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      navigate("/");
-    }
-  }, [navigate]);
+  const token = localStorage.getItem("token");
+  if (token) {
+    navigate("/");
+  }
+}, [navigate]);
+
 
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
@@ -47,8 +54,6 @@ const LoginForm = () => {
     setErrors({});
     setLoading(true);
     
-// https://api.cooltrails.purchaseitnow.shop/api
-// https://api.cooltrails.purchaseitnow.shop/api/auth/login
     try {
       const response = await axios.post(`${BASE_URL}/auth/login`, {
         Username: email,
@@ -58,18 +63,20 @@ const LoginForm = () => {
       });
 
       const data = response.data;
-      console.log('login',data);
+      // console.log('login',data);
       if (data.status === "success") {
         
         // localStorage.setItem("token", data.token);
-        // localStorage.setItem("email", email); 
-        // localStorage.setItem("id", data.user.id); 
-        // localStorage.setItem("login", data.user.loginid); 
-
+        localStorage.setItem("email", data.user.email); 
+        localStorage.setItem("id", data.user.id); 
+        localStorage.setItem("login", data.user.loginid); 
+        
         sessionStorage.setItem("token", data.token);
-        sessionStorage.setItem("email", email);
-        sessionStorage.setItem("id", data.user.id);
-        sessionStorage.setItem("login", data.user.loginid);
+        // sessionStorage.setItem("email", email);
+        // sessionStorage.setItem("id", data.user.id);
+        // sessionStorage.setItem("login", data.user.loginid);
+        sessionStorage.setItem("browser_alive", "true");
+        
         navigate(redirectUrl, { replace: true });
         // navigate('/profile');
       } else {
@@ -82,6 +89,7 @@ const LoginForm = () => {
       setLoading(false);
     }
   };
+  
 // console.log('BASE_URL',BASE_URL);
 
   const togglePasswordVisibility = () => {

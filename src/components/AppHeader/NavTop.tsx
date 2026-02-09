@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import SeoMeta from '../../containers/SeoMeta';
 import axios from 'axios';
@@ -13,18 +13,19 @@ interface Profile {
   totalFollowers: number;
   totalFollowing: number;
 }
+const PROFILE_KEY = "user_profile";
 const NavTop: React.FC = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [userId, setUserId] = useState<string>("");
     const [loginId, setLoginId] = useState("");
     const [profile, setProfile] = useState<Profile | null>(null);
-    
+    const profileFetched = useRef(false);
     
     
     const navigate = useNavigate();
      useEffect(() => {
-        const storedId = sessionStorage.getItem("id");
-        // const storedId = localStorage.getItem("id");
+        // const storedId = sessionStorage.getItem("id");
+        const storedId = localStorage.getItem("id");
         // console.log("Stored ID:", storedId); // should print the ID string
         if (storedId) {
             setUserId(storedId.trim());
@@ -47,47 +48,64 @@ const NavTop: React.FC = () => {
      console.log('userid',userId);
     //  console.log('BASE_URL',sessionStorage.getItem("token"));
     useEffect(() => {
-    if (!userId) return;
+        if (!userId) return;
 
-    const loadProfile = async () => {
+        // Use localStorage first
+        const storedProfile = localStorage.getItem(PROFILE_KEY);
+        if (storedProfile) {
+        setProfile(JSON.parse(storedProfile));
+        return;
+        }
+
+        // Prevent duplicate API call
+        if (profileFetched.current) return;
+        profileFetched.current = true;
+
+        const loadProfile = async () => {
         try {
-            const token = sessionStorage.getItem("token");
-
             const response = await axios.post(
-                `${BASE_URL}/user/profile`,
-                { UserId: userId }
-                // {
-                //     withCredentials: false,
-                //     headers: {
-                //         "Authorization": `Bearer ${token}`,
-                //         "Content-Type": "application/json",
-                //         "Accept": "application/json"
-                //     }
-                // }
+            `${BASE_URL}/user/profile`,
+            { UserId: userId }
             );
 
-            console.log("API Response:", response.data);
-
             if (response.data.status === "success") {
-                setProfile(response.data.data);
+            setProfile(response.data.data);
+            localStorage.setItem(
+                PROFILE_KEY,
+                JSON.stringify(response.data.data)
+            );
             }
-        } catch (error) {
-            console.error("API Error:", error.response?.data || error);
+        } catch (error: any) {
+            console.error("Profile API error", error.response?.data || error);
         }
-    };
+        };
 
-    loadProfile();
-}, [userId]);
+        loadProfile();
+    }, [userId]);
 
 
 
+    // const handleLogout = () => {
+        
+    //     const PROFILE_KEY = "user_profile";
+    //     localStorage.removeItem('PROFILE_KEY');
+    //     sessionStorage.removeItem("id");
+    //     sessionStorage.removeItem('token');
+    //     setIsLoggedIn(false);
+    //     navigate('/');
+    // };
     const handleLogout = () => {
-        // localStorage.removeItem('token');
+        const PROFILE_KEY = "user_profile";
+
+        localStorage.removeItem(PROFILE_KEY);
         sessionStorage.removeItem("id");
-        sessionStorage.removeItem('token');
+        sessionStorage.removeItem("token");
+        localStorage.clear();
+        sessionStorage.clear();
         setIsLoggedIn(false);
         navigate('/');
     };
+    
     // const handleLogout = () => {
     // localStorage.removeItem('token');   // remove token
     // localStorage.removeItem('email');   // optional: remove other info
@@ -100,7 +118,7 @@ const NavTop: React.FC = () => {
 
     return (
         <>
-        <SeoMeta/>
+        {/* <SeoMeta/> */}
         <header className="header">
             <nav className="navbar navbar-expand-lg main-navbar">
                 <div className="container-fluid">
