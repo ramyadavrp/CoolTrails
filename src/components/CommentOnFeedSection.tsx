@@ -60,10 +60,14 @@ const BlockedUserSection: React.FC = () => {
             const response = await axios.post(`${BASE_URL}/common/commentlistbyuser`, {
                 userid: userId,
                 skip: 0,
-                take: 20
+                take: 20,
+                // headers: {
+                // "Content-Type": "multipart/form-data",
+                // "Authorization": `Bearer ${token}`
+                // } 
             });
 
-                console.log("commentlistbyuser Data:", response.data);
+                // console.log("commentlistbyuser Data:", response.data);
 
             if (response.data.status === "success") {
                 setCommentFeed(response.data.data);

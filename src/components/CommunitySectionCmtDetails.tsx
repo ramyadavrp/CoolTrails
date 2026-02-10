@@ -205,8 +205,8 @@ const CommunitySectionCmtDetails: React.FC = () => {
     }, [reviewListing, userId]);
 
     useEffect(() => {
-        const token = sessionStorage.getItem("token");
-        // const token = localStorage.getItem("token");
+        // const token = sessionStorage.getItem("token");
+        const token = localStorage.getItem("token");
         setIsLoggedIn(!!token);
     }, []);
 
@@ -272,7 +272,14 @@ const CommunitySectionCmtDetails: React.FC = () => {
         try {
             setIsUploading(true);
 
-            const response = await axios.post(`${BASE_URL}/feed/addimages`, formData);
+            const response = await axios.post(`${BASE_URL}/feed/addimages`, 
+                {
+                    formData,
+                    // headers: {
+                    // "Content-Type": "multipart/form-data",
+                    // "Authorization": `Bearer ${token}`
+                    // } 
+                });
 
             // console.log("API Response:", response.data);
             if (response.data.status === "success") {
@@ -325,7 +332,11 @@ const CommunitySectionCmtDetails: React.FC = () => {
             console.log("Deleting comment:", selectedCommentId);
             const response = await axios.post(`${BASE_URL}/feed/comment/delete`, {
                 commentId: selectedCommentId,
-                UserId: userId
+                UserId: userId,
+                // headers: {
+                // "Content-Type": "multipart/form-data",
+                // "Authorization": `Bearer ${token}`
+                // } 
             });
             setComments((prev) =>
                 prev.filter((c) => c.id !== selectedCommentId)
@@ -557,15 +568,16 @@ const CommunitySectionCmtDetails: React.FC = () => {
 
     const fetchUserImages = async () => {
         if (!userId) return; 
-
         try {
-            const response = await axios.post(
-                `${BASE_URL}/feed/user/Images/${userId}`,
+            const response = await axios.post(`${BASE_URL}/feed/user/Images/${userId}`,
                 {
-                    LoginId: loginIdBased
+                    LoginId: loginIdBased,
+                    // headers: {
+                    // "Content-Type": "multipart/form-data",
+                    // "Authorization": `Bearer ${token}`
+                    // } 
                 }
             );
-
             // console.log("Images:", response.data.data);
             if (Array.isArray(response.data?.data)) {
                 setPreviewUrls(response.data.data); // this is your images array
@@ -709,7 +721,11 @@ const CommunitySectionCmtDetails: React.FC = () => {
                 issueRaisedBy: userId,
                 UserId: getBlockedUserId,
                 Remark:reason ?? '',
-                isBlocked:getCheckblock
+                isBlocked:getCheckblock,
+                // headers: {
+                // "Content-Type": "multipart/form-data",
+                // "Authorization": `Bearer ${token}`
+                // } 
             });
        
             // console.log('blocked',response.data);
@@ -764,21 +780,18 @@ const CommunitySectionCmtDetails: React.FC = () => {
                 return;
             } 
             try {
-                const response = await axios.post(
-                        `${BASE_URL}/feed/comment/`,
+                const response = await axios.post( `${BASE_URL}/feed/comment/`,
                     {
                         PostId: postId,
                         // UserId: userId,   
                          UserId: userId,   
-                        CommentText: commenttext,  
-                    },
-                    {
-                    headers: {
-                        "Content-Type": "application/json",
-                        Accept: "application/json",
-                    }, 
+                        CommentText: commenttext, 
+                        // headers: {
+                        // "Content-Type": "multipart/form-data",
+                        // "Authorization": `Bearer ${token}`
+                        // }  
                     }
-                    );
+                );
                     console.log("Comment posted:", response.data);
                     if (response.data.status === "success") {
                         const newComment = {
@@ -845,7 +858,10 @@ const CommunitySectionCmtDetails: React.FC = () => {
         try {
         const response = await axios.post(`${BASE_URL}/feed/user/Review/${userId}`, {
             LoginId: loginIdBased,
-            // LoginId: '1112VIRENDRA',
+            // headers: {
+            // "Content-Type": "multipart/form-data",
+            // "Authorization": `Bearer ${token}`
+            // } 
         });
 
         // console.log("REvi Data:", response.data);
@@ -877,19 +893,15 @@ const CommunitySectionCmtDetails: React.FC = () => {
         if (!loginId || !slug) return;
 
         try {
-            const response = await axios.post(
-            `${BASE_URL}/user/community/${slug}`,
+            const response = await axios.post(`${BASE_URL}/user/community/${slug}`,
             {
                 LoginId: loginId,
                 slug: slug,
-            },
-            {
-                headers: {
-                "Content-Type": "application/json",
-                Accept: "application/json",
-                },
-            }
-            );
+                // headers: {
+                // "Content-Type": "multipart/form-data",
+                // "Authorization": `Bearer ${token}`
+                // } 
+            });
 
             const data = response.data?.data;
             console.log('community/1',response.data.data.feed_fetails);
@@ -948,6 +960,10 @@ const CommunitySectionCmtDetails: React.FC = () => {
                 UserId: userId,
                 Rating: rating,
                 Review: review,
+                // headers: {
+                // "Content-Type": "multipart/form-data",
+                // "Authorization": `Bearer ${token}`
+                // } 
             });
         };
 
@@ -958,6 +974,10 @@ const CommunitySectionCmtDetails: React.FC = () => {
                 UserId: userId,
                 Rating: rating,
                 Review: review,
+                // headers: {
+                // "Content-Type": "multipart/form-data",
+                // "Authorization": `Bearer ${token}`
+                // } 
             });
         };
         // console.log('PostId  handle',postId);
@@ -1062,8 +1082,12 @@ const CommunitySectionCmtDetails: React.FC = () => {
 
             try {
                 const response = await axios.post(`${BASE_URL}/feed/like`, {
-                PostId: postId,
-                UserId: userId,
+                    PostId: postId,
+                    UserId: userId,
+                    // headers: {
+                    // "Content-Type": "multipart/form-data",
+                    // "Authorization": `Bearer ${token}`
+                    // } 
                 });
 
                 if (response.data.status === "success") {

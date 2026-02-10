@@ -31,7 +31,7 @@ const GiftMembershipSection: React.FC = () => {
     const [getGiftMembership, setGiftMembership ]= useState<FAQ[]>([]);
     const [getAnnualPlans, setAnnualPlans ]= useState<Plans[]>([]);
     
-    usePageTitle("Cooltrails | Gift Membership");
+    // usePageTitle("Cooltrails | Gift Membership");
 
     useEffect(() => {
         window.scrollTo(0, 0);

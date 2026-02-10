@@ -132,7 +132,11 @@ function ExploreNearByTrailsSection() {
                 lon: longitude,
                 // lat: 27.1719517170742,
                 // lon: 78.0420843000696,
-                maxDistance: maxDistance
+                maxDistance: maxDistance,
+                // headers: {
+                // "Content-Type": "multipart/form-data",
+                // "Authorization": `Bearer ${token}`
+                // } 
             });
             
             setTrails(response.data.data);

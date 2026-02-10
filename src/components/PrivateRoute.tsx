@@ -7,8 +7,8 @@ interface PrivateRouteProps {
 }
 
 const PrivateRoute: React.FC<PrivateRouteProps> = () => {
-  const token = sessionStorage.getItem('token'); // Check for the token
-  // const token = localStorage.getItem('token'); // Check for the token
+  // const token = sessionStorage.getItem('token'); // Check for the token
+  const token = localStorage.getItem('token'); // Check for the token
 
   // If token exists, render the child routes; otherwise, redirect to login
   return token ? <Outlet /> : <Navigate to="/login" replace state={{ tab: 'signin' }} />;

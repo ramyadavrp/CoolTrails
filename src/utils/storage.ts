@@ -8,9 +8,9 @@
 // };
 
 export const getAuth = () => {
-  if (!sessionStorage.getItem("browser_alive")) {
-    return { token: null, userId: null, login: null };
-  }
+  // if (!localStorage.getItem("browser_alive")) {
+  //   return { token: null, userId: null, login: null };
+  // }
 
   return {
     token: localStorage.getItem("token"),

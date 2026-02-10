@@ -40,6 +40,10 @@ const ActivitiesListSection: React.FC = () => {
             setErrorsActivity('');
             const response = await axios.post(`${BASE_URL}/user/activity-logs`, {
                 userid: userId,
+                // headers: {
+                // "Content-Type": "multipart/form-data",
+                // "Authorization": `Bearer ${token}`
+                // } 
             });
 
                 console.log("activity Data:", response.data);

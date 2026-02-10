@@ -51,7 +51,11 @@ const DismissedUserSection: React.FC = () => {
             const response = await axios.post(`${BASE_URL}/common/dismisseduser`, {
                 userid: userId,
                 skip: 0,
-                take: 20
+                take: 20,
+                // headers: {
+                // "Content-Type": "multipart/form-data",
+                // "Authorization": `Bearer ${token}`
+                // } 
             });
 
                 // console.log("dismisseduser Data:", response.data.data);

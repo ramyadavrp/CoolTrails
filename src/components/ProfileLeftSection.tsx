@@ -23,7 +23,8 @@ const ProfileLeftSection: React.FC = () => {
         return location.pathname === path ? 'active' : '';
     };
     useEffect(() => {
-            const storedId = sessionStorage.getItem("id");
+            const storedId = localStorage.getItem("id");
+            // const storedId = sessionStorage.getItem("id");
             // console.log("Stored sssID:", storedId); // should print the ID string
             if (storedId) {
                 setUserId(storedId.trim());

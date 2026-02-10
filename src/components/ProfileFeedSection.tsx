@@ -81,15 +81,15 @@ const ProfileFeedSection: React.FC = () => {
         return location.pathname === path ? 'active' : '';
     };
     useEffect(() => {
-            const storedId = sessionStorage.getItem("id");
-            // const storedId = localStorage.getItem("id");
+            // const storedId = sessionStorage.getItem("id");
+            const storedId = localStorage.getItem("id");
             console.log("Stored sssID:", storedId); // should print the ID string
             if (storedId) {
                 // setUserId(storedId); 
                 setUserId(storedId.trim());
             }  
     }, []);
-    
+    console.log('pfeed',token);
     // Show the profile
     useEffect(() => {
         const storedProfile = localStorage.getItem(PROFILE_KEY);
@@ -124,6 +124,10 @@ const ProfileFeedSection: React.FC = () => {
                 try {
                 const response = await axios.post(`${BASE_URL}/feed/user/${userId}`, {
                     LoginId: loginId,
+                    // headers: {
+                    // "Content-Type": "multipart/form-data",
+                    // "Authorization": `Bearer ${token}`
+                    // } 
                     // LoginId: '1112virendra@gmail.com',
                 }
             );
