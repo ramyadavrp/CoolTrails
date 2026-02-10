@@ -236,6 +236,10 @@ const AffiliateDetailTrail: React.FC = () => {
         const response = await axios.post(`${BASE_URL}/common/MapQRCode`, {
             UserId: userId,
             TrailTitle: title,
+            // headers: {
+            //     "Content-Type": "multipart/form-data",
+            //     "Authorization": `Bearer ${token}`
+            // }
         });
 
         // console.log("QR:", response.data);
@@ -255,8 +259,12 @@ const AffiliateDetailTrail: React.FC = () => {
         try {
             // setQrLoading(true);
             const response = await axios.post(`${BASE_URL}/common/getfilenamefordownloadmap`, {
-            UserId: userId,
-            TrailTitle: title,
+                UserId: userId,
+                TrailTitle: title,
+                // headers: {
+                //     "Content-Type": "multipart/form-data",
+                //     "Authorization": `Bearer ${token}`
+                // }
             });
             if (response.data.status === "success") {
             setExportData(response.data.data); // expects array of {id, fileName}
@@ -584,9 +592,13 @@ const AffiliateDetailTrail: React.FC = () => {
             setQrLoading(true);
 
             const response = await axios.post(`${BASE_URL}/common/downloadfile`, {
-            id: 1,
-            UserId: userId,
-            TrailTitle: title,
+                id: 1,
+                UserId: userId,
+                TrailTitle: title,
+                // headers: {
+                //     "Content-Type": "multipart/form-data",
+                //     "Authorization": `Bearer ${token}`
+                // }
             });
 
             if (response.data.status === "success") {
@@ -678,7 +690,10 @@ const AffiliateDetailTrail: React.FC = () => {
         try {
         const response = await axios.post(`${BASE_URL}/trail/user/Review/${userId}`, {
             LoginId: loginIdBased,
-            // LoginId: '1112VIRENDRA',
+            // headers: {
+            //     "Content-Type": "multipart/form-data",
+            //     "Authorization": `Bearer ${token}`
+            // }
         });
 
         console.log("REvi trail Data:", response.data);
@@ -733,7 +748,10 @@ const AffiliateDetailTrail: React.FC = () => {
         try{
             const response = await axios.post(`${BASE_URL}/Trail/traildetail`, {
                 urlTitle: title,
-                
+                // headers: {
+                //     "Content-Type": "multipart/form-data",
+                //     "Authorization": `Bearer ${token}`
+                // }
             });
             
             setTrailDetail(response.data.data);
@@ -807,9 +825,14 @@ const AffiliateDetailTrail: React.FC = () => {
         formData.append("Rating", rating);
         formData.append("Review", review);
 
-    return axios.post(`${BASE_URL}/trail/addrating`, formData);
-    };
-
+    return axios.post(`${BASE_URL}/trail/addrating`, {
+        formData,
+        // headers: {
+        //             "Content-Type": "multipart/form-data",
+        //             "Authorization": `Bearer ${token}`
+        //         }
+        });
+    }    
     const updateReviewAPI = async () => {
         // console.log('trailIdtrailId',trailId);
         // console.log('userId',userId);
@@ -820,6 +843,10 @@ const AffiliateDetailTrail: React.FC = () => {
             UserId: userId,
             Rating: rating,
             Review: review,
+            // headers: {
+            //     "Content-Type": "multipart/form-data",
+            //     "Authorization": `Bearer ${token}`
+            // }
         });
     };
     
@@ -2735,10 +2762,13 @@ const handleTrailClick = async (trail: any, trailurl: string) => {
                                                 {
                                                     loginId &&(
                                                         <div className="upload-btn-wrapper" style={{display: "flex",alignItems: "center", gap: "10px"}}>
-                                                        <label htmlFor="imageInput"
-                                                        style={{background: "#FC673C", border: "none",borderRadius: "50px"}}
-                                                            className="btn btn-sm btn-primary ms-2"
-                                                        >Add Images</label>
+                                                        {rev.userId === userId &&(
+                                                            <label htmlFor="imageInput"
+                                                            style={{background: "#FC673C", border: "none",borderRadius: "50px"}}
+                                                                className="btn btn-sm btn-primary ms-2"
+                                                            >Add Images</label>
+                                                        )}
+                                                        
                                                         <input id="imageInput" type="file" accept="image/*" multiple
                                                         onChange={(e) => handleFileChange(e, trailDetail?.trailId)}
 

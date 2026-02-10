@@ -68,7 +68,8 @@ const ProfileEditSection: React.FC = () => {
     // Use hook for each Clear  message after success
     useAutoClearMessage(message, setMessage, 3000);
     useAutoClearMessage(imgmessage, setImgMessage, 3000);
-
+    const [token, setToken] = useState<string | null>(null);
+    
     const [profileData, setProfileData] = useState<ProfileData>({
         full_name: "",
         last_name: "",
@@ -89,8 +90,9 @@ const ProfileEditSection: React.FC = () => {
     });
     // Get id by helper
     useEffect(() => {
-        const { userId } = getAuth();
+        const { userId ,token} = getAuth();
         if (userId) setUserId(userId);
+         if (token) setToken(token);
     }, []);
 
     
@@ -102,6 +104,10 @@ const ProfileEditSection: React.FC = () => {
                 try {
                 const response = await axios.post(`${BASE_URL}/user/profile`, {
                     UserId: userId,
+                    // headers: {
+                    // "Content-Type": "multipart/form-data",
+                    // "Authorization": `Bearer ${token}`
+                    // } 
                 });
     
                 // console.log("Profile get Data:", response.data.data);
@@ -180,8 +186,12 @@ const ProfileEditSection: React.FC = () => {
         formData.append("profile_photo", file);
 
         try {
-            const res = await axios.post(`${BASE_URL}/user/updateprofilephoto`, formData, {
-                headers: { "Content-Type": "multipart/form-data" },
+            const res = await axios.post(`${BASE_URL}/user/updateprofilephoto`, formData,
+                {
+                // headers: {
+                // "Content-Type": "multipart/form-data",
+                // "Authorization": `Bearer ${token}`
+                // } 
             });
             console.log("Uploaded:", res.data);
             if (res.data.status === "success") {
@@ -321,7 +331,10 @@ const ProfileEditSection: React.FC = () => {
         try {
             useLoader("Please wait...", "Profile Updating...");
             const response = await axios.post(`${BASE_URL}/user/profileupdate`, payload, {
-                headers: { "Content-Type": "application/json" }
+            // headers: {
+                // "Content-Type": "multipart/form-data",
+                // "Authorization": `Bearer ${token}`
+                // } 
             });
             closeLoader();
             // console.log('profile update',response.data.data);

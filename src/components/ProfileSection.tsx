@@ -40,9 +40,10 @@ const ProfileSection: React.FC = () => {
     };
     // console.log('tokentoken',token);
      // Get id by helper
+    //  console.log('p2',token);
     useEffect(() => {
         const { userId, token ,login} = getAuth();
-            // alert(token);
+        //    console.log('p',token);
             // if (!token || !userId) {
             //     navigate("/login"); // redirect if not logged in
             //     return;
@@ -51,9 +52,7 @@ const ProfileSection: React.FC = () => {
             if (token) setToken(token);
             if (login) setLoginId(login);
     }, []);
-    //   console.log("loginId:", loginId); 
-    //  console.log("token:", token); 
-    //  console.log("userId:", userId); 
+    
     
     // Show the profile
     useEffect(() => {
@@ -63,17 +62,13 @@ const ProfileSection: React.FC = () => {
                 try {
                 const response = await axios.post(`${BASE_URL}/feed/user/${userId}`, {
                     LoginId: loginId,
-                    // LoginId: '1112virendra@gmail.com',
-                }
-                // {
-                //     headers: {
-                //     "Content-Type": "application/json",
-                //     "Authorization": `Bearer ${sessionStorage.getItem("token")}`
-                //     }
-                // }
-            );
+                    // headers: {
+                    // "Content-Type": "multipart/form-data",
+                    // "Authorization": `Bearer ${token}`
+                    // } 
+                });
     
-                console.log("Postssss Data:", response.data);
+                // console.log("Postssss Data:", response.data);
     
                 if (response.data.status === "success") {
                     const data = response.data.data;

@@ -66,15 +66,12 @@ const LoginForm = () => {
       // console.log('login',data);
       if (data.status === "success") {
         
-        // localStorage.setItem("token", data.token);
+        localStorage.setItem("token", data.token);
         localStorage.setItem("email", data.user.email); 
         localStorage.setItem("id", data.user.id); 
         localStorage.setItem("login", data.user.loginid); 
         
-        sessionStorage.setItem("token", data.token);
-        // sessionStorage.setItem("email", email);
-        // sessionStorage.setItem("id", data.user.id);
-        // sessionStorage.setItem("login", data.user.loginid);
+        // browser-alive flag (tab-specific)
         sessionStorage.setItem("browser_alive", "true");
         
         navigate(redirectUrl, { replace: true });

@@ -21,7 +21,7 @@ const NavTop: React.FC = () => {
     const [profile, setProfile] = useState<Profile | null>(null);
     const profileFetched = useRef(false);
     
-    
+    const token = localStorage.getItem('token');
     const navigate = useNavigate();
      useEffect(() => {
         // const storedId = sessionStorage.getItem("id");
@@ -32,8 +32,8 @@ const NavTop: React.FC = () => {
         }  
     }, []);
     useEffect(() => {
-        // const token = localStorage.getItem('token');
-        const token = sessionStorage.getItem('token');// 03-11-25
+        const token = localStorage.getItem('token');
+        // const token = sessionStorage.getItem('token');// 03-11-25
         setIsLoggedIn(!!token);
     }, []);
     useEffect(() => {
@@ -45,7 +45,6 @@ const NavTop: React.FC = () => {
             }
     }, []);
      // get the profile
-     console.log('userid',userId);
     //  console.log('BASE_URL',sessionStorage.getItem("token"));
     useEffect(() => {
         if (!userId) return;
@@ -63,10 +62,13 @@ const NavTop: React.FC = () => {
 
         const loadProfile = async () => {
         try {
-            const response = await axios.post(
-            `${BASE_URL}/user/profile`,
-            { UserId: userId }
-            );
+            const response = await axios.post(`${BASE_URL}/user/profile`,{ 
+                UserId: userId,
+                // headers: {
+                //     "Content-Type": "multipart/form-data",
+                //     "Authorization": `Bearer ${token}`
+                // } 
+            });
 
             if (response.data.status === "success") {
             setProfile(response.data.data);
@@ -98,10 +100,7 @@ const NavTop: React.FC = () => {
         const PROFILE_KEY = "user_profile";
 
         localStorage.removeItem(PROFILE_KEY);
-        sessionStorage.removeItem("id");
-        sessionStorage.removeItem("token");
         localStorage.clear();
-        sessionStorage.clear();
         setIsLoggedIn(false);
         navigate('/');
     };

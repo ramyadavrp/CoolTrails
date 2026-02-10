@@ -206,7 +206,11 @@ const CommunitySection: React.FC = () => {
             issueRaisedBy: userId, //360ccff6-2f3b-4f27-9d06-692ca03657c3
             UserId: post_by_userid,  //9458d7d7-9268-457c-b27a-3011976bb2e4
             Remark: reason ?? '',
-            isBlocked:getCheckblock
+            isBlocked:getCheckblock,
+            // headers: {
+            // "Content-Type": "multipart/form-data",
+            // "Authorization": `Bearer ${token}`
+            // } 
         });
     // alert("Report submitted successfully!");
         console.log('report',response.data);
@@ -287,6 +291,10 @@ const CommunitySection: React.FC = () => {
             try {
             const response = await axios.post(`${BASE_URL}/user/community`, {
                 LoginId: loginId,
+                // headers: {
+                // "Content-Type": "multipart/form-data",
+                // "Authorization": `Bearer ${token}`
+                // } 
             });
 
             // console.log('community',response.data.data.suggested_members);
@@ -344,18 +352,15 @@ const CommunitySection: React.FC = () => {
             }
 
             try {
-                const response = await axios.post(
-                    `${BASE_URL}/feed/like`,
+                const response = await axios.post(`${BASE_URL}/feed/like`,
                     {
                         PostId: id,
                         UserId: userId, 
+                        // headers: {
+                        // "Content-Type": "multipart/form-data",
+                        // "Authorization": `Bearer ${token}`
+                        // } 
                         // UserId: "e08ee354-20e2-4af6-a37f-c30127cf322d", 
-                    },
-                    {
-                        headers: {
-                            "Content-Type": "application/json",
-                            Accept: "application/json",
-                        },
                     }
                 );
 
@@ -426,6 +431,10 @@ const CommunitySection: React.FC = () => {
             const response = await axios.post(`${BASE_URL}/user/follow`, {
                 FollowerId: userId,//9c4eede4-8850-4f89-aaf0-4e417d40b942
                 UserId: id, //a2dc38a2-f4fa-4a6f-8eb3-4400932bc62c
+                // headers: {
+                // "Content-Type": "multipart/form-data",
+                // "Authorization": `Bearer ${token}`
+                // } 
 
             });
             if (response.data.status === "success") {
@@ -466,18 +475,15 @@ const CommunitySection: React.FC = () => {
         if(id !==0){
            // alert(id);
             try{
-                const response = await axios.post(
-                    `${BASE_URL}/user/Dismissed`,
+                const response = await axios.post(`${BASE_URL}/user/Dismissed`,
                     {
                         DismissedById: userId,
-                        UserId: id, 
+                        UserId: id,
+                        // headers: {
+                        // "Content-Type": "multipart/form-data",
+                        // "Authorization": `Bearer ${token}`
+                        // }  
                         
-                    },
-                    {
-                        headers: {
-                            "Content-Type": "application/json",
-                            Accept: "application/json",
-                        },
                     }
                 );
                  console.log("API DismissedUser Response:", response.data);
@@ -502,9 +508,11 @@ const CommunitySection: React.FC = () => {
         try {
         const response = await axios.post(`${BASE_URL}/feed/share`, {
             PostId: id,
-            UserId: userId
-        }, {
-            headers: { "Content-Type": "application/json" }
+            UserId: userId,
+            // headers: {
+            // "Content-Type": "multipart/form-data",
+            // "Authorization": `Bearer ${token}`
+            // } 
         });
 
         console.log("Share response:", response.data);

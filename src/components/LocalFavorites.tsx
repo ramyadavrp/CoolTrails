@@ -126,7 +126,11 @@ const LocalFavorites: React.FC = () => {
             const response = await axios.post(`${BASE_URL}/trail/bookmark`, {
                 TrailId: trailid,
                 UserId: userId,
-                do_bookmark: !isAlreadyBookmarked
+                do_bookmark: !isAlreadyBookmarked,
+                // headers: {
+                // "Content-Type": "multipart/form-data",
+                // "Authorization": `Bearer ${token}`
+                // } 
               }
             
             );

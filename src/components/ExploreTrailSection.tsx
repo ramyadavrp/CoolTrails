@@ -178,9 +178,14 @@ function ExploreTrailSection() {
         try {
             setloadingExplore(true);
 
-            const response = await axios.post(
-            `${BASE_URL}/Park/details/${title}`,
-            { title }
+            const response = await axios.post(`${BASE_URL}/Park/details/${title}`,
+                { 
+                    title,
+                    // headers: {
+                    // "Content-Type": "multipart/form-data",
+                    // "Authorization": `Bearer ${token}`
+                    // } 
+                }
             );
 
             console.log("ParkParkPark:", response.data);
