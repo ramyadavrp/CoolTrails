@@ -1,0 +1,191 @@
+/* .clt-img-bg{
+    width: 100%;
+    min-height: 293px;
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover;
+    opacity: 1;
+    position: absolute;
+    top: 0px;
+    left: 1px;
+    border-top-left-radius: 19px;
+    border-top-right-radius: 19px;
+    border-bottom-left-radius: 19px;
+    border-bottom-right-radius: 19px;
+    box-shadow: 13px 7px 8px rgba(0.06675338745117188, 0.06650615483522415, 0.0660116970539093, 0.25);
+    overflow: hidden;
+}
+.clt-category-title{
+    width: 90%;
+    text-align: center;
+}
+
+.clt-app-store .bg-img{
+    border-top-left-radius: 65px;
+    border-top-right-radius: 65px;
+    border-bottom-left-radius: 65px;
+    border-bottom-right-radius: 65px;
+    overflow: hidden;
+    opacity: 1;
+    top: 0px;
+}
+.clt-width-auto{
+    width: 100%;
+    left: auto;
+}
+.size-96{
+    width: 100%;
+}
+.w-96{
+    width: 100%;
+}
+.w-96{
+    width: 100%;
+}
+
+.clt-circle-icon{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100px;
+}
+.clt-circle-icon img{
+    width: 60px;
+    height: 60px;
+    border-radius: 15px;
+}
+.clt-barcode{
+    border:1px solid;
+    border-radius: 15px;
+    padding: 10px;;
+}
+
+.clt-trail .clt-bg-img{
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: contain;
+    opacity: 1;
+    overflow: hidden;
+    width: 100%;
+}
+.clt-trail .clt-left-text{
+    border-bottom: 1px solid;
+    padding-bottom: 12px;
+}
+
+.clt-r-img{
+    bottom: 14px;
+    left: 10.8rem;
+}
+.clt-adventure-anywhere{
+    padding-top: 2rem;
+    padding-bottom: 6rem;
+}
+.clt-dropdown{
+    padding: 4.5rem 1.5rem;
+}
+.clt-blue-section .clt-img-icon{
+    width: 87px;
+    height: 85px;
+    opacity: 1;
+    border-radius: 50%;
+    box-shadow: 9px 2px 7px #030F2DE8;
+    overflow: hidden;
+    border: 1px solid;
+    padding: 4px;
+}
+footer .clt-member-planet-icon{
+    border: 1px solid;
+    padding: 2px;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+}
+footer .clt-member-planet-text{
+    text-align: left;
+}
+img.object-cover, div.share-li {
+    transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+    cursor: pointer;
+}
+img.object-cover:hover , div.share-li:hover{
+    transform: scale(1.05);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+}
+
+
+.clip-curve-left {
+    clip-path: polygon(0 0, 80% 0, 100% 100%, 0% 100%);
+  }
+  
+  .clip-curve-right {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 10% 100%);
+  }
+
+  .clip-curve-right2 {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 23% 100%);
+  }
+  
+.card-collaps {
+    transition: transform .2s;
+    width: 180px;
+    height: 270px;
+    border-radius: 8px;
+    background-color: rgb(43, 0, 82);
+    color: rgb(255, 255, 255);
+    overflow: hidden;
+    box-shadow: rgba(0, 0, 0, 0.15) 0px 4px 12px;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transform: scale(1);
+    filter: blur(.4px);
+}
+.card-collaps:hover {
+    opacity: 0.8;
+    filter: blur(0px);
+} */
+/* profile page css */
+/* .add-trail-btn {
+    height: 18px;
+    width: 18px;
+    line-height: unset;
+}
+
+@media (max-width: 768px) {
+    .clip-curve-right2{
+        clip-path: none;
+    }
+    .clip-curve-right{
+        clip-path: none;
+    }
+    .clip-curve-left{
+        clip-path: none;
+    }
+} */
+
+/* community page */
+
+
+           /* .community-tab{gap: 40px;border-bottom: 1px solid var(--soft-grey);padding-bottom: 10px;margin-bottom: 20px;}
+                        .community-tab .nav-item button{border: none;background: none;box-shadow: none;font-size: 18px;line-height: 1.5;color: var(--midnight-navy);}
+                        .community-tab .nav-item button.active{ color: var(--orange);}
+                       .suggested-members-container {
+    padding: 60px 0;
+    margin-bottom: 30px;
+}
+.smc-title{font-size: 28px;font-weight: 600;line-height: 1.4;margin-bottom: 40px;}
+.suggested-member-single{border: 1px solid var(--soft-grey);gap: 18px;padding: 10px;width: 345px;border-radius: 12px;}
+.sms-img img{height: 80px;width: 80px;border-radius: 12px;object-fit: cover;object-position: top;}
+.sms-dt .sms-dt-title{font-size: 18px;line-height: 1.5;}
+.sms-dt .sms-dt-location{font-size: 14px;}
+.sm-box{display: flex;gap: 10px;overflow: auto;} */
+
+/* community page */
+
+
+
+
+
+  
