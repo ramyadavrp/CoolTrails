@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState ,useEffect} from "react";
 import { SquareLoader } from "react-spinners";
 
 const PlanSection = () => {
@@ -20,6 +20,9 @@ const PlanSection = () => {
         { label: "Build your own routes", base: false, plus: false, peak: true },
         { label: "Identify plants and more", base: false, plus: false, peak: true },
     ];
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
     // if (loadingPlans) {
     //         return (
     //             <div
